@@ -1,0 +1,20 @@
+# Environnement virtuel
+venv/
+.env/
+
+# Fichiers Python compilés
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Fichiers de base de données
+db.sqlite3
+
+# Dossiers spécifiques à VS Code / IDE
+.vscode/
+.idea/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
