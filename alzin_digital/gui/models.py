@@ -170,7 +170,7 @@ class commentaire(models.Model):
 
 
 
-class Commander(models.Model):
+class commander(models.Model):
     commande = models.ForeignKey(
         commande,
         on_delete=models.CASCADE,
@@ -191,7 +191,7 @@ class Commander(models.Model):
 
 
 
-class Chanter(models.Model):
+class chanter(models.Model):
     chant = models.ForeignKey(
         chant,
         on_delete=models.CASCADE,
@@ -246,7 +246,7 @@ class appartenir(models.Model):
         # ça remplace ta clé primaire composée (Access)
 
 
-class Contenir(models.Model):
+class contenir(models.Model):
     chant = models.ForeignKey(
         chant,            
         on_delete=models.CASCADE,
@@ -281,7 +281,7 @@ class fournir(models.Model):
         unique_together = (('fournisseur', 'chansonnier', 'date_fourniture'),)
 
 
-class Noter(models.Model):
+class noter(models.Model):
     utilisateur = models.ForeignKey(
         utilisateur,
         on_delete=models.CASCADE
