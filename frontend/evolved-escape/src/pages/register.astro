@@ -1,0 +1,133 @@
+---
+import Layout from "@layouts/Layout.astro";
+const next = Astro.url.searchParams.get("next") || "/"; // redir après register
+---
+
+<Layout title="Inscription">
+  <main class="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6">
+    <section class="w-full max-w-md">
+      <div class="w-full max-w-md rounded-xl bg-white px-5 py-6 shadow-lg sm:px-8">
+      <h1 class="mb-2 bg-white text-xl font-semibold text-bleu sm:text-2xl">Inscription</h1>
+
+      <form id="registerForm" class="stack" novalidate>
+        <label>
+          Nom
+          <input 
+            id="nom" 
+            name="nom" 
+            type="text" 
+            required 
+            class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </label>
+
+        <label>
+          Prénom
+          <input 
+            id="prenom" 
+            name="prenom" 
+            type="text" 
+            required 
+            class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </label>
+
+        <label>
+          Email
+          <input 
+            id="email" 
+            name="email" 
+            type="email" 
+            placeholder="exemple@domaine.com"
+            required 
+            class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </label>
+
+        <label>
+          Mot de passe
+          <input 
+            id="password" 
+            name="password" 
+            type="password" 
+            placeholder="••••••••"
+            required 
+            class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </label>
+
+        <label>
+          Confirmer le mot de passe
+          <input 
+            id="password2" 
+            name="password2" 
+            type="password" 
+            placeholder="••••••••"
+            required 
+            class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </label>
+
+        <button type="submit" class="rounded-lg border-2 border-bleu bg-bleu px-4 py-2 text-white transition duration-150 hover:bg-blue-50 hover:text-bleu">
+          S'inscrire
+        </button>
+        <p id="err" style="color:#b00;"></p>
+        <p id="success" style="color:green;"></p>
+      </form>
+
+      <style>
+        .stack { display:flex; flex-direction:column; gap:.8rem; max-width:380px }
+        input, button { padding:.55rem .7rem; font-size:1rem }
+      </style>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  const form = document.getElementById('registerForm');
+  const $err = document.getElementById('err');
+  const $success = document.getElementById('success');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $err.textContent = '';
+    $success.textContent = '';
+
+    const nom = document.getElementById('nom').value.trim();
+    const prenom = document.getElementById('prenom').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const password2 = document.getElementById('password2').value;
+
+    if (!nom || !prenom || !email || !password || !password2) {
+      $err.textContent = "Tous les champs sont obligatoires.";
+      return;
+    }
+    if (password !== password2) {
+      $err.textContent = "Les mots de passe ne correspondent pas.";
+      return;
+    }
+
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({ nom, prenom, email: email.toLowerCase(), password })
+    });
+
+    let data = {};
+    try { data = await res.json(); } catch {}
+
+    if (!res.ok) {
+      $err.textContent = data.error || ('Erreur ' + res.status);
+      return;
+    }
+
+    $success.textContent = data.message || "Inscription réussie ! Vérifie ton email.";
+
+    // redirection si next est défini
+    const next = new URLSearchParams(window.location.search).get('next') || '/';
+    setTimeout(() => location.href = next, 1500);
+  });
+</script>
