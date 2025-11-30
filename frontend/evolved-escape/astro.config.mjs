@@ -1,6 +1,6 @@
 import { defineConfig } from "astro/config";
 
-import tailwindcss from "@tailwindcss/vite";
+import tailwind from "@astrojs/tailwind";
 
 export default defineConfig({
   alias: {
@@ -9,10 +9,8 @@ export default defineConfig({
     "@styles": "./src/styles",
     "@layouts": "./src/layouts",
     "@icons": "./src/icons",
-    "@images": "./src/assests/images"
+    "@images": "./src/assets/images"
   },
-
-  vite: {
-    plugins: [tailwindcss()],
-  },
+  
+  integrations : [tailwind()],
 });
