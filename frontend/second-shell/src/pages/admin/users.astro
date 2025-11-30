@@ -1,0 +1,13 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AdminUsersTable from "../../components/AdminUsersTable";
+import RequireRole from "@components/RequireRole";
+---
+<Layout title="Gestion des utilisateurs">
+  <main class="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6">
+    <RequireRole allowedRoles={['admin']} client:load>
+      <h1 class="mb-2 bg-white text-xl font-semibold text-bleu sm:text-2xl">Gestion des utilisateurs</h1>
+      <AdminUsersTable client:load />
+    </RequireRole>
+  </main>
+</Layout>

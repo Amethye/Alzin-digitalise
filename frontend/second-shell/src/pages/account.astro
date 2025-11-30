@@ -1,0 +1,13 @@
+---
+import Layout from "@layouts/Layout.astro";
+import RequireAuth from "@components/RequireAuth";
+import AccountPage from "../components/account.tsx";
+---
+
+<Layout title="Mon compte">
+  <main class="flex min-h-screen justify-center bg-white px-4 py-6 sm:px-6 sm:py-8">
+    <RequireAuth client:load>
+      <AccountPage client:load />
+    </RequireAuth>
+  </main>
+</Layout>
