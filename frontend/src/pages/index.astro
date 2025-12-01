@@ -1,9 +1,57 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import Layout from "@layouts/Layout.astro";
+
+import { Image } from "astro:assets";
+
+import statueFPMs from "@images/statue-fpms.jpg";
 ---
 
-<Layout>
-  <h1 class="text-red-500 text-4xl font-bold">
-    Test — Tailwind fonctionne !
-  </h1>
+
+<Layout title="Accueil">
+  <main class="container mx-auto space-y-6 px-4 pb-10 pt-6 sm:space-y-8 lg:space-y-10">
+    <section
+      class="relative overflow-hidden rounded-3xl shadow-xl min-h-[18rem] sm:min-h-[24rem] lg:h-[calc(100vh_-_15rem)]"
+    >
+      <Image
+        class="absolute inset-0 h-full w-full object-cover"
+        src={statueFPMs}
+        alt="Statue des deux fondateurs de la Faculté polytechnique de Mons, Guibal et Devillez"
+        quality={30}
+        width={1920}
+        height={1280}
+        format="webp"
+      />
+      <div class="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/40 to-transparent pb-10 sm:pb-16">
+        <h1
+          class="mx-auto w-full max-w-3xl px-4 text-2xl font-semibold leading-tight text-white text-shadow-title sm:px-8 sm:text-3xl lg:max-w-4xl lg:pe-16 lg:text-4xl"
+        >
+          Bienvenue sur le site de l'
+          <span
+            class="bg-gradient-to-r bleu to-blue-600 bg-clip-text text-transparent drop-shadow-white text-shadow-none"
+            >Alzin</span
+          >
+          de la Faculté Polytechnique de Mons !
+        </h1>
+      </div>
+    </section>
+    <section
+      class="mx-auto max-w-4xl space-y-4 rounded-lg border-l-4 border-mauve bg-white px-4 py-6 text-base font-medium shadow-box sm:px-6 sm:text-lg"
+    >
+      <h2 class="text-2xl font-bold text-mauve underline sm:text-3xl">À propos</h2>
+      <ul class="list-disc list-inside space-y-2 text-gray-800">
+        <li>
+          Ce site est le site officiel de l'Alzin, le chansonnier étudiant de la Faculté Polytechnique de Mons.
+        </li>
+        <li>
+          Notre objectif est de vous fournir tous les chants étudiants. Vous pouvez les commenter, les noter et les télécharger.
+        </li>
+        <li>
+          Pour toutes questions, n'hésitez pas à contacter les maîtres de chants.
+        </li>
+        <li>
+          Ce site a été réalisé dans le cadre d'un projet de BAB3.
+        </li>
+      </ul>
+    </section>
+  </main>
 </Layout>

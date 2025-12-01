@@ -1,13 +1,71 @@
 ---
-import "../styles/base.css";
+
+import SpeedInsights from "@vercel/speed-insights/astro";
+import { ClientRouter } from "astro:transitions";
+import { AstroFont } from "astro-font";
+
+import "@styles/base.css";
+
+const {
+  title: pageTitle,
+  description: pageDescription,
+  canonical,
+} = Astro.props;
+
+const site = Astro.site ?? new URL("https://alzin.fede.fpms.ac.be");
+const title = pageTitle ? `${pageTitle} | Alzin FPMs` : "Alzin FPMs";
+const description =
+  pageDescription ??
+  "L'Alzin est un chasonnier qui contient des chants étudiants réprésentant le folklore de la Polytech de Mons et d'autres facultés";
+const canonicalURL = new URL(canonical ?? Astro.url.pathname, site)
+  .toString()
+  .replace(/\/$/, "");
 ---
 
-<html lang="fr">
+<!doctype html>
+<html lang="fr-BE" class="scroll-p-24 scroll-smooth lg:scroll-p-[8.5rem]">
   <head>
-    <meta charset="UTF-8" />
-  </head>
+    <meta charset="utf-8" />
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="author" content="Les IGs" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={canonicalURL} />
 
-  <body class="bg-white">
-    <slot />
+    <title>{title}</title>
+    <meta name="og:title" content={title} />
+    <meta name="og:description" content={description} />
+    <meta name="og:type" content="website" />
+    <meta name="og:locale" content="be_FR" />
+    <meta name="og:url" content={canonicalURL} />
+    <meta name="og:site_name" content="Alzin FPMs" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <ClientRouter />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <SpeedInsights />
+    <AstroFont
+      config={[
+        {
+          src: [],
+          name: "Poppins",
+          googleFontsURL:
+            "https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap",
+          preload: true,
+          display: "swap",
+          selector: "body",
+          fallback: "sans-serif",
+        },
+      ]}
+    />
+  </head>
+  <body class="antialiased" transition:animate="fade">
+    <main>
+      <slot />
+    </main>
   </body>
 </html>
