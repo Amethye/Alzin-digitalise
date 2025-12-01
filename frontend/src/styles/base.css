@@ -18,6 +18,10 @@
     @apply [overflow-clip-margin:unset];
   }
 }
+@theme {
+  --color-mauve: #7E00FE;
+  --color-gris: #f0f2f5;
+}
 
 @tailwind components;
 @tailwind utilities;

@@ -6,6 +6,9 @@ import { AstroFont } from "astro-font";
 
 import "@styles/base.css";
 
+import Footer from "@components/Footer.astro";
+import Nav from "@components/Nav.tsx"
+
 const {
   title: pageTitle,
   description: pageDescription,
@@ -30,7 +33,11 @@ const canonicalURL = new URL(canonical ?? Astro.url.pathname, site)
     <meta name="description" content={description} />
     <meta name="author" content="Les IGs" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  
+    <link rel="icon" type="image/svg+xml" href="/FPMs-icon.svg?v=1" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={canonicalURL} />
 
@@ -63,9 +70,11 @@ const canonicalURL = new URL(canonical ?? Astro.url.pathname, site)
       ]}
     />
   </head>
-  <body class="antialiased" transition:animate="fade">
+  <body class="antialiased bg-gray-50" transition:animate="fade">
+    <Nav client:load />
     <main>
       <slot />
     </main>
+    <Footer />
   </body>
 </html>

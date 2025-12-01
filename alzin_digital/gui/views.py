@@ -32,83 +32,160 @@ def reset_password_page(request):
 
 
 #views pour le site Alzin
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import utilisateur, chant, piste_audio, favoris, commentaire
-from .forms import (
-    UtilisateurForm, ChantForm, PisteAudioForm, FavorisForm, CommentaireForm
+from .models import (
+    utilisateur,
+    chant,
+    favoris,
+    commentaire,
 )
 
-def ajouter_utilisateur(request):
-    if request.method == "POST":
-        form = UtilisateurForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("liste_utilisateurs")
-    else:
-        form = UtilisateurForm()
-    return render(request, "gui/utilisateur_form.html", {"form": form})
 
-def liste_utilisateurs(request):
-    users = utilisateur.objects.all()
-    return render(request, "gui/utilisateur_list.html", {"utilisateurs": users})
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def utilisateurs_api(request):
+    if request.method == "GET":
+        users = utilisateur.objects.all()
+        data = [
+            model_to_dict(
+                u,
+                fields=["id", "email", "nom", "prenom", "pseudo", "ville", "statut"],
+            )
+            for u in users
+        ]
+        return JsonResponse(data, safe=False)
+
+    # POST : création d'un utilisateur
+    body = json.loads(request.body.decode("utf-8"))
+    u = utilisateur.objects.create(
+        email=body["email"],
+        nom=body.get("nom", ""),
+        prenom=body.get("prenom", ""),
+        pseudo=body.get("pseudo", ""),
+        password=body.get("password", ""),
+        ville=body.get("ville", ""),
+        statut=body.get("statut", ""),
+    )
+    return JsonResponse(model_to_dict(u), status=201)
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def chants_api(request):
+    if request.method == "GET":
+        chants = chant.objects.select_related("utilisateur").all()
+        data = []
+        for c in chants:
+            data.append({
+                "id": c.id,
+                "nom_chant": c.nom_chant,
+                "auteur": c.auteur,
+                "ville_origine": c.ville_origine,
+                "description": c.description,
+                "utilisateur_id": c.utilisateur_id,
+            })
+        return JsonResponse(data, safe=False)
+
+    # POST : création d'un chant (version simple, sans upload de fichiers)
+    body = json.loads(request.body.decode("utf-8"))
+
+    user_id = body.get("utilisateur_id")
+    u = utilisateur.objects.get(id=user_id) if user_id is not None else None
+
+    c = chant.objects.create(
+        nom_chant=body["nom_chant"],
+        auteur=body.get("auteur", ""),
+        ville_origine=body.get("ville_origine", ""),
+        description=body.get("description", ""),
+        paroles=body.get("paroles", ""),
+        utilisateur=u,
+        # pour les fichiers (illustration_chant, pdf, partition), tu peux les gérer via l'admin
+    )
+    return JsonResponse({"id": c.id, "nom_chant": c.nom_chant}, status=201)
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def favoris_api(request):
+    if request.method == "GET":
+        user_id = request.GET.get("utilisateur_id")
+        qs = favoris.objects.select_related("utilisateur", "chant")
+        if user_id:
+            qs = qs.filter(utilisateur_id=user_id)
+
+        data = [
+            {
+                "id": f.id,
+                "utilisateur_id": f.utilisateur_id,
+                "chant_id": f.chant_id,
+                "date_favori": f.date_favori.isoformat(),
+                "utilisateur": str(f.utilisateur),
+                "chant": str(f.chant),
+            }
+            for f in qs
+        ]
+        return JsonResponse(data, safe=False)
+
+    # POST : ajouter un favori
+    body = json.loads(request.body.decode("utf-8"))
+
+    fav = favoris.objects.create(
+        utilisateur_id=body["utilisateur_id"],
+        chant_id=body["chant_id"],
+        date_favori=body["date_favori"],  # "2025-11-25"
+    )
+    return JsonResponse(
+        {
+            "id": fav.id,
+            "utilisateur_id": fav.utilisateur_id,
+            "chant_id": fav.chant_id,
+            "date_favori": fav.date_favori.isoformat(),
+        },
+        status=201,
+    )
 
 
-def ajouter_chant(request):
-    if request.method == "POST":
-        form = ChantForm(request.POST, request.FILES)   # ⚠️ request.FILES pour les FileField
-        if form.is_valid():
-            form.save()
-            return redirect("liste_chants")
-    else:
-        form = ChantForm()
-    return render(request, "gui/chant_form.html", {"form": form})
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def commentaires_api(request):
+    if request.method == "GET":
+        chant_id = request.GET.get("chant_id")
+        qs = commentaire.objects.select_related("utilisateur", "chant")
+        if chant_id:
+            qs = qs.filter(chant_id=chant_id)
 
-def liste_chants(request):
-    chants = chant.objects.all()
-    return render(request, "gui/chant_list.html", {"chants": chants})
+        data = [
+            {
+                "id": c.id,
+                "utilisateur_id": c.utilisateur_id,
+                "chant_id": c.chant_id,
+                "date_comment": c.date_comment.isoformat(),
+                "texte": c.texte,
+                "utilisateur": str(c.utilisateur),
+            }
+            for c in qs
+        ]
+        return JsonResponse(data, safe=False)
 
+    # POST : ajouter un commentaire
+    body = json.loads(request.body.decode("utf-8"))
 
-def ajouter_piste_audio(request):
-    if request.method == "POST":
-        form = PisteAudioForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect("liste_pistes_audio")
-    else:
-        form = PisteAudioForm()
-    return render(request, "gui/piste_audio_form.html", {"form": form})
+    com = commentaire.objects.create(
+        utilisateur_id=body["utilisateur_id"],
+        chant_id=body["chant_id"],
+        date_comment=body["date_comment"],
+        texte=body["texte"],
+    )
 
-def liste_pistes_audio(request):
-    pistes = piste_audio.objects.all()
-    return render(request, "gui/piste_audio_list.html", {"pistes": pistes})
-
-
-def ajouter_favoris(request):
-    if request.method == "POST":
-        form = FavorisForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("liste_favoris")
-    else:
-        form = FavorisForm()
-    return render(request, "gui/favoris_form.html", {"form": form})
-
-def liste_favoris(request):
-    favs = favoris.objects.select_related("utilisateur", "chant")
-    return render(request, "gui/favoris_list.html", {"favoris": favs})
-
-
-def ajouter_commentaire(request):
-    if request.method == "POST":
-        form = CommentaireForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("liste_commentaires")
-    else:
-        form = CommentaireForm()
-    return render(request, "gui/commentaire_form.html", {"form": form})
-
-def liste_commentaires(request):
-    comms = commentaire.objects.select_related("utilisateur", "chant")
-    return render(request, "gui/commentaire_list.html", {"commentaires": comms})
+    return JsonResponse(
+        {
+            "id": com.id,
+            "utilisateur_id": com.utilisateur_id,
+            "chant_id": com.chant_id,
+            "date_comment": com.date_comment.isoformat(),
+            "texte": com.texte,
+        },
+        status=201,
+    )
