@@ -20,23 +20,44 @@ export default function Nav() {
   const desktopMenuRef = useRef<HTMLDivElement | null>(null);
   const logoSrc = LogoUrl.split("?")[0];
 
-  useEffect(() => {
-    fetch("/api/me", { credentials: "include" })
-      .then(async (res) => {
-        if (!res.ok) {
-          setRole("guest");
-          setMe(null);
-          return;
-        }
-        const data = await res.json();
-        setRole(data.role || "guest");
-        setMe(data);
-      })
-      .catch(() => {
-        setRole("guest");
+useEffect(() => {
+  const email = localStorage.getItem("email");
+
+  if (!email) {
+    setMe(null);
+    setRole("guest");
+    return;
+  }
+
+  fetch("http://127.0.0.1:8000/api/me/", {
+    method: "GET",
+    headers: {
+      "X-User-Email": email,
+      "Content-Type": "application/json"
+    }
+  })
+    .then(async (res) => {
+      const data = await res.json();
+
+      if (!res.ok || !data.id) {
         setMe(null);
+        setRole("guest");
+        return;
+      }
+
+      setMe({
+        identifiant: data.pseudo,
+        email: data.email,
+        role: "user",
       });
-  }, []);
+
+      setRole("user");
+    })
+    .catch(() => {
+      setMe(null);
+      setRole("guest");
+    });
+}, []);
 
   useEffect(() => {
     if (!showMobileMenu && !showDesktopMenu) return;
@@ -84,12 +105,21 @@ export default function Nav() {
     setShowMobileMenu(false);
     setShowDesktopMenu(false);
     setIsMobileMenuOpen(false);
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    setRole("guest");
+    await fetch("http://127.0.0.1:8000/api/auth/logout/", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    // Effacer stockage local
+    localStorage.removeItem("email");
+
+    // Reset état
     setMe(null);
-    // Optionnel : reload de la page pour forcer la redirection
+    setRole("guest");
+
+    // Rediriger
     window.location.href = "/";
-  };
+};
 
   const isAdmin = role === "admin";
   const isVerifier = role === "verifier";

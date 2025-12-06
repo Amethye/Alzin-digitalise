@@ -5,6 +5,7 @@ urlpatterns = [
     path("utilisateurs/", views.utilisateurs_api, name="api_utilisateurs"),
     path("login/", views.login_api, name="api_login"),
     path("me/", views.me_api, name="api_me"),
+    path("auth/logout/", views.logout_api, name="api_logout"),
     path("chants/", views.chants_api, name="api_chants"),
     path("favoris/", views.favoris_api, name="api_favoris"),
     path("commentaires/", views.commentaires_api, name="api_commentaires"),

@@ -190,6 +190,14 @@ def me_api(request):
     # Méthode non autorisée
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
+#LOGOUT
+@csrf_exempt
+def logout_api(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+    return JsonResponse({"success": True})
+
 #CHANTS
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
