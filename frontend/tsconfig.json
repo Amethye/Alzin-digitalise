@@ -6,7 +6,8 @@
       "@layouts/*" : ["./src/layouts/*"],
       "@images/*" : ["./src/assets/images/*"],
       "@icons/*" : ["./src/icons/*"],
-      "@components/*" : ["./src/components/*"]
+      "@components/*" : ["./src/components/*"],
+      "@admincomponents/*" : ["./src/components/admin/*"]
     }
   },
   "include": [".astro/types.d.ts", "**/*"],

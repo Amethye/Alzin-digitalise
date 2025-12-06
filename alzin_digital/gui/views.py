@@ -77,24 +77,109 @@ def utilisateurs_api(request):
         data = [
             model_to_dict(
                 u,
-                fields=["id", "email", "nom", "prenom", "pseudo", "ville", "statut"],
+                fields=["id", "email", "nom", "prenom", "pseudo", "ville"]
             )
             for u in users
         ]
         return JsonResponse(data, safe=False)
 
     # POST : création d'un utilisateur
-    body = json.loads(request.body.decode("utf-8"))
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    required = ["email", "nom", "prenom", "pseudo", "ville", "password"]
+    for field in required:
+        if field not in body or not body[field]:
+            return JsonResponse({"error": f"Missing field: {field}"}, status=400)
+
+    # vérifie email unique
+    if utilisateur.objects.filter(email=body["email"]).exists():
+        return JsonResponse({"error": "Email déjà utilisé"}, status=409)
+
+    # vérifie pseudo unique
+    if utilisateur.objects.filter(pseudo=body["pseudo"]).exists():
+        return JsonResponse({"error": "Pseudo déjà utilisé"}, status=409)
+
+    # création utilisateur avec mot de passe hashé
     u = utilisateur.objects.create(
         email=body["email"],
-        nom=body.get("nom", ""),
-        prenom=body.get("prenom", ""),
-        pseudo=body.get("pseudo", ""),
-        password=body.get("password", ""),
-        ville=body.get("ville", ""),
-        statut=body.get("statut", ""),
+        nom=body["nom"],
+        prenom=body["prenom"],
+        pseudo=body["pseudo"],
+        ville=body["ville"],
+        password=make_password(body["password"]),
     )
-    return JsonResponse(model_to_dict(u), status=201)
+
+    return JsonResponse(
+        {"success": True, "user_id": u.id, "message": "Compte créé"},
+        status=201
+    )
+
+#LOGIN
+@csrf_exempt
+def login_api(request):
+    if request.method == "OPTIONS":
+        return JsonResponse({"ok": True})
+
+    if request.method != "POST":
+        return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+    body = json.loads(request.body.decode("utf-8"))
+    email = body.get("email", "").lower()
+    password = body.get("password", "")
+
+    try:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Utilisateur introuvable"}, status=400)
+
+    if user.password != password:  # ou check_password si hash
+        return JsonResponse({"success": False, "error": "Mot de passe incorrect"}, status=400)
+
+    return JsonResponse({"success": True, "user": user.id})
+
+#ME
+@csrf_exempt
+def me_api(request):
+    # Email envoyé par le frontend dans les headers
+    email = request.headers.get("X-User-Email", "").lower()
+
+    if not email:
+        return JsonResponse({"error": "Email manquant"}, status=400)
+
+    try:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
+        return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    # Récupérer les informations
+    if request.method == "GET":
+        return JsonResponse({
+            "id": user.id,
+            "nom": user.nom,
+            "prenom": user.prenom,
+            "email": user.email,
+            "pseudo": user.pseudo,
+            "ville": user.ville,
+        })
+    
+    # Mise à jour des informations utilisateur
+    if request.method == "PATCH":
+        body = json.loads(request.body.decode("utf-8"))
+
+        user.nom = body.get("nom", user.nom)
+        user.prenom = body.get("prenom", user.prenom)
+        user.pseudo = body.get("pseudo", user.pseudo)
+        user.ville = body.get("ville", user.ville)
+        user.email = body.get("email", user.email)
+
+        user.save()
+        return JsonResponse({"success": True})
+
+    # Méthode non autorisée
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
 #CHANTS
 @csrf_exempt

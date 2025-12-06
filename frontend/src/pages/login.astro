@@ -1,0 +1,13 @@
+---
+import Layout from "@layouts/Layout.astro";
+import LoginForm from "@components/Login";
+const next = Astro.url.searchParams.get("next") || "/";
+---
+
+<Layout title="Connexion">
+  <main class="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6">
+    <section class="w-full max-w-md">
+      <LoginForm next={next} client:load />
+    </section>
+  </main>
+</Layout>

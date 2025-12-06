@@ -10,9 +10,8 @@ class utilisateur(models.Model):
     nom = models.CharField(max_length = 30)
     prenom = models.CharField(max_length = 30)
     pseudo = models.CharField(max_length = 30)
-    password = models.CharField(max_length = 50)
+    password = models.CharField(max_length = 128)
     ville = models.CharField(max_length = 85)
-    statut = models.CharField(max_length= 50) #a modifier , faire une autre table pour les statuts ?
     
     class Meta:
         db_table = 'utilisateur'
