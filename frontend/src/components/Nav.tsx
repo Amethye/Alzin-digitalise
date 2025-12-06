@@ -9,7 +9,6 @@ type Me = {
   identifiant?: string; 
 };
 
-
 export default function Nav() {
   const [role, setRole] = useState<string>("guest");
   const [me, setMe] = useState<Me | null>(null);
@@ -20,44 +19,44 @@ export default function Nav() {
   const desktopMenuRef = useRef<HTMLDivElement | null>(null);
   const logoSrc = LogoUrl.split("?")[0];
 
-useEffect(() => {
-  const email = localStorage.getItem("email");
+  useEffect(() => {
+    const email = localStorage.getItem("email");
 
-  if (!email) {
-    setMe(null);
-    setRole("guest");
-    return;
-  }
-
-  fetch("http://127.0.0.1:8000/api/me/", {
-    method: "GET",
-    headers: {
-      "X-User-Email": email,
-      "Content-Type": "application/json"
-    }
-  })
-    .then(async (res) => {
-      const data = await res.json();
-
-      if (!res.ok || !data.id) {
-        setMe(null);
-        setRole("guest");
-        return;
-      }
-
-      setMe({
-        identifiant: data.pseudo,
-        email: data.email,
-        role: "user",
-      });
-
-      setRole("user");
-    })
-    .catch(() => {
+    if (!email) {
       setMe(null);
       setRole("guest");
-    });
-}, []);
+      return;
+    }
+
+    fetch("http://127.0.0.1:8000/api/me/", {
+      method: "GET",
+      headers: {
+        "X-User-Email": email,
+        "Content-Type": "application/json"
+      }
+    })
+      .then(async (res) => {
+        const data = await res.json();
+
+        if (!res.ok || !data.id) {
+          setMe(null);
+          setRole("guest");
+          return;
+        }
+
+        setMe({
+          identifiant: data.pseudo,
+          email: data.email,
+          role: "user",
+        });
+
+        setRole("user");
+      })
+      .catch(() => {
+        setMe(null);
+        setRole("guest");
+      });
+  }, []);
 
   useEffect(() => {
     if (!showMobileMenu && !showDesktopMenu) return;
@@ -105,27 +104,22 @@ useEffect(() => {
     setShowMobileMenu(false);
     setShowDesktopMenu(false);
     setIsMobileMenuOpen(false);
+
     await fetch("http://127.0.0.1:8000/api/auth/logout/", {
       method: "POST",
       credentials: "include",
     });
 
-    // Effacer stockage local
     localStorage.removeItem("email");
-
-    // Reset état
     setMe(null);
     setRole("guest");
-
-    // Rediriger
     window.location.href = "/";
-};
+  };
 
   const isAdmin = role === "admin";
   const isVerifier = role === "verifier";
   const isLoggedIn = Boolean(me);
 
-  // Filtrer les items selon la connexion
   const navItems = originalNavItems.filter((item) => {
     if (item.adminOnly) {
       const verifierHasAccess = item.verifierOnly && isVerifier;
@@ -134,10 +128,7 @@ useEffect(() => {
       return false;
     }
 
-    if (
-      isLoggedIn &&
-      (item.label === "Se connecter" || item.label === "S'inscrire")
-    ) {
+    if (isLoggedIn && (item.label === "Se connecter" || item.label === "S'inscrire")) {
       return false;
     }
     return true;
@@ -165,15 +156,8 @@ useEffect(() => {
     <>
       <nav className="container mx-auto flex flex-col gap-4 p-4 lg:grid lg:grid-cols-[1fr_auto]">
         <div className="flex items-center justify-between gap-4 lg:col-span-2">
-          <a
-            href="/"
-            className="inline-flex items-center gap-3 text-base duration-150 hover:opacity-80 xs:text-lg"
-          >
-            <img
-              src={logoSrc}
-              alt="Logo CAP"
-              className="h-12 w-auto max-w-[70px]"
-            />
+          <a href="/" className="inline-flex items-center gap-3 text-base duration-150 hover:opacity-80 xs:text-lg">
+            <img src={logoSrc} alt="Logo FPMs" className="h-12 w-auto max-w-[70px]" />
             <span className="text-base font-semibold leading-tight text-mauve sm:text-lg">
               <span className="lg:hidden">Alzin</span>
               <span className="hidden lg:inline">Alzin FPMs</span>
@@ -202,34 +186,6 @@ useEffect(() => {
                       />
                     </svg>
                   </button>
-                  {showMobileMenu && (
-                    <div className="absolute right-0 z-10 mt-2 w-64 rounded border bg-white text-base shadow-lg">
-                      <ul>
-                        {userMenuLinks.map((link) => (
-                          <li key={link.href}>
-                            <a
-                              href={link.href}
-                              onClick={() => {
-                                setShowMobileMenu(false);
-                                handleNavItemClick();
-                              }}
-                              className="block px-4 py-2 text-mauve hover:bg-mauve-50"
-                            >
-                              {link.label}
-                            </a>
-                          </li>
-                        ))}
-                        <li>
-                          <button
-                            onClick={handleLogout}
-                            className="block w-full px-4 py-2 text-left text-red-700 hover:bg-red-50"
-                          >
-                            Se déconnecter
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <span className="text-gray-500">Non connecté</span>
@@ -243,15 +199,7 @@ useEffect(() => {
               aria-controls="mobile-navigation"
               className="inline-flex items-center gap-2 rounded-md border border-mauve px-3 py-2 text-sm font-semibold text-mauve shadow-sm transition hover:bg-mauve hover:text-white lg:hidden"
             >
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="18" x2="21" y2="18" />
@@ -261,32 +209,43 @@ useEffect(() => {
           </div>
         </div>
 
+        {/* DESKTOP NAV */}
         <ul className="hidden flex-wrap justify-center gap-2 text-sm lg:col-start-1 lg:row-start-2 lg:flex lg:flex-nowrap lg:items-center lg:justify-center lg:gap-4 xl:text-base">
           {navItems.map((item: NavItem) => (
             <li key={item.href} className="mx-auto flex items-center justify-center">
               <div className="inline-flex">
-              {item.label === "Site Fédé" ? (
-                <a
-                  href={item.href}
-                  onClick={handleNavItemClick}
-                  className="rounded-lg border-2 border-mauve bg-mauve px-4 py-2 text-white transition duration-150 hover:bg-mauve-50 hover:text-mauve"
-                >
-                  {item.label}
-                </a>
-              ) : (
-                <a
-                  href={item.href}
-                  onClick={handleNavItemClick}
-                  className="relative px-1 py-1 after:absolute after:bottom-0 after:left-0 after:z-50 after:h-[3px] after:w-0 after:rounded-full after:bg-mauve after:duration-500 hover:after:w-full"
-                >
-                  {item.label}
-                </a>
-              )}
+
+                {item.label === "Site Fédé" ? (
+                  <a
+                    href={item.href}
+                    onClick={handleNavItemClick}
+                    className="rounded-lg border-2 border-mauve bg-mauve px-4 py-2 text-white transition font-semibold duration-150 hover:bg-purple-50 hover:text-mauve"
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <a
+                    href={item.href}
+                    onClick={handleNavItemClick}
+                    className="
+                      relative px-1 py-1
+                      text-mauve font-semibold
+                      after:absolute after:bottom-0 after:left-0 after:z-50
+                      after:h-[3px] after:w-0 after:rounded-full
+                      after:bg-mauve after:duration-500
+                      hover:after:w-full
+                    "
+                  >
+                    {item.label}
+                  </a>
+                )}
+
               </div>
             </li>
           ))}
         </ul>
 
+        {/* DESKTOP USER MENU */}
         <div
           className="hidden text-sm text-gray-700 lg:col-start-2 lg:row-start-2 lg:flex lg:justify-end lg:whitespace-nowrap"
           ref={desktopMenuRef}
@@ -311,33 +270,6 @@ useEffect(() => {
                   />
                 </svg>
               </button>
-              {showDesktopMenu && (
-                <div className="absolute right-0 z-10 mt-2 w-64 rounded border bg-white text-base shadow-lg">
-                  <ul>
-                    {userMenuLinks.map((link) => (
-                      <li key={link.href}>
-                        <a
-                          href={link.href}
-                          onClick={() => {
-                            setShowDesktopMenu(false);
-                          }}
-                          className="block px-4 py-2 text-mauve hover:bg-mauve-50"
-                        >
-                          {link.label}
-                        </a>
-                      </li>
-                    ))}
-                    <li>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full px-4 py-2 text-left text-red-700 hover:bg-red-50"
-                      >
-                        Se déconnecter
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              )}
             </div>
           ) : (
             <span className="text-gray-500">Non connecté</span>
@@ -345,32 +277,19 @@ useEffect(() => {
         </div>
       </nav>
 
+      {/* MOBILE NAV */}
       {isMobileMenuOpen && (
         <>
-          <div
-            className="fixed inset-0 z-30 bg-black/30 lg:hidden"
-            onClick={toggleMobileMenu}
-          />
+          <div className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={toggleMobileMenu} />
+
           <div
             id="mobile-navigation"
             className="fixed bottom-0 right-0 top-0 z-40 w-72 max-w-[80%] bg-white/95 shadow-xl backdrop-blur-sm lg:hidden"
           >
             <div className="flex items-center justify-between border-b px-4 py-4">
               <span className="text-base font-semibold text-mauve">Menu</span>
-              <button
-                type="button"
-                onClick={toggleMobileMenu}
-                className="rounded-md p-2 text-mauve transition hover:bg-blue-50"
-              >
-                <svg
-                  className="h-6 w-6"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+              <button type="button" onClick={toggleMobileMenu} className="rounded-md p-2 text-mauve transition hover:bg-purple-50">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
@@ -388,11 +307,12 @@ useEffect(() => {
                         key={link.href}
                         href={link.href}
                         onClick={handleNavItemClick}
-                        className="block rounded-md border border-mauve px-3 py-2 text-center text-mauve transition hover:bg-mauve-50"
+                        className="block rounded-md border border-mauve px-3 py-2 text-center text-mauve transition hover:bg-purple-50"
                       >
                         {link.label}
                       </a>
                     ))}
+
                     <button
                       onClick={handleLogout}
                       className="block w-full rounded-md border border-red-500 px-3 py-2 text-center font-semibold text-red-600 transition hover:bg-red-50"
@@ -409,11 +329,12 @@ useEffect(() => {
             <ul className="flex h-full flex-col gap-4 overflow-y-auto px-6 py-6 text-base">
               {navItems.map((item: NavItem) => (
                 <li key={item.href}>
+
                   {item.label === "Site Fédé" ? (
                     <a
                       href={item.href}
                       onClick={handleNavItemClick}
-                      className="flex w-full items-center justify-center rounded-lg border-2 border-mauve bg-mauve px-4 py-2 text-white transition duration-150 hover:bg-mauve-50 hover:text-mauve"
+                      className="flex w-full items-center justify-center rounded-lg border-2 border-mauve bg-mauve px-4 py-2 text-white font-semibold transition duration-150 hover:bg-purple-50 hover:text-mauve"
                     >
                       {item.label}
                     </a>
@@ -421,14 +342,23 @@ useEffect(() => {
                     <a
                       href={item.href}
                       onClick={handleNavItemClick}
-                      className="relative block px-1 py-1 text-center after:absolute after:bottom-0 after:left-1/2 after:z-50 after:h-[3px] after:w-0 after:-translate-x-1/2 after:rounded-full after:bg-mauve after:duration-500 hover:after:w-full"
+                      className="
+                        relative block px-1 py-1 text-center
+                        text-mauve font-semibold
+                        after:absolute after:bottom-0 after:left-1/2 after:z-50
+                        after:h-[3px] after:w-0 after:-translate-x-1/2 after:rounded-full
+                        after:bg-mauve after:duration-500
+                        hover:after:w-full
+                      "
                     >
                       {item.label}
                     </a>
                   )}
+
                 </li>
               ))}
             </ul>
+
           </div>
         </>
       )}
