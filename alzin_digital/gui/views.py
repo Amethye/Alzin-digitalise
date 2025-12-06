@@ -137,11 +137,17 @@ def login_api(request):
     except utilisateur.DoesNotExist:
         return JsonResponse({"success": False, "error": "Utilisateur introuvable"}, status=400)
 
-
-
+    # Vérification du mot de passe hashé
     if not check_password(password, user.password):
         return JsonResponse({"success": False, "error": "Mot de passe incorrect"}, status=400)
-    return JsonResponse({"success": True, "user": user.id})
+
+    # Succès
+    return JsonResponse({
+        "success": True,
+        "user_id": user.id,
+        "email": user.email,
+        "pseudo": user.pseudo,
+    })
 
 #ME
 @csrf_exempt

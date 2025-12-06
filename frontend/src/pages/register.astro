@@ -1,131 +1,143 @@
 ---
 import Layout from "@layouts/Layout.astro";
-const next = Astro.url.searchParams.get("next") || "/"; // redirection après register
+const next = Astro.url.searchParams.get("next") || "/";
 ---
 
 <Layout title="Inscription">
   <main class="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6">
     <section class="w-full max-w-md">
       <div class="w-full max-w-md rounded-xl bg-white px-5 py-6 shadow-lg sm:px-8">
-        <h1 class="mb-2 bg-white text-xl font-semibold text-mauve sm:text-2xl">Inscription</h1>
+        
+        <h1 class="mb-2 text-xl font-semibold text-mauve sm:text-2xl">
+          Inscription
+        </h1>
 
         <form id="registerForm" class="stack" novalidate>
 
-          <label>
+          <label class="flex flex-col gap-1">
             Nom
-            <input id="nom" name="nom" type="text" required class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
+            <input id="nom" type="text" required
+              class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
           </label>
 
-          <label>
+          <label class="flex flex-col gap-1">
             Prénom
-            <input id="prenom" name="prenom" type="text" required class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
+            <input id="prenom" type="text" required
+              class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
           </label>
 
-          <label>
+          <label class="flex flex-col gap-1">
             Email
-            <input id="email" name="email" type="email" placeholder="exemple@domaine.com"
-              required class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
+            <input id="email" type="email" placeholder="exemple@domaine.com" required
+              class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
           </label>
 
-          <label>
+          <label class="flex flex-col gap-1">
             Pseudo
-            <input id="pseudo" name="pseudo" type="text" required class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
+            <input id="pseudo" type="text" required
+              class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
           </label>
 
-          <label>
+          <label class="flex flex-col gap-1">
             Ville
-            <input id="ville" name="ville" type="text" required class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
+            <input id="ville" type="text" required
+              class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
           </label>
 
-          <label>
+          <label class="flex flex-col gap-1">
             Mot de passe
-            <input id="password" name="password" type="password" placeholder="••••••••"
-              required class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
+            <input id="password" type="password" placeholder="••••••••" required
+              class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
           </label>
 
-          <label>
+          <label class="flex flex-col gap-1">
             Confirmer le mot de passe
-            <input id="password2" name="password2" type="password" placeholder="••••••••"
-              required class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
+            <input id="password2" type="password" placeholder="••••••••" required
+              class="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve" />
           </label>
 
-          <button type="submit"
+          <button
+            type="submit"
             class="rounded-lg border-2 border-mauve bg-mauve px-4 py-2 text-white transition hover:bg-mauve-50 hover:text-mauve">
             S'inscrire
           </button>
 
-          <p id="err" style="color:#b00;"></p>
-          <p id="success" style="color:green;"></p>
+          <p id="err" class="text-red-600 text-sm"></p>
+          <p id="success" class="text-green-600 text-sm"></p>
+
         </form>
 
         <style>
-          .stack { display:flex; flex-direction:column; gap:.8rem; max-width:380px }
-          input, button { padding:.55rem .7rem; font-size:1rem }
+          .stack {
+            display: flex;
+            flex-direction: column;
+            gap: .8rem;
+            max-width: 380px;
+          }
+          input, button { 
+            padding: .55rem .7rem; 
+            font-size: 1rem; 
+          }
         </style>
+
       </div>
     </section>
   </main>
 </Layout>
 
 <script>
-  type ApiResponse = {
-    success?: boolean;
-    error?: string;
-    message?: string;
-  };
+  const form = document.getElementById("registerForm");
+  const $err = document.getElementById("err");
+  const $success = document.getElementById("success");
 
-  const form = document.getElementById('registerForm')!;
-  const $err = document.getElementById('err')!;
-  const $success = document.getElementById('success')!;
-
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    $err.textContent = '';
-    $success.textContent = '';
+    $err.textContent = "";
+    $success.textContent = "";
 
-    const nom = (document.getElementById('nom') as HTMLInputElement)!.value.trim();
-    const prenom = (document.getElementById('prenom') as HTMLInputElement)!.value.trim();
-    const email = (document.getElementById('email') as HTMLInputElement)!.value.trim();
-    const pseudo = (document.getElementById('pseudo') as HTMLInputElement)!.value.trim();
-    const ville = (document.getElementById('ville') as HTMLInputElement)!.value.trim();
-    const password = (document.getElementById('password') as HTMLInputElement)!.value;
-    const password2 = (document.getElementById('password2') as HTMLInputElement)!.value;
+    // Collecte des valeurs
+    const fields = ["nom", "prenom", "email", "pseudo", "ville", "password", "password2"];
+    const data = Object.fromEntries(fields.map(id => [id, document.getElementById(id).value.trim()]));
 
-    if (!nom || !prenom || !email || !pseudo || !ville || !password || !password2) {
+    // Vérifs
+    if (Object.values(data).some(v => !v)) {
       $err.textContent = "Tous les champs sont obligatoires.";
       return;
     }
 
-    if (password !== password2) {
+    if (data.password !== data.password2) {
       $err.textContent = "Les mots de passe ne correspondent pas.";
       return;
     }
 
-    const res = await fetch("http://127.0.0.1:8000/api/register/", {
+    // Envoi API
+    const res = await fetch("http://127.0.0.1:8000/api/utilisateurs/", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({
-        nom,
-        prenom,
-        email: email.toLowerCase(),
-        pseudo,
-        ville,
-        password,
+        nom: data.nom,
+        prenom: data.prenom,
+        email: data.email.toLowerCase(),
+        pseudo: data.pseudo,
+        ville: data.ville,
+        password: data.password,
       }),
     });
 
-    let data = {} as ApiResponse;
-    try { data = await res.json(); } catch {}
+    let json = {};
+    try { json = await res.json(); } catch {}
 
-    if (!res.ok || !data.success) {
-      $err.textContent = data.error || ("Erreur " + res.status);
+    if (!res.ok || !json.success) {
+      $err.textContent = json.error || ("Erreur " + res.status);
       return;
     }
 
     $success.textContent = "Inscription réussie !";
 
-    const next = new URLSearchParams(window.location.search).get('next') || '/';
-    setTimeout(() => location.href = next, 1000);
+    // Redirection
+    setTimeout(() => {
+      location.href = new URLSearchParams(window.location.search).get("next") || "/";
+    }, 900);
   });
 </script>

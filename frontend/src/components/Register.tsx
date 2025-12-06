@@ -4,24 +4,31 @@ interface SignupFormProps {
   next?: string; // redirection après inscription
 }
 
-export default function SignupForm({ next }: SignupFormProps) {
-  const [nom, setNom] = useState("");
-  const [prenom, setPrenom] = useState("");
-  const [email, setEmail] = useState("");
-  const [pseudo, setPseudo] = useState("");
-  const [ville, setVille] = useState("");
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
+export default function Register({ next = "/" }: SignupFormProps) {
+  const [form, setForm] = useState({
+    nom: "",
+    prenom: "",
+    email: "",
+    pseudo: "",
+    ville: "",
+    password: "",
+    password2: "",
+  });
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    // Vérification basique
+    const { nom, prenom, email, pseudo, ville, password, password2 } = form;
+
     if (!nom || !prenom || !email || !pseudo || !ville || !password || !password2) {
       setError("Tous les champs sont obligatoires.");
       return;
@@ -47,107 +54,80 @@ export default function SignupForm({ next }: SignupFormProps) {
         }),
       });
 
-      let data: any = {};
-      try { data = await res.json(); } catch {}
+      const data = await res.json();
 
       if (!res.ok || !data.success) {
         setError(data.error || `Erreur ${res.status}`);
         return;
       }
 
-      // succès
       setSuccess("Inscription réussie !");
-      setNom(""); 
-      setPrenom(""); 
-      setEmail(""); 
-      setPseudo("");
-      setVille("");
-      setPassword(""); 
-      setPassword2("");
+      setForm({
+        nom: "",
+        prenom: "",
+        email: "",
+        pseudo: "",
+        ville: "",
+        password: "",
+        password2: "",
+      });
 
-      if (next) window.location.href = next;
-
-    } catch (err) {
-      console.error(err);
+      setTimeout(() => (window.location.href = next), 1000);
+    } catch {
       setError("Erreur serveur, réessaie plus tard.");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="stack" noValidate>
+    <div className="w-full max-w-md rounded-xl bg-white px-5 py-6 shadow-lg sm:px-8">
+      <h1 className="mb-2 text-xl font-semibold text-mauve sm:text-2xl">Inscription</h1>
 
-      <label htmlFor="nom">Nom</label>
-      <input
-        id="nom"
-        value={nom}
-        onChange={(e) => setNom(e.target.value)}
-        type="text"
-        required
-      />
+      <form onSubmit={handleSubmit} className="stack" noValidate>
+        {["nom","prenom","email","pseudo","ville"].map((field) => (
+          <div key={field}>
+            <label className="font-semibold capitalize">{field}</label>
+            <input
+              type={field === "email" ? "email" : "text"}
+              name={field}
+              value={(form as any)[field]}
+              onChange={handleChange}
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"
+            />
+          </div>
+        ))}
 
-      <label htmlFor="prenom">Prénom</label>
-      <input
-        id="prenom"
-        value={prenom}
-        onChange={(e) => setPrenom(e.target.value)}
-        type="text"
-        required
-      />
+        <label className="font-semibold">Mot de passe</label>
+        <input
+          type="password"
+          name="password"
+          value={form.password}
+          onChange={handleChange}
+          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"
+        />
 
-      <label htmlFor="email">Email</label>
-      <input
-        id="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        type="email"
-        required
-      />
+        <label className="font-semibold">Confirmer le mot de passe</label>
+        <input
+          type="password"
+          name="password2"
+          value={form.password2}
+          onChange={handleChange}
+          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"
+        />
 
-      <label htmlFor="pseudo">Pseudo</label>
-      <input
-        id="pseudo"
-        value={pseudo}
-        onChange={(e) => setPseudo(e.target.value)}
-        type="text"
-        required
-      />
+        <button
+          type="submit"
+          className="rounded-lg border-2 border-mauve bg-mauve px-4 py-2 mt-4 text-white transition hover:bg-mauve-50 hover:text-mauve"
+        >
+          S'inscrire
+        </button>
 
-      <label htmlFor="ville">Ville</label>
-      <input
-        id="ville"
-        value={ville}
-        onChange={(e) => setVille(e.target.value)}
-        type="text"
-        required
-      />
+        {error && <p className="text-red-600">{error}</p>}
+        {success && <p className="text-green-600">{success}</p>}
+      </form>
 
-      <label htmlFor="password">Mot de passe</label>
-      <input
-        id="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        type="password"
-        required
-      />
-
-      <label htmlFor="password2">Confirmer le mot de passe</label>
-      <input
-        id="password2"
-        value={password2}
-        onChange={(e) => setPassword2(e.target.value)}
-        type="password"
-        required
-      />
-
-      <button
-        type="submit"
-        className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-      >
-        S'inscrire
-      </button>
-
-      {error && <p style={{ color: "#b00" }}>{error}</p>}
-      {success && <p style={{ color: "green" }}>{success}</p>}
-    </form>
+      <style>{`
+        .stack { display: flex; flex-direction: column; gap: .8rem; }
+      `}</style>
+    </div>
   );
 }
