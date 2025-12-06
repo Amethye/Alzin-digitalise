@@ -21,9 +21,6 @@ from gui.views import api_root
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    path("", include("gui.urls")),
-#A retirer, test de backend
     path("", api_root),
     path("api/", include("gui.urls")),
 

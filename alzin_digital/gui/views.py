@@ -36,6 +36,8 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth.hashers import check_password, make_password
+from django.forms.models import model_to_dict
 
 def api_root(request):
     return JsonResponse({
@@ -135,9 +137,10 @@ def login_api(request):
     except utilisateur.DoesNotExist:
         return JsonResponse({"success": False, "error": "Utilisateur introuvable"}, status=400)
 
-    if user.password != password:  # ou check_password si hash
-        return JsonResponse({"success": False, "error": "Mot de passe incorrect"}, status=400)
 
+
+    if not check_password(password, user.password):
+        return JsonResponse({"success": False, "error": "Mot de passe incorrect"}, status=400)
     return JsonResponse({"success": True, "user": user.id})
 
 #ME
