@@ -17,8 +17,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from gui.views import api_root
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+
     path("", include("gui.urls")),
+#A retirer, test de backend
+    path("", api_root),
+    path("api/", include("gui.urls")),
 
 ]
