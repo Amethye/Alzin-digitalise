@@ -58,7 +58,7 @@ from .models import (
     piste_audio,
     favoris,
     commentaire,
-    chansonnier,
+    chansonnier_perso,
     fournisseur,
     commande,
     evenement,
@@ -484,7 +484,7 @@ def commentaires_api(request):
 @require_http_methods(["GET", "POST"])
 def chansonniers_api(request):
     if request.method == "GET":
-        qs = chansonnier.objects.all()
+        qs = chansonnier_perso.objects.all()
         data = [
             {
                 "id": c.id,
@@ -498,7 +498,7 @@ def chansonniers_api(request):
 
     body = json.loads(request.body.decode("utf-8"))
 
-    c = chansonnier.objects.create(
+    c = chansonnier_perso.objects.create(
         couleur=body["couleur"],
         type_papier=body["type_papier"],
         prix_vente_unite=body["prix_vente_unite"],
@@ -587,12 +587,12 @@ def commandes_api(request):
 @require_http_methods(["GET", "POST"])
 def commander_api(request):
     if request.method == "GET":
-        qs = commander.objects.select_related("commande", "chansonnier")
+        qs = commander.objects.select_related("commande", "chansonnier_perso")
         data = [
             {
                 "id": l.id,
                 "commande_id": l.commande_id,
-                "chansonnier_id": l.chansonnier_id,
+                "chansonnier_perso_id": l.chansonnier_perso_id,
                 "quantite": l.quantite,
             }
             for l in qs
@@ -603,7 +603,7 @@ def commander_api(request):
 
     l = commander.objects.create(
         commande_id=body["commande_id"],
-        chansonnier_id=body["chansonnier_id"],
+        chansonnier_perso_id=body["chansonnier_perso_id"],
         quantite=body["quantite"],
     )
 
@@ -611,7 +611,7 @@ def commander_api(request):
         {
             "id": l.id,
             "commande_id": l.commande_id,
-            "chansonnier_id": l.chansonnier_id,
+            "chansonnier_perso_id": l.chansonnier_perso_id,
             "quantite": l.quantite,
         },
         status=201,
@@ -789,12 +789,12 @@ def appartenir_api(request):
 @require_http_methods(["GET", "POST"])
 def contenir_api(request):
     if request.method == "GET":
-        qs = contenir.objects.select_related("chant", "chansonnier")
+        qs = contenir.objects.select_related("chant", "chansonnier_perso")
         data = [
             {
                 "id": c.id,
                 "chant_id": c.chant_id,
-                "chansonnier_id": c.chansonnier_id,
+                "chansonnier_perso_id": c.chansonnier_perso_id,
             }
             for c in qs
         ]
@@ -804,11 +804,11 @@ def contenir_api(request):
 
     c = contenir.objects.create(
         chant_id=body["chant_id"],
-        chansonnier_id=body["chansonnier_id"],
+        chansonnier_perso_id=body["chansonnier_perso_id"],
     )
 
     return JsonResponse(
-        {"id": c.id, "chant_id": c.chant_id, "chansonnier_id": c.chansonnier_id},
+        {"id": c.id, "chant_id": c.chant_id, "chansonnier_perso_id": c.chansonnier_perso_id},
         status=201,
     )
 
@@ -817,12 +817,12 @@ def contenir_api(request):
 @require_http_methods(["GET", "POST"])
 def fournir_api(request):
     if request.method == "GET":
-        qs = fournir.objects.select_related("fournisseur", "chansonnier")
+        qs = fournir.objects.select_related("fournisseur", "chansonnier_perso")
         data = [
             {
                 "id": f.id,
                 "fournisseur_id": f.fournisseur_id,
-                "chansonnier_id": f.chansonnier_id,
+                "chansonnier_perso_id": f.chansonnier_perso_id,
                 "date_fourniture": f.date_fourniture.isoformat(),
             }
             for f in qs
@@ -833,7 +833,7 @@ def fournir_api(request):
 
     f = fournir.objects.create(
         fournisseur_id=body["fournisseur_id"],
-        chansonnier_id=body["chansonnier_id"],
+        chansonnier_perso_id=body["chansonnier_perso_id"],
         date_fourniture=body["date_fourniture"],
     )
 
@@ -841,7 +841,7 @@ def fournir_api(request):
         {
             "id": f.id,
             "fournisseur_id": f.fournisseur_id,
-            "chansonnier_id": f.chansonnier_id,
+            "chansonnier_perso_id": f.chansonnier_perso_id,
             "date_fourniture": f.date_fourniture.isoformat(),
         },
         status=201,
