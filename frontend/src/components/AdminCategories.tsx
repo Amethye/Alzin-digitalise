@@ -4,31 +4,60 @@ const AdminCategories = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [newCat, setNewCat] = useState("");
 
-  const fetchCats = async () => {
-    const res = await fetch("http://127.0.0.1:8000/api/categories/");
-    setCategories(await res.json());
-  };
+  const [editingCat, setEditingCat] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  const API_URL = "http://127.0.0.1:8000/api/categories/";
+
+const fetchCats = async () => {
+  const res = await fetch(API_URL);
+  const data = await res.json();
+
+  setCategories(data.map((c: any) => c.nom_categorie));
+};
 
   useEffect(() => {
     fetchCats();
   }, []);
 
+  /** Ajouter catégorie */
   const addCategory = async () => {
     if (!newCat.trim()) return;
-    await fetch("http://127.0.0.1:8000/api/categories/", {
+
+    await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newCat }),
+      body: JSON.stringify({ nom_categorie: newCat }),
     });
+
     setNewCat("");
     fetchCats();
   };
 
+  /** Supprimer */
   const deleteCategory = async (name: string) => {
-    if (name === "Autre") return;
-    await fetch(`http://127.0.0.1:8000/api/categories/?delete=${name}`, {
+    if (name === "Autre") return; // protection
+
+    await fetch(`${API_URL}?delete=${name}`, {
       method: "DELETE",
     });
+
+    fetchCats();
+  };
+
+  /** Enregistrer modification */
+  const saveEdit = async (oldName: string) => {
+    await fetch(API_URL, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        old_name: oldName,
+        new_name: editValue,
+      }),
+    });
+
+    setEditingCat(null);
+    setEditValue("");
     fetchCats();
   };
 
@@ -41,6 +70,7 @@ const AdminCategories = () => {
         <input
           value={newCat}
           onChange={(e) => setNewCat(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && addCategory()}
           placeholder="Nouvelle catégorie"
           className="flex-1 rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-mauve/40"
         />
@@ -59,15 +89,65 @@ const AdminCategories = () => {
             key={cat}
             className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 shadow-sm transition hover:border-mauve/50 hover:bg-mauve/5"
           >
-            <span className="font-medium text-gray-800">{cat}</span>
+            {/* MODE ÉDITION */}
+            {editingCat === cat ? (
+              <div className="flex w-full items-center gap-2">
+                <input
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  className="flex-1 rounded-lg border border-gray-300 px-2 py-1"
+                />
 
-            {cat !== "Autre" && (
-              <button
-                onClick={() => deleteCategory(cat)}
-                className="rounded-lg bg-red-500 px-3 py-1 text-sm font-semibold text-white transition hover:bg-red-600"
-              >
-                Supprimer
-              </button>
+                {/* ✔ Bouton vert */}
+                <button
+                  onClick={() => saveEdit(cat)}
+                  className="rounded-lg px-3 py-1 text-white 
+                            !bg-green-500 hover:!bg-green-600"
+                >
+                  ✔
+                </button>
+
+                {/* ✖ Bouton rouge */}
+                <button
+                  onClick={() => {
+                    setEditingCat(null);
+                    setEditValue("");
+                  }}
+                  className="rounded-lg px-3 py-1 text-white 
+                            !bg-red-500 hover:!bg-red-600"
+                >
+                  ✖
+                </button>
+              </div>
+            ) : (
+              <>
+                <span className="font-medium text-gray-800">{cat}</span>
+
+                <div className="flex gap-2">
+                  {/* Modifier */}
+                  {cat !== "Autre" && (
+                    <button
+                      onClick={() => {
+                        setEditingCat(cat);
+                        setEditValue(cat);
+                      }}
+                      className="rounded-lg bg-yellow-500 px-3 py-1 text-white hover:bg-yellow-600"
+                    >
+                      Modifier
+                    </button>
+                  )}
+
+                  {/* Supprimer */}
+                  {cat !== "Autre" && (
+                    <button
+                      onClick={() => deleteCategory(cat)}
+                      className="rounded-lg bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+                    >
+                      Supprimer
+                    </button>
+                  )}
+                </div>
+              </>
             )}
           </li>
         ))}

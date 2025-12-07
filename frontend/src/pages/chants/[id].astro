@@ -1,0 +1,13 @@
+---
+export const prerender = false;
+import Layout from "@layouts/Layout.astro";
+import ChantDetail from "@components/ChantDetail.tsx";
+
+const { id } = Astro.params;
+---
+
+<Layout title="Chant">
+  <main class="py-6">
+    <ChantDetail id={id} client:load />
+  </main>
+</Layout>

@@ -1,0 +1,11 @@
+---
+import ListeChants from '@components/ListeChants';
+import Layout from '@layouts/Layout.astro';
+
+---
+
+<Layout title="Chants">
+  <main class="flex justify-center bg-white px-4 py-6 sm:px-6 sm:py-8">
+      <ListeChants client:load />
+  </main>
+</Layout>

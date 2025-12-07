@@ -42,6 +42,7 @@ class chant(models.Model):
     paroles_pdf = models.FileField(upload_to='paroles_pdf/',null=True, blank=True)
     description = models.CharField(max_length = 255)
     partition = models.FileField(upload_to='partitions/',null=True, blank=True)
+    categorie =models.ManyToManyField('categorie', blank = True)
     
     utilisateur = models.ForeignKey(
         utilisateur,
