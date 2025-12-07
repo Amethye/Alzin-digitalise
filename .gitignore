@@ -10,6 +10,7 @@ __pycache__/
 
 # Fichiers de base de données
 db.sqlite3
+to-do.md 
 
 # Dossiers spécifiques à VS Code / IDE
 .vscode/

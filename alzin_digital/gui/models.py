@@ -210,35 +210,51 @@ class commentaire(models.Model):
 # ================================================================================
 # CHANSONNIER (+ relations : contenir, fournir)
 # ================================================================================
-
-class chansonnier_perso(models.Model):
-    couleur = models.CharField(max_length = 50)
-    illustration_chansonnier = models.FileField(upload_to='illustrations_chansonnier/',null=True, blank=True)
-    type_papier = models.CharField(max_length = 100)
-    prix_vente_unite = models.DecimalField(max_digits=5, decimal_places=2)
-    date_creation = models.DateField()
-
-    class Meta:
-        db_table = 'chansonnier_perso'
-    
-    def __str__(self):
-        return f"Chansonnier_perso {self.id} - {self.couleur}"
-
 class template_chansonnier(models.Model):
     nom_template = models.CharField(max_length = 100)
     description = models.CharField(max_length = 255)
+    couleur = models.CharField(max_length = 50)
     illustration_template = models.FileField(upload_to='illustrations_template/',null=True, blank=True)
     type_papier = models.CharField(max_length = 100)
     prix_vente_unite = models.DecimalField(max_digits=5, decimal_places=2)
     
-
     class Meta:
         db_table = 'template_chansonnier'
     
     def __str__(self):
         return self.nom_template
+    
 
-class contenir(models.Model):
+
+class chansonnier_perso(models.Model):
+    nom_chansonnier_perso = models.CharField(max_length = 100)
+    couleur = models.CharField(max_length = 50)
+    illustration_chansonnier = models.FileField(upload_to='illustrations_chansonnier/',null=True, blank=True)
+    type_papier = models.CharField(max_length = 100)
+    prix_vente_unite = models.DecimalField(max_digits=5, decimal_places=2)
+    date_creation = models.DateField()
+    utilisateur = models.ForeignKey(
+        utilisateur,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+    template_chansonnier = models.ForeignKey(
+        template_chansonnier,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        db_table = 'chansonnier_perso'
+    
+    def __str__(self):
+        return f"Chansonnier_perso {self.nom_chansonnier_perso} - {self.id}"
+
+
+
+class contenir_chant_perso(models.Model):
     chant = models.ForeignKey(
         chant,            
         on_delete=models.CASCADE,
@@ -251,20 +267,41 @@ class contenir(models.Model):
     )
 
     class Meta:
-        db_table = 'contenir'
+        db_table = 'contenir_chant_perso'
         # PRIMARY KEY (nom_chant, id_chansonnier)
         unique_together = (('chant', 'chansonnier_perso'),)
     
     def __str__(self):
         return f"{self.chansonnier_perso} contient {self.chant}"
+    
+
+class contenir_chant_template(models.Model):
+    chant = models.ForeignKey(
+        chant,            
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    template_chansonnier = models.ForeignKey(
+        template_chansonnier,
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        db_table = 'contenir_chant_template'
+        # PRIMARY KEY (nom_chant, id_chansonnier)
+        unique_together = (('chant', 'template_chansonnier'),)
+    
+    def __str__(self):
+        return f"{self.template_chansonnier} contient {self.chant}"
 
 # ================================================================================
 # COMMANDE (+ relation commander)
 # ================================================================================
 
-
 class commande(models.Model):
     date_commande = models.DateField()
+    status = models.CharField(max_length = 50) #Pour dire ou on en est et si le panier d'affiche ou non
     utilisateur = models.ForeignKey(
         utilisateur,
         on_delete=models.CASCADE,
@@ -274,10 +311,11 @@ class commande(models.Model):
         db_table = 'commande'
     
     def __str__(self):
-        return f"Commande {self.id} by {self.utilisateur} on {self.date_commande}"
+        return f"- Commande {self.id} {self.utilisateur} - Status: {self.status}"
 
-
+#une instance de commander représente un panier d'achat
 class commander(models.Model):
+    
     commande = models.ForeignKey(
         commande,
         on_delete=models.CASCADE,
@@ -303,7 +341,7 @@ class commander(models.Model):
 class fournisseur(models.Model):
     nom_fournisseur = models.CharField(max_length = 100)
     ville_fournisseur = models.CharField(max_length = 85)
-    type_reliure = models.CharField(max_length= 30)
+    type_reliure = models.CharField(max_length= 30) #Reliures que le fournisseur propose
     
     class Meta:
         db_table = 'fournisseur'
