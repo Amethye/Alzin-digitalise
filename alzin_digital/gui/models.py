@@ -5,6 +5,15 @@ from django.db import models
 
 
 #--  CHECK (Email_adress LIKE '%_@__%.%__%')
+class role(models.Model):
+    nom_role = models.CharField(max_length = 50, unique=True)
+
+    class Meta:
+        db_table = 'role'
+    
+    def __str__(self):
+        return self.nom_role
+
 class utilisateur(models.Model):
     email = models.CharField(max_length = 50)
     nom = models.CharField(max_length = 30)
@@ -12,6 +21,11 @@ class utilisateur(models.Model):
     pseudo = models.CharField(max_length = 30)
     password = models.CharField(max_length = 128)
     ville = models.CharField(max_length = 85)
+
+    role = models.ForeignKey(
+        role,
+        on_delete=models.PROTECT
+    )
     
     class Meta:
         db_table = 'utilisateur'
@@ -41,6 +55,19 @@ class chant(models.Model):
     
     def __str__(self):
         return self.nom_chant
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "nom_chant": self.nom_chant,
+            "auteur": self.auteur,
+            "ville_origine": self.ville_origine,
+            "paroles": self.paroles,
+            "description": self.description,
+            "illustration_chant_url": self.illustration_chant.url if self.illustration_chant else None,
+            "paroles_pdf_url": self.paroles_pdf.url if self.paroles_pdf else None,
+            "partition_url": self.partition.url if self.partition else None,
+        }
 
 
 class chansonnier(models.Model):
@@ -211,7 +238,7 @@ class chanter(models.Model):
 
 
 
-class categories(models.Model):
+class categorie(models.Model):
     nom_categorie = models.CharField(max_length = 50)
 
     class Meta:
@@ -225,7 +252,7 @@ class categories(models.Model):
 
 class appartenir(models.Model):
     nom_categorie = models.ForeignKey(
-        categories,
+        categorie,
         on_delete=models.CASCADE
     )
     chant = models.ForeignKey(
@@ -297,3 +324,9 @@ class noter(models.Model):
 
     def __str__(self):
         return f"{self.utilisateur} rated {self.piste_audio} on {self.date_rating}"
+
+class maitre_chant(models.Model):
+    nom = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.nom

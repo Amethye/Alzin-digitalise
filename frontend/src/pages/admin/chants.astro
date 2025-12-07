@@ -1,0 +1,10 @@
+---
+import Layout from "@layouts/Layout.astro";
+import AdminChants from "@components/AdminChants";
+---
+
+<Layout title="Admin - Chants">
+  <main class="flex min-h-screen justify-center bg-white px-4 py-6 sm:px-6 sm:py-8">
+    <AdminChants client:load />
+  </main>
+</Layout>

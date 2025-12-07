@@ -1,0 +1,10 @@
+---
+import Layout from "@layouts/Layout.astro";
+import AdminMaitres from "@components/AdminMaitres";
+---
+
+<Layout title="Gestion des maîtres de chants">
+  <main class="flex min-h-[70vh] flex-1 items-start justify-center px-4 py-10 sm:px-6">
+    <AdminMaitres client:load />
+  </main>
+</Layout>

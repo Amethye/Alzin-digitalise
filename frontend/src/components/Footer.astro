@@ -3,35 +3,38 @@ import Mail from "@icons/Mail.astro";
 import LogoFPMsUrl from "@images/LogoFPMs.svg?url";
 
 const logoSrc = LogoFPMsUrl.split("?")[0];
+
+// Valeurs par défaut si backend offline
 const initialMaitres = ["Quentin Gueret", "Kamya Blondiau"];
 const developers = ["Boreux Tom", "Kabelis Eva", "Lempire Martin"];
 ---
 
 <footer class="bg-mauve p-4 text-white" transition:animate="none">
-  <div class="container mx-auto flex flex-col gap-4 px-4 py-8 md:grid md:grid-cols-[repeat(3,_1fr)_auto]">
+  <div class="w-full flex flex-col gap-4 px-4 py-8 md:grid md:grid-cols-[repeat(3,_1fr)_auto]">
 
     <!-- COL 1 -->
     <div>
       <h4 class="mb-4 mt-0 font-semibold">Maîtres de chants</h4>
-      <ul class="flex flex-col gap-2">
+      <ul id="footer-maitres" class="flex flex-col gap-2">
         {initialMaitres.map((member) => <li>{member}</li>)}
       </ul>
     </div>
 
     <!-- COL 2 -->
     <div>
-      <h4 class="tmb-4 mt-0 font-semibold">© Site développé par</h4>
+      <h4 class="mb-4 mt-0 font-semibold">© Site développé par</h4>
       <ul class="flex flex-col gap-2">
         {developers.map((d) => <li>{d}</li>)}
       </ul>
     </div>
 
-     <div class="h-[2px] rounded-full bg-white md:hidden"></div>
+    <div class="h-[2px] rounded-full bg-white md:hidden"></div>
+
     <!-- COL 3 -->
     <div>
       <h4 class="mb-4 mt-0 font-semibold">Commission Web</h4>
       <ul class="flex flex-col gap-2">
-      <li>
+        <li>
           <a
             class="inline-flex items-center gap-2 underline duration-150 hover:translate-x-2 hover:opacity-80"
             href="mailto:commission.web.fpms@gmail.com"
@@ -52,5 +55,7 @@ const developers = ["Boreux Tom", "Kabelis Eva", "Lempire Martin"];
       />
     </div>
 
+    <!-- SCRIPT qui met à jour les maîtres -->
+    <script type="module" src="/scripts/footer-maitres.js"></script>
   </div>
 </footer>

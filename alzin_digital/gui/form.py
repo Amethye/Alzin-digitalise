@@ -1,3 +1,9 @@
+
+#
+# A SUPRIMER 
+# svp supprimez ce fichier j'arrive pas
+#
+
 from django import forms
 from .models import (
     utilisateur, chant, piste_audio, favoris, commentaire

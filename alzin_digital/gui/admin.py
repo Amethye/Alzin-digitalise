@@ -2,11 +2,12 @@ from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
-from .models import (utilisateur, chant, chansonnier, fournisseur,
+from .models import (utilisateur, categorie, chant, chansonnier, fournisseur,
                      commande, commander, contenir, commentaire,
-                     fournir, favoris, noter, piste_audio, evenement)
+                     fournir, favoris, noter, piste_audio, evenement, maitre_chant, role)
 
 admin.site.register(utilisateur)
+admin.site.register(categorie)
 admin.site.register(chant)
 admin.site.register(chansonnier)
 admin.site.register(fournisseur)
@@ -19,4 +20,6 @@ admin.site.register(favoris)
 admin.site.register(noter)
 admin.site.register(piste_audio)
 admin.site.register(evenement)
+admin.site.register(maitre_chant)
+admin.site.register(role)
 

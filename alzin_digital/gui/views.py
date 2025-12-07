@@ -63,11 +63,13 @@ from .models import (
     evenement,
     commander,
     chanter,
-    categories,
+    categorie,
     appartenir,
     contenir,
     fournir,
     noter,
+    maitre_chant,
+    role,
 )
 
 #UTILISATEURS
@@ -103,6 +105,8 @@ def utilisateurs_api(request):
     # vérifie pseudo unique
     if utilisateur.objects.filter(pseudo=body["pseudo"]).exists():
         return JsonResponse({"error": "Pseudo déjà utilisé"}, status=409)
+    
+    role_user = role.objects.get(nom_role="user")
 
     # création utilisateur avec mot de passe hashé
     u = utilisateur.objects.create(
@@ -112,6 +116,7 @@ def utilisateurs_api(request):
         pseudo=body["pseudo"],
         ville=body["ville"],
         password=make_password(body["password"]),
+        role=role_user,
     )
 
     return JsonResponse(
@@ -147,6 +152,7 @@ def login_api(request):
         "user_id": user.id,
         "email": user.email,
         "pseudo": user.pseudo,
+        "role":user.role.nom_role
     })
 
 #ME
@@ -172,6 +178,7 @@ def me_api(request):
             "email": user.email,
             "pseudo": user.pseudo,
             "ville": user.ville,
+            "role" : user.role.nom_role
         })
     
     # Mise à jour des informations utilisateur
@@ -198,40 +205,160 @@ def logout_api(request):
 
     return JsonResponse({"success": True})
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from gui.models import utilisateur
+import json
+
+
+@csrf_exempt
+def admin_users_api(request, user_id=None, action=None):
+
+    # liste des utilisateurs
+
+    if request.method == "GET" and user_id is None:
+        users = list(utilisateur.objects.all().values(
+            "id", "nom", "prenom", "pseudo", "email", "ville", "role"
+        ))
+        return JsonResponse(users, safe=False)
+
+    # Si un user_id est fourni, on charge l'utilisateur
+    if user_id is not None:
+        try:
+            user = utilisateur.objects.get(id=user_id)
+        except utilisateur.DoesNotExist:
+            return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    # 2️⃣ PUT /role : mise à jour du rôle
+
+    if request.method == "PUT" and action == "role":
+        try:
+            data = json.loads(request.body)
+        except:
+            return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    role_name = data.get("role")
+    if not role_name:
+        return JsonResponse({"error": "Paramètre 'role' manquant"}, status=400)
+
+    try:
+        new_role = role.objects.get(nom_role=role_name)
+    except role.DoesNotExist:
+        return JsonResponse({"error": "Rôle inconnu"}, status=400)
+
+    user.role = new_role
+    user.save()
+
+    return JsonResponse({"success": True})
+ 
+    # modification utilisateur
+   
+    if request.method == "PUT":
+        try:
+            data = json.loads(request.body)
+        except:
+            return JsonResponse({"error": "JSON invalide"}, status=400)
+
+        for field in ["nom", "prenom", "pseudo", "email", "ville"]:
+            if field in data:
+                setattr(user, field, data[field])
+
+        user.save()
+        return JsonResponse({"success": True})
+
+    #supprimer utilisateur
+    if request.method == "DELETE":
+        user.delete()
+        return JsonResponse({"success": True})
+
+    # Si aucune méthode correspond :
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
 #CHANTS
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
-def chants_api(request):
-    if request.method == "GET":
-        chants = chant.objects.select_related("utilisateur").all()
-        data = []
-        for c in chants:
-            data.append({
-                "id": c.id,
-                "nom_chant": c.nom_chant,
-                "auteur": c.auteur,
-                "ville_origine": c.ville_origine,
-                "description": c.description,
-                "utilisateur_id": c.utilisateur_id,
-            })
+def chants_api(request, chant_id=None):
+    # GET /api/chants/ → liste complète
+    if request.method == "GET" and chant_id is None:
+        chants = chant.objects.all()
+        data = [c.serialize() for c in chants]
         return JsonResponse(data, safe=False)
 
-    # POST : création d'un chant (version simple, sans upload de fichiers)
-    body = json.loads(request.body.decode("utf-8"))
+    # GET /api/chants/<id>/ → un seul chant
+    if request.method == "GET" and chant_id is not None:
+        try:
+            c = chant.objects.get(id=chant_id)
+        except chant.DoesNotExist:
+            return JsonResponse({"error": "Chant introuvable"}, status=404)
+        return JsonResponse(c.serialize())
 
-    user_id = body.get("utilisateur_id")
-    u = utilisateur.objects.get(id=user_id) if user_id is not None else None
+    # POST /api/chants/ → création
+    if request.method == "POST":
+        nom_chant = request.POST.get("nom_chant")
+        auteur = request.POST.get("auteur")
+        ville_origine = request.POST.get("ville_origine")
+        paroles = request.POST.get("paroles")
+        description = request.POST.get("description")
 
-    c = chant.objects.create(
-        nom_chant=body["nom_chant"],
-        auteur=body.get("auteur", ""),
-        ville_origine=body.get("ville_origine", ""),
-        description=body.get("description", ""),
-        paroles=body.get("paroles", ""),
-        utilisateur=u,
-        # pour les fichiers (illustration_chant, pdf, partition), tu peux les gérer via l'admin
-    )
-    return JsonResponse({"id": c.id, "nom_chant": c.nom_chant}, status=201)
+        illustration = request.FILES.get("illustration_chant")
+        paroles_pdf = request.FILES.get("paroles_pdf")
+        partition = request.FILES.get("partition")
+
+        c = chant.objects.create(
+            nom_chant=nom_chant,
+            auteur=auteur,
+            ville_origine=ville_origine,
+            paroles=paroles,
+            description=description,
+            illustration_chant=illustration,
+            paroles_pdf=paroles_pdf,
+            partition=partition,
+            utilisateur=request.user if request.user.is_authenticated else None
+        )
+        return JsonResponse(c.serialize(), status=201)
+
+    # PUT /api/chants/<id>/ → modification
+    if request.method == "PUT":
+        if chant_id is None:
+            return JsonResponse({"error": "ID manquant"}, status=400)
+
+        try:
+            c = chant.objects.get(id=chant_id)
+        except chant.DoesNotExist:
+            return JsonResponse({"error": "Chant introuvable"}, status=404)
+
+        data = request.POST.dict()
+
+        c.nom_chant = data.get("nom_chant", c.nom_chant)
+        c.auteur = data.get("auteur", c.auteur)
+        c.ville_origine = data.get("ville_origine", c.ville_origine)
+        c.paroles = data.get("paroles", c.paroles)
+        c.description = data.get("description", c.description)
+
+        if "illustration_chant" in request.FILES:
+            c.illustration_chant = request.FILES["illustration_chant"]
+        if "paroles_pdf" in request.FILES:
+            c.paroles_pdf = request.FILES["paroles_pdf"]
+        if "partition" in request.FILES:
+            c.partition = request.FILES["partition"]
+
+        c.save()
+        return JsonResponse(c.serialize())
+
+    # DELETE /api/chants/<id>/ → suppression
+    if request.method == "DELETE":
+        if chant_id is None:
+            return JsonResponse({"error": "ID manquant"}, status=400)
+
+        try:
+            c = chant.objects.get(id=chant_id)
+        except chant.DoesNotExist:
+            return JsonResponse({"error": "Chant introuvable"}, status=404)
+
+        c.delete()
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
 
 #PISTE AUDIO
 @csrf_exempt
@@ -564,18 +691,49 @@ def chanter_api(request):
 
 #CATEGORIES
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
-def categories_api(request):
+def categorie_api(request):
+    # --- DELETE (ex: /api/categories/?delete=IG ) ---
+    if request.method == "DELETE":
+        name = request.GET.get("delete")
+
+        if not name:
+            return JsonResponse({"error": "Paramètre 'delete' requis"}, status=400)
+
+        if name == "Autre":
+            return JsonResponse({"error": "Impossible de supprimer 'Autre'"}, status=400)
+
+        try:
+            cat = categorie.objects.get(nom_categorie=name)
+            cat.delete()
+            return JsonResponse({"message": "Catégorie supprimée"})
+        except categorie.DoesNotExist:
+            return JsonResponse({"error": "Catégorie introuvable"}, status=404)
+
+    # --- GET : renvoie un tableau de strings ---
     if request.method == "GET":
-        qs = categories.objects.all()
-        data = [{"id": c.id, "nom_categorie": c.nom_categorie} for c in qs]
-        return JsonResponse(data, safe=False)
+        qs = categorie.objects.values_list("nom_categorie", flat=True)
+        return JsonResponse(list(qs), safe=False)
 
-    body = json.loads(request.body.decode("utf-8"))
+    # --- POST : { "name": "NouvelleCatégorie" } ---
+    if request.method == "POST":
+        try:
+            body = json.loads(request.body.decode("utf-8"))
+        except:
+            return JsonResponse({"error": "JSON invalide"}, status=400)
 
-    c = categories.objects.create(nom_categorie=body["nom_categorie"])
+        name = body.get("name")
+        if not name:
+            return JsonResponse({"error": "Paramètre 'name' manquant"}, status=400)
 
-    return JsonResponse({"id": c.id, "nom_categorie": c.nom_categorie}, status=201)
+        c = categorie.objects.create(nom_categorie=name)
+
+        return JsonResponse(
+            {"id": c.id, "nom_categorie": c.nom_categorie},
+            status=201
+        )
+
+    # --- Méthode non autorisée ---
+    return JsonResponse({"error": "Méthode non supportée"}, status=405)
 
 #APPARTENIR
 @csrf_exempt
@@ -710,3 +868,30 @@ def noter_api(request):
         status=201,
     )
 
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def maitres_api(request):
+
+    if request.method == "GET":
+        data = [m.nom for m in maitre_chant.objects.all()]
+        return JsonResponse({"maitres": data}, safe=False)
+
+    # POST → remplace toute la liste
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+
+        maitres = body.get("maitres", None)
+        if maitres is None or not isinstance(maitres, list):
+            return JsonResponse({"error": "Format invalide"}, status=400)
+
+        # On réinitialise la table
+        maitre_chant.objects.all().delete()
+
+        # On insère les nouveaux éléments
+        for nom in maitres:
+            maitre_chant.objects.create(nom=nom)
+
+        return JsonResponse({"maitres": maitres}, status=200)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

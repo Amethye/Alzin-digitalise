@@ -47,10 +47,10 @@ export default function Nav() {
         setMe({
           identifiant: data.pseudo,
           email: data.email,
-          role: "user",
+          role: data.role,
         });
 
-        setRole("user");
+        setRole(data.role);
       })
       .catch(() => {
         setMe(null);
@@ -154,7 +154,7 @@ export default function Nav() {
 
   return (
     <>
-      <nav className="container mx-auto flex flex-col gap-4 p-4 lg:grid lg:grid-cols-[1fr_auto]">
+      <nav className="w-full flex flex-col gap-4 p-4 lg:grid lg:grid-cols-[1fr_auto]">
         <div className="flex items-center justify-between gap-4 lg:col-span-2">
           <a href="/" className="inline-flex items-center gap-3 text-base duration-150 hover:opacity-80 xs:text-lg">
             <img src={logoSrc} alt="Logo FPMs" className="h-12 w-auto max-w-[70px]" />
