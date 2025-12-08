@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
+import FavoriButton from "@components/FavoriButton";
 
 type Chant = {
   id: number;
   nom_chant: string;
-  auteur: string;
-  ville_origine: string;
-  paroles: string;
-  description: string;
+  auteur: string | null;
+  ville_origine: string | null;
+  paroles: string | null;
+  description: string | null;
   illustration_chant_url?: string;
   paroles_pdf_url?: string;
   partition_url?: string;
@@ -14,185 +15,132 @@ type Chant = {
   pistes_audio: { id: number; fichier_mp3: string }[];
 };
 
-type Favori = {
-  id: number;
-  utilisateur_id: number;
-  chant_id: number;
-};
+const API_CHANTS = "http://127.0.0.1:8000/api/chants/";
 
-const API_CHANT = "http://127.0.0.1:8000/api/chants/";
-const API_FAVORIS = "http://127.0.0.1:8000/api/favoris/";
-
-
-export default function ChantDetail({ id }: { id: string }) {
-  const chantId = Number(id);
-
-  const USER_ID = Number(localStorage.getItem("utilisateur_id"));
-
+export default function ChantPage({ id }: { id: number }) {
   const [chant, setChant] = useState<Chant | null>(null);
-  const [favoriId, setFavoriId] = useState<number | null>(null);
+  const [USER_ID, setUSER_ID] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Charger le chant + favoris
-  const loadData = async () => {
-    setLoading(true);
-
-    // Charger le chant
-    const res = await fetch(`${API_CHANT}${chantId}/`);
-    const data = await res.json();
-    setChant(data);
-
-    // Charger les favoris
-    if (USER_ID) {
-      const favRes = await fetch(`${API_FAVORIS}?utilisateur_id=${USER_ID}`);
-      const favData: Favori[] = await favRes.json();
-
-      const f = favData.find(f => f.chant_id === chantId);
-      setFavoriId(f ? f.id : null);
-    }
-
-    setLoading(false);
-  };
-
   useEffect(() => {
-    loadData();
+    const uid = localStorage.getItem("utilisateur_id");
+    if (uid) setUSER_ID(Number(uid));
+  }, []);
+
+  // Charger le chant
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch(`${API_CHANTS}${id}/`);
+      setChant(await res.json());
+      setLoading(false);
+    };
+    load();
   }, [id]);
 
-  // Ajouter favori
-  const addFavori = async () => {
-    if (!USER_ID) return alert("Vous devez être connecté.");
-
-    const res = await fetch(API_FAVORIS, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        utilisateur_id: USER_ID,
-        chant_id: chantId,
-        date_favori: new Date().toISOString().split("T")[0],
-      }),
-    });
-
-    const data = await res.json();
-    setFavoriId(data.id);
-  };
-
-  // Supprimer favori
-  const removeFavori = async () => {
-    if (!favoriId) return;
-
-    await fetch(`${API_FAVORIS}?id=${favoriId}`, {
-      method: "DELETE",
-    });
-
-    setFavoriId(null);
-  };
-
-  if (loading || !chant)
-    return <p className="text-center mt-10 text-gray-500">Chargement...</p>;
-
-  const isFav = favoriId !== null;
+  if (loading || !chant) return <p className="text-center mt-10">Chargement…</p>;
 
   return (
-    <div className="px-10 py-10 max-w-4xl mx-auto">
+    <div className="px-10 py-10 flex flex-col gap-8 max-w-4xl mx-auto font-sans">
 
-      {/* HEADER */}
+      {/* Titre + favori */}
       <div className="flex justify-between items-start">
         <h1 className="text-4xl font-bold text-mauve">{chant.nom_chant}</h1>
 
         {USER_ID && (
-          <button
-            onClick={isFav ? removeFavori : addFavori}
-            className="text-4xl transition"
-          >
-            {isFav ? (
-              <span className="text-mauve">❤️</span>
-            ) : (
-              <span className="text-mauve/30">🤍</span>
-            )}
-          </button>
+          <FavoriButton chantId={chant.id} USER_ID={USER_ID} size={40} />
         )}
+      </div>
+
+      {/* Auteur / ville */}
+      <div className="text-gray-700 text-lg space-y-1">
+        <p><strong>Auteur :</strong> {chant.auteur || "—"}</p>
+        <p><strong>Ville d'origine :</strong> {chant.ville_origine || "—"}</p>
       </div>
 
       {/* Illustration */}
-      {chant.illustration_chant_url && (
-        <img
-          src={chant.illustration_chant_url}
-          className="w-full h-80 object-cover rounded-xl shadow mt-6"
-        />
-      )}
-
-      {/* Infos */}
-      <div className="mt-6 text-gray-700">
-        {chant.auteur && (
-          <p><strong>Auteur :</strong> {chant.auteur}</p>
-        )}
-        {chant.ville_origine && (
-          <p><strong>Ville d'origine :</strong> {chant.ville_origine}</p>
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Illustration</p>
+        {chant.illustration_chant_url ? (
+          <img src={chant.illustration_chant_url} className="w-full max-h-96 object-cover rounded-xl shadow" />
+        ) : (
+          <p className="text-gray-500 italic">Aucune illustration</p>
         )}
       </div>
 
-      {/* Description */}
-      {chant.description && (
-        <p className="mt-6 whitespace-pre-line">{chant.description}</p>
-      )}
-
-      {/* Paroles */}
-      <h2 className="text-2xl font-bold text-mauve mt-10">Paroles</h2>
-      <p className="whitespace-pre-line mt-3">{chant.paroles}</p>
-
-      {/* PDF */}
-      {chant.paroles_pdf_url && (
-        <a
-          href={chant.paroles_pdf_url}
-          target="_blank"
-          className="mt-4 inline-block text-mauve underline"
-        >
-          📄 Télécharger le PDF
-        </a>
-      )}
-
-      {/* Partition */}
-      {chant.partition_url && (
-        <a
-          href={chant.partition_url}
-          target="_blank"
-          className="mt-3 block text-mauve underline"
-        >
-          🎵 Télécharger la partition
-        </a>
-      )}
-
       {/* Catégories */}
-      {chant.categories.length > 0 && (
-        <>
-          <h2 className="text-xl font-bold text-mauve mt-10">Catégories</h2>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {chant.categories.map(cat => (
-              <span
-                key={cat}
-                className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm"
-              >
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Catégories</p>
+        {chant.categories.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {chant.categories.map((cat) => (
+              <span key={cat} className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm">
                 {cat}
               </span>
             ))}
           </div>
-        </>
-      )}
+        ) : (
+          <p className="text-gray-500 italic">Aucune catégorie</p>
+        )}
+      </div>
 
-      {/* AUDIO */}
-      {chant.pistes_audio.length > 0 && (
-        <>
-          <h2 className="text-xl font-bold text-mauve mt-10">Pistes audio</h2>
+      {/* Description */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Description</p>
+        <p className="text-gray-700">{chant.description || "—"}</p>
+      </div>
 
-          <div className="flex flex-col gap-4 mt-3">
-            {chant.pistes_audio.map(pa => (
-              <audio key={pa.id} controls className="w-full">
-                <source src={pa.fichier_mp3} type="audio/mpeg" />
-              </audio>
-            ))}
-          </div>
-        </>
-      )}
+      {/* Paroles */}
+      <div>
+        <h2 className="text-2xl font-semibold text-mauve mb-3">Paroles</h2>
+        <pre className="whitespace-pre-wrap bg-purple-50 p-4 rounded-xl border border-mauve/20 font-sans tracking-wide leading-relaxed">
+          {chant.paroles || "Aucune parole disponible."}
+        </pre>
+      </div>
+
+      {/* PDF */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">PDF des paroles</p>
+        {chant.paroles_pdf_url ? (
+          <a href={chant.paroles_pdf_url} target="_blank" className="inline-block bg-mauve text-white px-4 py-2 rounded-lg">
+            Télécharger
+          </a>
+        ) : (
+          <p className="text-gray-500 italic">Aucun fichier PDF</p>
+        )}
+      </div>
+
+      {/* Partition */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Partition</p>
+        {chant.partition_url ? (
+          <a href={chant.partition_url} target="_blank" className="inline-block bg-mauve/80 text-white px-4 py-2 rounded-lg">
+            Voir la partition
+          </a>
+        ) : (
+          <p className="text-gray-500 italic">Aucune partition</p>
+        )}
+      </div>
+
+      {/* Audio */}
+      <div>
+        <h2 className="text-2xl font-semibold text-mauve mb-3">Audio</h2>
+        {chant.pistes_audio.length > 0 ? (
+          chant.pistes_audio.map((p) => (
+            <audio key={p.id} controls className="w-full mb-2">
+              <source src={p.fichier_mp3} type="audio/mpeg" />
+            </audio>
+          ))
+        ) : (
+          <p className="text-gray-500 italic">Aucun audio disponible.</p>
+        )}
+      </div>
+
+      <button
+        onClick={() => history.back()}
+        className="mt-6 px-4 py-2 border border-mauve text-mauve rounded-lg hover:bg-mauve hover:text-white transition"
+      >
+        ← Retour
+      </button>
     </div>
   );
 }

@@ -270,6 +270,40 @@ export default function Nav() {
                   />
                 </svg>
               </button>
+              {showDesktopMenu && (
+                <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-mauve/30 z-50">
+                  <a
+                    href="/account"
+                    onClick={() => setShowDesktopMenu(false)}
+                    className="block px-4 py-2 text-sm text-mauve hover:bg-purple-50"
+                  >
+                    Mon compte
+                  </a>
+
+                  <a
+                    href="/favoris"
+                    onClick={() => setShowDesktopMenu(false)}
+                    className="block px-4 py-2 text-sm text-mauve hover:bg-purple-50"
+                  >
+                    Mes favoris
+                  </a>
+
+                  <a
+                    href="/orders"
+                    onClick={() => setShowDesktopMenu(false)}
+                    className="block px-4 py-2 text-sm text-mauve hover:bg-purple-50"
+                  >
+                    Mes commandes
+                  </a>
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Se déconnecter
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <span className="text-gray-500">Non connecté</span>

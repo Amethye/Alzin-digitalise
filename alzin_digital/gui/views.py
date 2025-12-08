@@ -206,6 +206,36 @@ def me_api(request):
 
     # Méthode non autorisée
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+#------------------------------------------------------------------------
+                                #RESET PASSWORD
+#------------------------------------------------------------------------
+@csrf_exempt
+def reset_password_api(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+    body = json.loads(request.body.decode("utf-8"))
+    email = body.get("email")
+    old_password = body.get("old_password")
+    new_password = body.get("new_password")
+
+    if not email or not old_password or not new_password:
+        return JsonResponse({"error": "Champs manquants"}, status=400)
+
+    try:
+        user = utilisateurs.objects.get(email=email)
+    except utilisateurs.DoesNotExist:
+        return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    if not check_password(old_password, user.password):
+        return JsonResponse({"error": "Ancien mot de passe incorrect"}, status=401)
+
+    user.password = make_password(new_password)
+    user.save()
+
+    return JsonResponse({"ok": True, "message": "Mot de passe mis à jour avec succès"})
+
 #------------------------------------------------------------------------
                                 #LOGOUT
 #------------------------------------------------------------------------
@@ -292,9 +322,6 @@ def admin_users_api(request, user_id=None, action=None):
     
 #------------------------------------------------------------------------
                             #CHANTS
-#------------------------------------------------------------------------
-#------------------------------------------------------------------------
-#                            CHANTS
 #------------------------------------------------------------------------
 
 def serialize_chant(c):
@@ -737,9 +764,12 @@ def noter_api(request, note_id=None):
 #                          FAVORIS
 #-----------------------------------------------------------
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET", "POST", "DELETE"])
 def favoris_api(request):
 
+    # -------------------------
+    #  GET : récupérer favoris
+    # -------------------------
     if request.method == "GET":
         user_id = request.GET.get("utilisateur_id")
         qs = favoris.objects.select_related("utilisateur", "chant")
@@ -760,12 +790,29 @@ def favoris_api(request):
         ]
         return JsonResponse(data, safe=False)
 
-    # -------- POST --------
+    # -------------------------
+    #  DELETE : supprimer favoris
+    # -------------------------
+    if request.method == "DELETE":
+        fav_id = request.GET.get("id")
+
+        if not fav_id:
+            return JsonResponse({"error": "ID manquant"}, status=400)
+
+        deleted, _ = favoris.objects.filter(id=fav_id).delete()
+
+        if deleted == 0:
+            return JsonResponse({"error": "Favori introuvable"}, status=404)
+
+        return JsonResponse({"success": True})
+
+    # -------------------------
+    #  POST : ajouter favoris
+    # -------------------------
     body = json.loads(request.body.decode("utf-8"))
     user_id = body.get("utilisateur_id")
     chant_id = body.get("chant_id")
     date_favori = body.get("date_favori")
-    
 
     # Vérifier si favori existe déjà
     if favoris.objects.filter(utilisateur_id=user_id, chant_id=chant_id).exists():
@@ -778,7 +825,7 @@ def favoris_api(request):
     fav = favoris.objects.create(
         utilisateur_id=user_id,
         chant_id=chant_id,
-        date_favori=date_favori
+        date_favori=date_favori,
     )
 
     return JsonResponse({
@@ -1182,10 +1229,37 @@ def evenement_detail_api(request, id):
 #                            CHANTER
 #---------------------------------------------------------------
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET", "POST", "DELETE"])
 def chanter_api(request):
+    # --- DELETE : /api/chanter/?id=123 ---
+    if request.method == "DELETE":
+        link_id = request.GET.get("id")
+
+        if not link_id:
+            return JsonResponse({"error": "Paramètre 'id' manquant"}, status=400)
+
+        try:
+            rel = chanter.objects.get(id=link_id)
+        except chanter.DoesNotExist:
+            return JsonResponse({"error": "Relation introuvable"}, status=404)
+
+        rel.delete()
+        return JsonResponse({"status": "deleted"})
+
+    # --- GET : /api/chanter/ ou filtré ---
+    #     /api/chanter/?evenement_id=3
+    #     /api/chanter/?chant_id=12
     if request.method == "GET":
         qs = chanter.objects.select_related("chant", "evenement")
+
+        evenement_id = request.GET.get("evenement_id")
+        chant_id = request.GET.get("chant_id")
+
+        if evenement_id:
+            qs = qs.filter(evenement_id=evenement_id)
+        if chant_id:
+            qs = qs.filter(chant_id=chant_id)
+
         data = [
             {
                 "id": c.id,
@@ -1196,29 +1270,36 @@ def chanter_api(request):
         ]
         return JsonResponse(data, safe=False)
 
-    body = json.loads(request.body.decode("utf-8"))
+    # --- POST : /api/chanter/ ---
+    # body JSON : { "chant_id": 1, "evenement_id": 2 }
+    if request.method == "POST":
+        try:
+            body = json.loads(request.body.decode("utf-8"))
+        except Exception:
+            return JsonResponse({"error": "JSON invalide"}, status=400)
 
-    c = chanter.objects.create(
-        chant_id=body["chant_id"],
-        evenement_id=body["evenement_id"],
-    )
+        chant_id = body.get("chant_id")
+        evenement_id = body.get("evenement_id")
 
-    return JsonResponse(
-        {"id": c.id, "chant_id": c.chant_id, "evenement_id": c.evenement_id},
-        status=201,
-    )
+        if not chant_id or not evenement_id:
+            return JsonResponse(
+                {"error": "chant_id et evenement_id requis"},
+                status=400,
+            )
 
+        c = chanter.objects.create(
+            chant_id=chant_id,
+            evenement_id=evenement_id,
+        )
 
-@csrf_exempt
-@require_http_methods(["DELETE"])
-def chanter_detail_api(request, chanter_id):
-    try:
-        c = chanter.objects.get(id=chanter_id)
-    except chanter.DoesNotExist:
-        return JsonResponse({"error": "Lien chant-évènement introuvable"}, status=404)
+        return JsonResponse(
+            {"id": c.id, "chant_id": c.chant_id, "evenement_id": c.evenement_id},
+            status=201,
+        )
 
-    c.delete()
-    return JsonResponse({"status": "deleted"})
+    # Normalement jamais atteint grâce à @require_http_methods
+    return JsonResponse({"error": "Méthode non supportée"}, status=405)
+
 
 
 

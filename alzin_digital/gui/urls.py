@@ -6,6 +6,7 @@ urlpatterns = [
     path("login/", views.login_api, name="api_login"),
     path("me/", views.me_api, name="api_me"),
     path("auth/logout/", views.logout_api, name="api_logout"),
+    path("auth/reset-password/", views.reset_password_api, name="api_reset_password"),
     path("admin/users/", views.admin_users_api, name="api_admin_users"),
     path("admin/users/<int:user_id>/", views.admin_users_api, name="api_admin_user_detail"),
     path("admin/users/<int:user_id>/<str:action>/", views.admin_users_api, name="api_admin_user_role"),
@@ -42,7 +43,6 @@ urlpatterns = [
     path("api/evenements/<int:id>/", views.evenement_detail_api, name="api_evenement_detail"),
     
     path("chanter/", views.chanter_api, name="api_chanter"),
-    path("chanter/<int:chanter_id>/", views.chanter_detail_api, name="api_chanter_detail"),
 
     path("contenir/", views.contenir_api, name="api_contenir"),
     path("fournir/", views.fournir_api, name="api_fournir"),

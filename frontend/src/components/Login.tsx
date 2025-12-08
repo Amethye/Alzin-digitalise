@@ -4,7 +4,8 @@ interface LoginFormProps {
   next?: string;
 }
 
-const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+const isEmail = (value: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
 const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
   const [ident, setIdent] = useState("");
@@ -52,10 +53,23 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
         return;
       }
 
-      // ➜ ENREGISTRER L'EMAIL POUR LE COMPTE
+      // -----------------------------
+      //  SAUVEGARDE DES INFORMATIONS
+      // -----------------------------
+
+      // email pour le compte
       localStorage.setItem("email", payload.email);
 
-      // ➜ REDIRECTION
+      // ID pour les favoris ❤️ et l’état connecté
+      if (data.user_id || data.id) {
+        const uid = data.user_id ?? data.id;
+        localStorage.setItem("utilisateur_id", String(uid));
+        console.log("Utilisateur connecté -> ID =", uid);
+      } else {
+        console.warn("⚠️ Aucun ID utilisateur renvoyé par l’API !");
+      }
+
+      // Redirection
       window.location.href = next || "/";
 
     } catch (err) {
@@ -68,10 +82,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
 
   return (
     <div className="w-full max-w-md rounded-xl bg-white px-5 py-6 shadow-lg sm:px-8">
-      <h1 className="mb-2 bg-white text-xl font-semibold text-mauve sm:text-2xl">Connexion</h1>
+      <h1 className="mb-2 bg-white text-xl font-semibold text-mauve sm:text-2xl">
+        Connexion
+      </h1>
 
       <form onSubmit={handleSubmit} className="stack" noValidate>
-
         <label htmlFor="ident">Email</label>
         <input
           id="ident"
@@ -114,13 +129,24 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
 
         <style>
           {`
-            .stack { display:flex; flex-direction:column; gap:.8rem; max-width:380px; }
-            input, button { padding:.55rem .7rem; font-size:1rem; }
+            .stack {
+              display:flex;
+              flex-direction:column;
+              gap:.8rem;
+              max-width:380px;
+            }
+            input, button {
+              padding:.55rem .7rem;
+              font-size:1rem;
+            }
           `}
         </style>
       </form>
 
-      <a href="/RequestPasswordReset" className="text-sm text-gray-600 hover:underline">
+      <a
+        href="/RequestPasswordReset"
+        className="text-sm text-gray-600 hover:underline"
+      >
         Mot de passe oublié ?
       </a>
     </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import FavoriButton from "@components/FavoriButton";
 
 type Chant = {
   id: number;
@@ -6,10 +7,7 @@ type Chant = {
   auteur: string;
   illustration_chant_url?: string;
   categories: string[];
-  pistes_audio: {
-    id: number;
-    fichier_mp3: string;
-  }[];
+  pistes_audio: { id: number; fichier_mp3: string }[];
 };
 
 type Favori = {
@@ -23,36 +21,43 @@ const API_FAVORIS = "http://127.0.0.1:8000/api/favoris/";
 
 export default function FavorisPage() {
   const [USER_ID, setUSER_ID] = useState<number | null>(null);
-
   const [favoris, setFavoris] = useState<Favori[]>([]);
   const [chants, setChants] = useState<Chant[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Charger l'utilisateur connecté
+  // Recherche + filtre catégorie + pagination
+  const [search, setSearch] = useState("");
+  const [filterCat, setFilterCat] = useState("Toutes");
+
+  const PER_PAGE = 9;
+  const [page, setPage] = useState(1);
+
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const id = localStorage.getItem("utilisateur_id");
-      if (id) setUSER_ID(Number(id));
-    }
+    const handler = () => window.location.reload();
+    window.addEventListener("favoriUpdated", handler);
+    return () => window.removeEventListener("favoriUpdated", handler);
   }, []);
 
-  // Charger favoris + chants une fois USER_ID disponible
+  // Charger utilisateur
+  useEffect(() => {
+    const id = localStorage.getItem("utilisateur_id");
+    if (id) setUSER_ID(Number(id));
+  }, []);
+
+  // Charger favoris + chants
   useEffect(() => {
     if (!USER_ID) return;
 
-    const loadData = async () => {
+    const load = async () => {
       setLoading(true);
 
-      // Favoris du user
       const resFav = await fetch(`${API_FAVORIS}?utilisateur_id=${USER_ID}`);
       const favData = await resFav.json();
       setFavoris(favData);
 
-      // Tous les chants
       const resChants = await fetch(API_CHANTS);
       const allChants = await resChants.json();
 
-      // Filtrer seulement ceux présents dans les favoris
       const favChants = allChants.filter((c: Chant) =>
         favData.some((f: Favori) => f.chant_id === c.id)
       );
@@ -61,118 +66,145 @@ export default function FavorisPage() {
       setLoading(false);
     };
 
-    loadData();
+    load();
   }, [USER_ID]);
 
-  // Supprimer un favori
-  const removeFavori = async (chantId: number) => {
-    const match = favoris.find(
-      (f) => f.chant_id === chantId && f.utilisateur_id === USER_ID
-    );
-    if (!match) return;
+  // Recherche
+  const searched = chants.filter((c) =>
+    `${c.nom_chant} ${c.auteur}`.toLowerCase().includes(search.toLowerCase())
+  );
 
-    await fetch(`${API_FAVORIS}?id=${match.id}`, {
-      method: "DELETE",
+  // Filtre catégorie
+  const filtered = searched.filter((c) =>
+    filterCat === "Toutes"
+      ? true
+      : (c.categories.length ? c.categories : ["Autre"]).includes(filterCat)
+  );
+
+  // Regrouper par catégories
+  const categoriesMap: Record<string, Chant[]> = {};
+  filtered.forEach((chant) => {
+    const catList = chant.categories.length ? chant.categories : ["Autre"];
+    catList.forEach((cat) => {
+      if (!categoriesMap[cat]) categoriesMap[cat] = [];
+      categoriesMap[cat].push(chant);
     });
+  });
 
-    // Recharge les données
-    const newFav = favoris.filter((f) => f.id !== match.id);
-    setFavoris(newFav);
+  // Liste des catégories
+  const allCategories = [
+    "Toutes",
+    ...new Set(chants.flatMap((c) =>
+      c.categories.length ? c.categories : ["Autre"]
+    )),
+  ].sort((a, b) => a.localeCompare(b, "fr"));
 
-    setChants((old) => old.filter((c) => c.id !== chantId));
-  };
+  // Pagination
+  const categoriesList = Object.keys(categoriesMap).sort((a, b) =>
+    a.localeCompare(b, "fr")
+  );
 
-  // --- AFFICHAGES ---
+  const totalPages = Math.ceil(categoriesList.length / PER_PAGE);
+  const visibleCategories = categoriesList.slice(
+    (page - 1) * PER_PAGE,
+    page * PER_PAGE
+  );
 
-  if (USER_ID === null)
-    return (
-      <p className="text-center text-gray-500 text-lg mt-10">
-        Veuillez vous connecter pour voir vos favoris...
-      </p>
-    );
+  if (!USER_ID)
+    return <p className="text-center text-gray-500 mt-10">Veuillez vous connecter.</p>;
 
   if (loading)
-    return (
-      <p className="text-center mt-10 text-gray-500">Chargement...</p>
-    );
+    return <p className="text-center mt-10">Chargement…</p>;
 
   return (
-    <div className="px-10 py-10 flex flex-col gap-8 w-full">
+    <div className="px-10 py-10 flex flex-col gap-10 w-full">
       <h1 className="text-3xl font-bold text-mauve">Mes favoris</h1>
 
-      {chants.length === 0 && (
-        <p className="text-gray-500 text-lg mt-10">
-          Aucun chant en favoris pour l’instant.
-        </p>
-      )}
+      {/* Barre de recherche + catégorie */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <input
+          type="text"
+          placeholder="Rechercher un favori..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          className="border border-mauve/40 p-3 rounded-lg flex-1"
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-        {chants.map((ch) => (
-          <div
-            key={ch.id}
-            className="border border-mauve/30 rounded-xl p-5 shadow bg-white"
-          >
-            {/* Header */}
-            <div className="flex justify-between items-start">
-              <h2 className="text-xl font-bold text-mauve">{ch.nom_chant}</h2>
-
-              <button
-                onClick={() => removeFavori(ch.id)}
-                className="text-3xl transition"
-              >
-                <span className="text-mauve">❤️</span>
-              </button>
-            </div>
-
-            {/* Illustration */}
-            {ch.illustration_chant_url && (
-              <img
-                src={ch.illustration_chant_url}
-                className="mt-3 w-full h-48 object-cover rounded-lg shadow"
-              />
-            )}
-
-            {/* Auteur */}
-            {ch.auteur && (
-              <p className="mt-3 text-gray-700">
-                <strong>Auteur :</strong> {ch.auteur}
-              </p>
-            )}
-
-            {/* Catégories */}
-            {ch.categories.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {ch.categories.map((cat) => (
-                  <span
-                    key={cat}
-                    className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm"
-                  >
-                    {cat}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Audio */}
-            {ch.pistes_audio.length > 0 && (
-              <div className="mt-4 flex flex-col gap-2">
-                {ch.pistes_audio.map((p) => (
-                  <audio key={p.id} controls className="w-full">
-                    <source src={p.fichier_mp3} type="audio/mpeg" />
-                  </audio>
-                ))}
-              </div>
-            )}
-
-            <a
-              href={`/chants/${ch.id}`}
-              className="mt-4 block w-full bg-mauve text-white text-center py-2 rounded-lg hover:bg-mauve/90"
-            >
-              Voir le chant
-            </a>
-          </div>
-        ))}
+        <select
+          value={filterCat}
+          onChange={(e) => {
+            setFilterCat(e.target.value);
+            setPage(1);
+          }}
+          className="border border-mauve/40 p-3 rounded-lg w-full md:w-60"
+        >
+          {allCategories.map((cat) => (
+            <option key={cat}>{cat}</option>
+          ))}
+        </select>
       </div>
+
+      {/* Groupe par catégories */}
+      {visibleCategories.map((cat) => {
+        const sortedChants = [...categoriesMap[cat]].sort((a, b) =>
+          a.nom_chant.localeCompare(b.nom_chant, "fr")
+        );
+
+        return (
+          <div key={cat}>
+            <h2 className="text-2xl font-bold text-mauve mt-6 mb-3">{cat}</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {sortedChants.map((ch) => (
+                <div
+                  key={ch.id}
+                  onClick={() => (window.location.href = `/chants/${ch.id}`)}
+                  className="border border-mauve/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-mauve/5 transition"
+                >
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-xl font-bold text-mauve">{ch.nom_chant}</h3>
+
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <FavoriButton chantId={ch.id} USER_ID={USER_ID} />
+                    </div>
+                  </div>
+
+                  {ch.pistes_audio.length > 0 && (
+                    <div className="mt-3 flex flex-col gap-2">
+                      {ch.pistes_audio.map((p) => (
+                        <audio key={p.id} controls className="w-full">
+                          <source src={p.fichier_mp3} type="audio/mpeg" />
+                        </audio>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-3 mt-6">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i + 1)}
+              className={`px-4 py-2 rounded-lg border ${
+                page === i + 1
+                  ? "bg-mauve text-white"
+                  : "border-mauve/40 hover:bg-mauve/10"
+              }`}>
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
