@@ -4,7 +4,7 @@ import LogoUrl from "@images/LogoFPMs.svg?url";
 type Commande = {
   id: number;
   date_commande: string;
-  status: string;
+  status?: string; // éventuellement, si tu ajoutes un statut plus tard
 };
 
 type AlzinPerso = {
@@ -14,6 +14,17 @@ type AlzinPerso = {
   type_papier: string;
   prix_vente_unite: string;
   date_creation: string;
+};
+
+type FournisseurBase = {
+  id: number;
+  nom_fournisseur: string;
+  ville_fournisseur: string;
+  type_reliure: string;
+};
+
+type Fournisseur = FournisseurBase & {
+  local: boolean;
 };
 
 type ActiveTab = "en_cours" | "passees" | "alzins";
@@ -32,8 +43,9 @@ function formatDate(iso: string) {
 }
 
 // Heuristique simple pour classer les statuts "passés"
-function isPastStatus(status: string) {
-  const s = (status || "").toLowerCase();
+function isPastStatus(status: string | undefined) {
+  if (!status) return false;
+  const s = status.toLowerCase();
   const keywords = [
     "terminée",
     "terminee",
@@ -53,38 +65,65 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("en_cours");
   const [commandes, setCommandes] = useState<Commande[]>([]);
   const [alzins, setAlzins] = useState<AlzinPerso[]>([]);
+  const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [noUser, setNoUser] = useState(false);
 
+  // Formulaire "Nouvelle commande"
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [selectedAlzinId, setSelectedAlzinId] = useState<number | "">("");
+  const [selectedFournisseurId, setSelectedFournisseurId] = useState<number | "">("");
+  const [quantity, setQuantity] = useState<number>(1);
+
   useEffect(() => {
     const email = localStorage.getItem("email");
 
-    // ➜ Pas connecté : on affiche la page "devenir membre"
+    // ➜ Pas d'email dans le navigateur : on considère que l'utilisateur n'est pas connecté
     if (!email) {
       setNoUser(true);
       setLoading(false);
       return;
     }
+     const authHeaders: Record<string, string> = {
+    "X-User-Email": email,
+  };
 
-    const headers = {
-      "X-User-Email": email,
-    };
+  async function fetchAll() {
+    try {
+      setLoading(true);
+      setError(null);
 
-    async function fetchData() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const [resCmd, resAlzins] = await Promise.all([
+        const [resCmd, resAlzins, resMe, resFournisseurs] = await Promise.all([
           fetch("http://127.0.0.1:8000/api/mes-commandes/", {
-            headers,
+            headers: authHeaders,
           }),
           fetch("http://127.0.0.1:8000/api/mes-chansonniers/", {
-            headers,
+            headers: authHeaders,
           }),
+          fetch("http://127.0.0.1:8000/api/me/", {
+            headers: authHeaders,
+          }),
+          fetch("http://127.0.0.1:8000/api/fournisseurs/"),
         ]);
+        const headers = {
+          "X-User-Email": email,
+        };
+
+       
+
+        // ➜ Si l'API commande dit "utilisateur inconnu / pas autorisé",
+        // on bascule aussi sur l'écran "devenir membre"
+        if (
+          resCmd.status === 401 ||
+          resCmd.status === 403 ||
+          resCmd.status === 404
+        ) {
+          setNoUser(true);
+          setLoading(false);
+          return;
+        }
 
         if (!resCmd.ok) {
           throw new Error("Erreur lors du chargement des commandes.");
@@ -92,12 +131,31 @@ export default function OrdersPage() {
         if (!resAlzins.ok) {
           throw new Error("Erreur lors du chargement des alzins personnalisés.");
         }
+        if (!resMe.ok) {
+          throw new Error("Erreur lors du chargement de ton profil.");
+        }
+        if (!resFournisseurs.ok) {
+          throw new Error("Erreur lors du chargement des fournisseurs.");
+        }
 
         const dataCmd: Commande[] = await resCmd.json();
         const dataAlzins: AlzinPerso[] = await resAlzins.json();
+        const me = await resMe.json();
+        const dataFournisseursRaw: FournisseurBase[] = await resFournisseurs.json();
+
+        const villeUser = (me.ville as string | undefined) || "";
+
+        const dataFournisseurs: Fournisseur[] = dataFournisseursRaw.map((f) => ({
+          ...f,
+          local:
+            !!villeUser &&
+            f.ville_fournisseur.trim().toLowerCase() ===
+              villeUser.trim().toLowerCase(),
+        }));
 
         setCommandes(dataCmd || []);
         setAlzins(dataAlzins || []);
+        setFournisseurs(dataFournisseurs || []);
       } catch (e: any) {
         setError(e.message || "Une erreur est survenue.");
       } finally {
@@ -105,16 +163,39 @@ export default function OrdersPage() {
       }
     }
 
-    fetchData();
+    fetchAll();
   }, []);
 
   const commandesEnCours = commandes.filter((c) => !isPastStatus(c.status));
   const commandesPassees = commandes.filter((c) => isPastStatus(c.status));
 
-  const handleCreateOrder = async () => {
+  const localFournisseurs = fournisseurs.filter((f) => f.local);
+  const otherFournisseurs = fournisseurs.filter((f) => !f.local);
+
+  const handleOpenOrderForm = () => {
+    setShowOrderForm(true);
+    setError(null);
+  };
+
+  const handleCancelOrderForm = () => {
+    setShowOrderForm(false);
+    setSelectedAlzinId("");
+    setSelectedFournisseurId("");
+    setQuantity(1);
+  };
+
+  const handleCreateOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     const email = localStorage.getItem("email");
     if (!email) {
+      setNoUser(true); // on renvoie vers l'écran membre
       setError("Tu dois être connecté pour créer une commande.");
+      return;
+    }
+
+    if (!selectedAlzinId || !selectedFournisseurId || quantity <= 0) {
+      setError("Merci de remplir tous les champs de la commande.");
       return;
     }
 
@@ -122,24 +203,70 @@ export default function OrdersPage() {
       setCreating(true);
       setError(null);
 
-      const res = await fetch("http://127.0.0.1:8000/api/mes-commandes/", {
+      const headersWithEmail = {
+        "Content-Type": "application/json",
+        "X-User-Email": email,
+      };
+
+      // 1) Créer la commande (via mes-commandes, qui déduit l'utilisateur avec l'email)
+      const resCmd = await fetch("http://127.0.0.1:8000/api/mes-commandes/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-User-Email": email,
-        },
+        headers: headersWithEmail,
         body: JSON.stringify({
-          status: "PANIER", // statut par défaut pour une nouvelle commande
+          status: "PANIER",
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Impossible de créer une nouvelle commande.");
+      if (!resCmd.ok) {
+        throw new Error("Impossible de créer la commande.");
       }
 
-      const newCommande: Commande = await res.json();
+      const newCommande: Commande = await resCmd.json();
+
+      // 2) Ajouter la ligne de commande
+      const resLigne = await fetch(
+        "http://127.0.0.1:8000/api/commandes-lignes/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            commande_id: newCommande.id,
+            chansonnier_perso_id: selectedAlzinId,
+            quantite: quantity,
+          }),
+        }
+      );
+
+      if (!resLigne.ok) {
+        throw new Error("Impossible d'ajouter l'alzin à la commande.");
+      }
+
+      // 3) Enregistrer le fournisseur choisi pour ce chansonnier
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const resFournir = await fetch("http://127.0.0.1:8000/api/fournir/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fournisseur_id: selectedFournisseurId,
+          chansonnier_perso_id: selectedAlzinId,
+          date_fourniture: today,
+        }),
+      });
+
+      if (!resFournir.ok) {
+        throw new Error("Impossible d'enregistrer le fournisseur.");
+      }
+
+      // Mettre à jour la liste des commandes (nouvelle commande en tête)
       setCommandes((prev) => [newCommande, ...prev]);
       setActiveTab("en_cours");
+
+      // Reset du formulaire
+      handleCancelOrderForm();
     } catch (e: any) {
       setError(e.message || "Une erreur est survenue lors de la création.");
     } finally {
@@ -170,9 +297,11 @@ export default function OrdersPage() {
               <p className="text-xs text-gray-600 sm:text-sm">
                 Date : {formatDate(c.date_commande)}
               </p>
-              <p className="text-xs text-gray-500 sm:text-sm">
-                Statut : <span className="font-medium">{c.status || "—"}</span>
-              </p>
+              {c.status && (
+                <p className="text-xs text-gray-500 sm:text-sm">
+                  Statut : <span className="font-medium">{c.status}</span>
+                </p>
+              )}
             </div>
           </li>
         ))}
@@ -205,11 +334,21 @@ export default function OrdersPage() {
               </p>
               <p className="text-xs text-gray-500 sm:text-sm">
                 Couleur : <span className="font-medium">{a.couleur}</span> ·
-                Type de papier : <span className="font-medium">{a.type_papier}</span>
+                Type de papier :{" "}
+                <span className="font-medium">{a.type_papier}</span>
               </p>
             </div>
-            <div className="mt-2 text-xs font-semibold text-gray-700 sm:mt-0 sm:text-sm">
-              {a.prix_vente_unite ? `${a.prix_vente_unite} €` : ""}
+            <div className="mt-2 flex flex-col items-end gap-2 sm:mt-0">
+              <div className="text-xs font-semibold text-gray-700 sm:text-sm">
+                {a.prix_vente_unite ? `${a.prix_vente_unite} €` : ""}
+              </div>
+              {/* Bouton "Modifier" : on branchera la vraie page d'édition dessus plus tard */}
+              <a
+                href={`/alzin-perso?id=${a.id}`}
+                className="text-xs font-semibold text-mauve underline hover:text-purple-800 sm:text-sm"
+              >
+                Modifier
+              </a>
             </div>
           </li>
         ))}
@@ -329,22 +468,152 @@ export default function OrdersPage() {
             </button>
           </nav>
 
-          {/* Bouton + toujours visible */}
+          {/* Bouton + toujours visible : nouvelle commande */}
           <button
             type="button"
-            onClick={handleCreateOrder}
+            onClick={handleOpenOrderForm}
             disabled={creating}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-mauve px-3 py-2 text-sm font-semibold text-mauve duration-150 hover:bg-mauve hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
           >
             <span className="text-lg leading-none">+</span>
-            <span>
-              {creating ? "Création..." : "Nouvelle commande"}
-            </span>
+            <span>{creating ? "En cours..." : "Nouvelle commande"}</span>
           </button>
+
+          {/* Bouton + nouvel alzin perso */}
+          <a
+            href="/alzin-perso"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-mauve px-3 py-2 text-sm font-semibold text-mauve duration-150 hover:bg-mauve/10 sm:text-base"
+          >
+            <span className="text-lg leading-none">+</span>
+            <span>Nouvel alzin perso</span>
+          </a>
         </aside>
 
         {/* Contenu principal */}
         <section className="flex-1 rounded-xl bg-white">
+          {/* Formulaire de nouvelle commande */}
+          {showOrderForm && (
+            <form
+              onSubmit={handleCreateOrder}
+              className="mb-6 space-y-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 sm:py-5"
+            >
+              <h2 className="text-base font-semibold text-mauve sm:text-lg">
+                Nouvelle commande
+              </h2>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="alzin"
+                    className="text-xs font-medium text-gray-700 sm:text-sm"
+                  >
+                    Alzin personnalisé
+                  </label>
+                  <select
+                    id="alzin"
+                    value={selectedAlzinId}
+                    onChange={(e) =>
+                      setSelectedAlzinId(
+                        e.target.value ? Number(e.target.value) : ""
+                      )
+                    }
+                    className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                    required
+                  >
+                    <option value="">Sélectionne un alzin</option>
+                    {alzins.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.nom_chansonnier_perso}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="quantite"
+                    className="text-xs font-medium text-gray-700 sm:text-sm"
+                  >
+                    Quantité
+                  </label>
+                  <input
+                    id="quantite"
+                    type="number"
+                    min={1}
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value) || 1)}
+                    className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="fournisseur"
+                  className="text-xs font-medium text-gray-700 sm:text-sm"
+                >
+                  Fournisseur
+                </label>
+                <select
+                  id="fournisseur"
+                  value={selectedFournisseurId}
+                  onChange={(e) =>
+                    setSelectedFournisseurId(
+                      e.target.value ? Number(e.target.value) : ""
+                    )
+                  }
+                  className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                  required
+                >
+                  <option value="">Sélectionne un fournisseur</option>
+                  {localFournisseurs.length > 0 && (
+                    <optgroup label="Fournisseurs recommandés (ta ville)">
+                      {localFournisseurs.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.nom_fournisseur} ({f.ville_fournisseur})
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {otherFournisseurs.length > 0 && (
+                    <optgroup label="Autres fournisseurs">
+                      {otherFournisseurs.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.nom_fournisseur} ({f.ville_fournisseur})
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                {localFournisseurs.length === 0 && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Aucun fournisseur local détecté, tu peux en choisir un dans la liste
+                    globale.
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancelOrderForm}
+                  className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:text-base"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="rounded-lg bg-mauve px-4 py-1.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+                >
+                  {creating ? "Création..." : "Valider la commande"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Contenu selon l'onglet */}
           {activeTab === "en_cours" && (
             <div className="space-y-3">
               <h2 className="text-lg font-semibold text-mauve sm:text-xl">

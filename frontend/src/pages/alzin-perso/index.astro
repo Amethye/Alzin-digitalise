@@ -1,0 +1,10 @@
+---
+import Layout from "@layouts/Layout.astro";
+import AlzinPersoPage from "@components/AlzinPersoPage.tsx";
+---
+
+<Layout title="Alzin personnalisé">
+  <main class="flex justify-center bg-white px-4 py-6 sm:px-6 sm:py-8">
+    <AlzinPersoPage client:load />
+  </main>
+</Layout>
