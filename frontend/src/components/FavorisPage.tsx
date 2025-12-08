@@ -22,62 +22,83 @@ const API_CHANTS = "http://127.0.0.1:8000/api/chants/";
 const API_FAVORIS = "http://127.0.0.1:8000/api/favoris/";
 
 export default function FavorisPage() {
+  const [USER_ID, setUSER_ID] = useState<number | null>(null);
+
   const [favoris, setFavoris] = useState<Favori[]>([]);
   const [chants, setChants] = useState<Chant[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const USER_ID = Number(localStorage.getItem("utilisateur_id"));
-
-  const loadData = async () => {
-    setLoading(true);
-
-    // chargement des favoris de l'utilisateur
-    const resFav = await fetch(`${API_FAVORIS}?utilisateur_id=${USER_ID}`);
-    const favData = await resFav.json();
-    setFavoris(favData);
-
-    // chargement de tous les chants
-    const resChants = await fetch(API_CHANTS);
-    const chantData = await resChants.json();
-
-    // filtrer seulement ceux en favoris
-    const favorisChants = chantData.filter((c: Chant) =>
-      favData.some((f: Favori) => f.chant_id === c.id)
-    );
-
-    setChants(favorisChants);
-    setLoading(false);
-  };
-
+  // Charger l'utilisateur connecté
   useEffect(() => {
-    loadData();
+    if (typeof window !== "undefined") {
+      const id = localStorage.getItem("utilisateur_id");
+      if (id) setUSER_ID(Number(id));
+    }
   }, []);
 
-  // retirer un favoris
-  const removeFavori = async (chantId: number) => {
-    const fav = favoris.find(f => f.chant_id === chantId && f.utilisateur_id === USER_ID);
-    if (!fav) return;
+  // Charger favoris + chants une fois USER_ID disponible
+  useEffect(() => {
+    if (!USER_ID) return;
 
-    await fetch(`${API_FAVORIS}?id=${fav.id}`, {
+    const loadData = async () => {
+      setLoading(true);
+
+      // Favoris du user
+      const resFav = await fetch(`${API_FAVORIS}?utilisateur_id=${USER_ID}`);
+      const favData = await resFav.json();
+      setFavoris(favData);
+
+      // Tous les chants
+      const resChants = await fetch(API_CHANTS);
+      const allChants = await resChants.json();
+
+      // Filtrer seulement ceux présents dans les favoris
+      const favChants = allChants.filter((c: Chant) =>
+        favData.some((f: Favori) => f.chant_id === c.id)
+      );
+
+      setChants(favChants);
+      setLoading(false);
+    };
+
+    loadData();
+  }, [USER_ID]);
+
+  // Supprimer un favori
+  const removeFavori = async (chantId: number) => {
+    const match = favoris.find(
+      (f) => f.chant_id === chantId && f.utilisateur_id === USER_ID
+    );
+    if (!match) return;
+
+    await fetch(`${API_FAVORIS}?id=${match.id}`, {
       method: "DELETE",
     });
 
-    loadData();
+    // Recharge les données
+    const newFav = favoris.filter((f) => f.id !== match.id);
+    setFavoris(newFav);
+
+    setChants((old) => old.filter((c) => c.id !== chantId));
   };
 
-  if (!USER_ID)
+  // --- AFFICHAGES ---
+
+  if (USER_ID === null)
     return (
       <p className="text-center text-gray-500 text-lg mt-10">
-        Vous devez être connecté pour voir vos favoris ❤️
+        Veuillez vous connecter pour voir vos favoris...
       </p>
     );
 
   if (loading)
-    return <p className="text-center mt-10 text-gray-500">Chargement...</p>;
+    return (
+      <p className="text-center mt-10 text-gray-500">Chargement...</p>
+    );
 
   return (
     <div className="px-10 py-10 flex flex-col gap-8 w-full">
-      <h1 className="text-3xl font-bold text-mauve">Mes favoris ❤️</h1>
+      <h1 className="text-3xl font-bold text-mauve">Mes favoris</h1>
 
       {chants.length === 0 && (
         <p className="text-gray-500 text-lg mt-10">
@@ -86,16 +107,15 @@ export default function FavorisPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-        {chants.map(ch => (
+        {chants.map((ch) => (
           <div
             key={ch.id}
-            className="border border-mauve/30 rounded-xl p-5 shadow bg-white w-full"
+            className="border border-mauve/30 rounded-xl p-5 shadow bg-white"
           >
-            {/* HEADER */}
+            {/* Header */}
             <div className="flex justify-between items-start">
               <h2 className="text-xl font-bold text-mauve">{ch.nom_chant}</h2>
 
-              {/* ❤️ bouton favoris */}
               <button
                 onClick={() => removeFavori(ch.id)}
                 className="text-3xl transition"
@@ -115,20 +135,20 @@ export default function FavorisPage() {
             {/* Auteur */}
             {ch.auteur && (
               <p className="mt-3 text-gray-700">
-                <strong>Auteur : </strong> {ch.auteur}
+                <strong>Auteur :</strong> {ch.auteur}
               </p>
             )}
 
             {/* Catégories */}
             {ch.categories.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
-                {ch.categories.map(cat => (
+                {ch.categories.map((cat) => (
                   <span
                     key={cat}
                     className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm"
                   >
                     {cat}
-        c features like a vertical panel and a "+" button. To respect the existing style, I'l          </span>
+                  </span>
                 ))}
               </div>
             )}
@@ -136,7 +156,7 @@ export default function FavorisPage() {
             {/* Audio */}
             {ch.pistes_audio.length > 0 && (
               <div className="mt-4 flex flex-col gap-2">
-                {ch.pistes_audio.map(p => (
+                {ch.pistes_audio.map((p) => (
                   <audio key={p.id} controls className="w-full">
                     <source src={p.fichier_mp3} type="audio/mpeg" />
                   </audio>

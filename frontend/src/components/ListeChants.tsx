@@ -7,12 +7,8 @@ type Chant = {
   ville_origine: string;
   paroles: string;
   description: string;
-  illustration_chant_url?: string;
   categories: string[];
-  pistes_audio: {
-    id: number;
-    fichier_mp3: string;
-  }[];
+  pistes_audio: { id: number; fichier_mp3: string }[];
 };
 
 type Favori = {
@@ -27,38 +23,37 @@ const API_FAVORIS = "http://127.0.0.1:8000/api/favoris/";
 export default function ListeChants() {
   const [chants, setChants] = useState<Chant[]>([]);
   const [favoris, setFavoris] = useState<Favori[]>([]);
+  const [USER_ID, setUSER_ID] = useState<number | null>(null);
 
-  // utilisateur connecté
-  const USER_ID = Number(localStorage.getItem("utilisateur_id"));
+  const [search, setSearch] = useState("");
 
-  // Charger les chants + favoris
-  const loadData = async () => {
+  // Charger chants + favoris
+  const loadData = async (userId: number | null) => {
     const resChants = await fetch(API_CHANTS);
     const dataChants = await resChants.json();
     setChants(dataChants);
 
-    if (USER_ID) {
-      const resFav = await fetch(`${API_FAVORIS}?utilisateur_id=${USER_ID}`);
+    if (userId) {
+      const resFav = await fetch(`${API_FAVORIS}?utilisateur_id=${userId}`);
       const dataFav = await resFav.json();
       setFavoris(dataFav);
     }
   };
 
   useEffect(() => {
-    loadData();
+    const storageId = localStorage.getItem("utilisateur_id");
+    const parsed = storageId && !isNaN(Number(storageId)) ? Number(storageId) : null;
+
+    console.log("ID utilisateur récupéré :", parsed);
+    setUSER_ID(parsed);
+    loadData(parsed);
   }, []);
 
-  // Vérifier si un chant est en favoris
   const isFavoris = (chantId: number) =>
-    favoris.some(f => f.chant_id === chantId && f.utilisateur_id === USER_ID);
+    favoris.some((f) => f.chant_id === chantId && f.utilisateur_id === USER_ID);
 
-  // Ajouter un favoris
   const addFavori = async (chantId: number) => {
-    if (!USER_ID) {
-      alert("Vous devez être connecté !");
-      return;
-    }
-
+    if (!USER_ID) return;
     await fetch(API_FAVORIS, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -68,113 +63,123 @@ export default function ListeChants() {
         date_favori: new Date().toISOString().split("T")[0],
       }),
     });
-
-    loadData();
+    loadData(USER_ID);
   };
 
-  // Retirer un favoris
   const removeFavori = async (chantId: number) => {
-    const fav = favoris.find(f => f.chant_id === chantId && f.utilisateur_id === USER_ID);
+    const fav = favoris.find(
+      (f) => f.chant_id === chantId && f.utilisateur_id === USER_ID
+    );
     if (!fav) return;
 
     await fetch(`${API_FAVORIS}?id=${fav.id}`, { method: "DELETE" });
-    loadData();
+    loadData(USER_ID);
   };
 
-  // Toggle sur le cœur
   const toggleFavori = (chantId: number) => {
+    if (!USER_ID) return;
     if (isFavoris(chantId)) removeFavori(chantId);
     else addFavori(chantId);
   };
 
-  if (!USER_ID) {
-    return (
-      <p className="text-center text-gray-500 text-lg mt-10">
-        Veuillez vous connecter pour voir vos favoris ❤️
-      </p>
-    );
-  }
+  // ----------------------
+  //    RECHERCHE
+  // ----------------------
+  const filteredChants = chants.filter((c) =>
+    `${c.nom_chant} ${c.auteur} ${c.ville_origine}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  // ----------------------
+  //   GROUPER PAR CAT
+  // ----------------------
+  const categoriesMap: Record<string, Chant[]> = {};
+
+  filteredChants.forEach((chant) => {
+    const chantCats = chant.categories.length > 0 ? chant.categories : ["Autre"];
+
+    chantCats.forEach((cat) => {
+      if (!categoriesMap[cat]) categoriesMap[cat] = [];
+      categoriesMap[cat].push(chant);
+    });
+  });
 
   return (
-    <div className="px-10 py-10 flex flex-col gap-8 w-full">
+    <div className="px-10 py-10 flex flex-col gap-10 w-full">
 
-      <h1 className="text-3xl font-bold text-mauve mb-4">
-        Liste des chants
-      </h1>
+      <h1 className="text-3xl font-bold text-mauve">Chants classés par catégorie</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
-        {chants.map(ch => (
-          <div
-            key={ch.id}
-            className="border border-mauve/30 rounded-xl p-5 shadow bg-white w-full"
-          >
-            {/* HEADER */}
-            <div className="flex justify-between items-start">
-              <h2 className="text-xl font-bold text-mauve">{ch.nom_chant}</h2>
+      {/* Recherche */}
+      <input
+        type="text"
+        placeholder="Rechercher un chant..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="border border-mauve/40 p-3 rounded-lg w-full max-w-md"
+      />
 
-              {/* ❤️ BOUTON FAVORIS */}
-              <button
-                onClick={() => toggleFavori(ch.id)}
-                className="text-3xl transition"
-              >
-                {isFavoris(ch.id) ? (
-                  <span className="text-mauve">❤️</span>
-                ) : (
-                  <span className="text-mauve/30">♡</span>
-                )}
-              </button>
-            </div>
+      {/* AFFICHAGE PAR CATÉGORIE */}
+      {Object.keys(categoriesMap)
+        .sort((a, b) => a.localeCompare(b, "fr"))
+        .map((cat) => (
+          <div key={cat} className="w-full">
+            <h2 className="text-2xl font-bold text-mauve mt-6 mb-3">{cat}</h2>
 
-            {/* ILLUSTRATION */}
-            {ch.illustration_chant_url && (
-              <img
-                src={ch.illustration_chant_url}
-                className="mt-3 w-full h-48 object-cover rounded-lg shadow"
-              />
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {categoriesMap[cat].map((ch) => (
+                <div
+                  key={ch.id}
+                  className="border border-mauve/30 rounded-xl p-5 shadow bg-white"
+                >
+                  {/* HEADER */}
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-xl font-bold text-mauve">{ch.nom_chant}</h3>
 
-            {/* AUTEUR */}
-            {ch.auteur && (
-              <p className="mt-3 text-gray-600">
-                <strong>Auteur :</strong> {ch.auteur}
-              </p>
-            )}
+                    {USER_ID && (
+                      <button
+                        onClick={() => toggleFavori(ch.id)}
+                        className="text-3xl"
+                      >
+                        {isFavoris(ch.id) ? (
+                          <span className="text-mauve">❤️</span>
+                        ) : (
+                          <span className="text-mauve/30">♡</span>
+                        )}
+                      </button>
+                    )}
+                  </div>
 
-            {/* CATÉGORIES */}
-            {ch.categories.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {ch.categories.map(cat => (
-                  <span
-                    key={cat}
-                    className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm"
+                  {/* Auteur */}
+                  {ch.auteur && (
+                    <p className="mt-2 text-gray-600">
+                      <strong>Auteur :</strong> {ch.auteur}
+                    </p>
+                  )}
+
+                  {/* Audio */}
+                  {ch.pistes_audio.length > 0 && (
+                    <div className="mt-3 flex flex-col gap-2">
+                      {ch.pistes_audio.map((p) => (
+                        <audio key={p.id} controls className="w-full">
+                          <source src={p.fichier_mp3} type="audio/mpeg" />
+                        </audio>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Paroles */}
+                  <button
+                    onClick={() => alert(ch.paroles)}
+                    className="mt-4 w-full bg-mauve text-white py-2 rounded-lg hover:bg-mauve/90"
                   >
-                    {cat}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* AUDIO */}
-            {ch.pistes_audio.length > 0 && (
-              <div className="mt-4 flex flex-col gap-2">
-                {ch.pistes_audio.map((p) => (
-                  <audio key={p.id} controls className="w-full">
-                    <source src={p.fichier_mp3} type="audio/mpeg" />
-                  </audio>
-                ))}
-              </div>
-            )}
-
-            {/* PAROLES */}
-            <button
-              onClick={() => alert(ch.paroles)}
-              className="mt-4 w-full bg-mauve text-white py-2 rounded-lg hover:bg-mauve/90"
-            >
-              Voir les paroles
-            </button>
+                    Voir les paroles
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
-      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import LogoUrl from "@images/LogoFPMs.svg?url";
 
 type Commande = {
   id: number;
@@ -16,6 +17,8 @@ type AlzinPerso = {
 };
 
 type ActiveTab = "en_cours" | "passees" | "alzins";
+
+const logoSrc = LogoUrl.split("?")[0];
 
 function formatDate(iso: string) {
   if (!iso) return "";
@@ -53,11 +56,14 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [noUser, setNoUser] = useState(false);
 
   useEffect(() => {
     const email = localStorage.getItem("email");
+
+    // ➜ Pas connecté : on affiche la page "devenir membre"
     if (!email) {
-      setError("Tu dois être connecté pour voir tes commandes.");
+      setNoUser(true);
       setLoading(false);
       return;
     }
@@ -210,6 +216,41 @@ export default function OrdersPage() {
       </ul>
     );
   };
+
+  // ➜ Cas "pas connecté" : on affiche la page blanche spéciale
+  if (noUser) {
+    return (
+      <div className="flex w-full max-w-3xl flex-col items-center justify-center rounded-xl bg-white px-6 py-10 text-center shadow-lg sm:px-10 sm:py-14">
+        <img
+          src={logoSrc}
+          alt="Logo Alzin"
+          className="mb-6 h-20 w-auto opacity-90"
+        />
+        <h1 className="mb-3 text-2xl font-bold text-mauve sm:text-3xl">
+          Deviens membre pour commander ton Alzin
+        </h1>
+        <p className="mb-6 max-w-xl text-sm text-gray-600 sm:text-base">
+          Les commandes d&apos;Alzin sont réservées aux membres connectés.
+          Crée ton compte ou connecte-toi pour accéder à la boutique et
+          suivre tes commandes.
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <a
+            href="/register"
+            className="inline-flex items-center justify-center rounded-lg bg-mauve px-5 py-2.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-purple-800 sm:text-base"
+          >
+            Devenir membre
+          </a>
+          <a
+            href="/login"
+            className="inline-flex items-center justify-center rounded-lg border border-mauve px-5 py-2.5 text-sm font-semibold text-mauve duration-150 hover:bg-mauve hover:text-white sm:text-base"
+          >
+            Se connecter
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -51,6 +51,7 @@ export default function AdminChants() {
   const [chants, setChants] = useState<Chant[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
+
   const [form, setForm] = useState<FormState>(initialForm);
   const [newCat, setNewCat] = useState("");
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
@@ -59,6 +60,15 @@ export default function AdminChants() {
   const [previewIllustration, setPreviewIllustration] = useState<string>();
   const [previewPDF, setPreviewPDF] = useState<string>();
   const [previewPartition, setPreviewPartition] = useState<string>();
+
+  // FILTRES
+  const [search, setSearch] = useState("");
+  const [filterCat, setFilterCat] = useState("Toutes");
+  const [order, setOrder] = useState("AZ");
+
+  // PAGINATION
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 10;
 
   const loadData = () => {
     fetch(API_CHANTS).then(r => r.json()).then(setChants);
@@ -105,6 +115,8 @@ export default function AdminChants() {
     setPreviewIllustration(c.illustration_chant_url);
     setPreviewPDF(c.paroles_pdf_url?.split("/").pop());
     setPreviewPartition(c.partition_url?.split("/").pop());
+
+    window.scrollTo({ top: 0, behavior: "smooth" })
   };
 
   const cancelEdit = () => {
@@ -123,7 +135,8 @@ export default function AdminChants() {
     fd.append("ville_origine", form.ville_origine);
     fd.append("paroles", form.paroles);
     fd.append("description", form.description);
-    fd.append("categories", JSON.stringify(selectedCats));
+    selectedCats.forEach(cat => {fd.append("categories", cat);
+});
 
     if (form.illustration_chant) fd.append("illustration_chant", form.illustration_chant);
     if (form.paroles_pdf) fd.append("paroles_pdf", form.paroles_pdf);
@@ -192,6 +205,25 @@ export default function AdminChants() {
     setPreviewPartition(undefined);
   };
 
+    // --------------------- FILTRE / TRI ---------------------
+  const filtered = chants
+    .filter(c => filterCat === "Toutes" || c.categories.includes(filterCat))
+    .filter(c =>
+      `${c.nom_chant} ${c.auteur} ${c.ville_origine}`
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    )
+    .sort((a, b) =>
+      order === "AZ"
+        ? a.nom_chant.localeCompare(b.nom_chant, "fr")
+        : b.nom_chant.localeCompare(a.nom_chant, "fr")
+    );
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const displayed = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  useEffect(() => setPage(1), [search, filterCat, order]);
+
   return (
     <div className="w-full min-h-screen px-10 py-8 flex flex-col gap-12">
 
@@ -205,23 +237,23 @@ export default function AdminChants() {
         <div className="grid gap-4 w-full">
           <input name="nom_chant" placeholder="Nom du chant" value={form.nom_chant}
             onChange={handleChange}
-            className="border border-mauve/60 p-3 rounded-xl w-full" />
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"/>
 
           <input name="auteur" placeholder="Auteur" value={form.auteur}
             onChange={handleChange}
-            className="border border-mauve/60 p-3 rounded-xl w-full" />
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"/>
 
           <input name="ville_origine" placeholder="Ville d'origine" value={form.ville_origine}
             onChange={handleChange}
-            className="border border-mauve/60 p-3 rounded-xl w-full" />
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"/>
 
           <textarea name="paroles" placeholder="Paroles" value={form.paroles}
             onChange={handleChange}
-            className="border border-mauve/60 p-3 rounded-xl w-full h-28" />
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full h-28" />
 
           <textarea name="description" placeholder="Description" value={form.description}
             onChange={handleChange}
-            className="border border-mauve/60 p-3 rounded-xl w-full h-20" />
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full h-20" />
         </div>
         {/* Sélection des catégories */}
         <div className="mt-6">
@@ -382,68 +414,86 @@ export default function AdminChants() {
       </section>
 
       {/* LISTE */}
-      <section className="w-full rounded-xl bg-white p-8 shadow border border-mauve/40">
+      <section className="rounded-xl bg-white p-8 shadow border border-mauve/40">
         <h2 className="text-2xl font-bold text-mauve mb-6">Liste des chants</h2>
 
-        <div className="flex flex-col gap-6 w-full">
-          {chants.map(c => (
-            <div key={c.id} className="border rounded-xl p-4 shadow w-full">
+        {/* Recherche + filtres */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <input
+            placeholder="Rechercher..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="border border-mauve/50 rounded-lg p-3 flex-1"
+          />
 
-              {/* TITRE */}
-              <div className="flex items-center justify-between">
+          <select
+            value={filterCat}
+            onChange={e => setFilterCat(e.target.value)}
+            className="border border-mauve/50 rounded-lg p-3"
+          >
+            <option value="Toutes">Toutes</option>
+            {categories.map(cat => (
+              <option key={cat}>{cat}</option>
+            ))}
+          </select>
+
+          <select
+            value={order}
+            onChange={e => setOrder(e.target.value)}
+            className="border border-mauve/50 rounded-lg p-3"
+          >
+            <option value="AZ">A → Z</option>
+            <option value="ZA">Z → A</option>
+          </select>
+        </div>
+
+        {/* LISTE DES CHANTS */}
+        <div className="flex flex-col gap-6">
+          {displayed.map(c => (
+            <div key={c.id} className="border rounded-xl p-4 shadow">
+              <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold text-mauve">{c.nom_chant}</h3>
 
                 <div className="flex gap-2">
                   <button
                     onClick={() => startEdit(c)}
-                    className="bg-yellow-500 text-white px-3 py-1 text-sm rounded hover:bg-yellow-600"
+                    className="bg-yellow-500 text-white px-3 py-1 rounded"
                   >
                     Modifier
                   </button>
 
                   <button
                     onClick={() => deleteChant(c.id)}
-                    className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
+                    className="bg-red-600 text-white px-3 py-1 rounded"
                   >
                     Supprimer
                   </button>
                 </div>
               </div>
 
-              {/* Catégories */}
-              <div className="mt-2 flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap mt-2">
                 {c.categories.map(cat => (
-                  <span
-                    key={cat}
-                    className="px-3 py-1 bg-gray-200 rounded-full text-sm flex items-center gap-2"
-                  >
+                  <span key={cat} className="px-3 py-1 bg-gray-200 rounded-full text-sm">
                     {cat}
-                    <button
-                      onClick={() => deleteCategorieFromChant(c.id, cat)}
-                      className="text-red-500 font-bold"
-                    >
-                      ×
-                    </button>
                   </span>
                 ))}
               </div>
-
-              {/* Ajouter une catégorie */}
-              <div className="flex gap-2 mt-3">
-                <input
-                  placeholder="Nouvelle catégorie"
-                  value={newCat}
-                  onChange={(e) => setNewCat(e.target.value)}
-                  className="border border-mauve/60 p-2 rounded-lg w-full"
-                />
-                <button
-                  onClick={() => addCategorieToChant(c.id)}
-                  className="bg-mauve text-white px-4 py-2 rounded-lg"
-                >
-                  Ajouter
-                </button>
-              </div>
             </div>
+          ))}
+        </div>
+
+        {/* PAGINATION */}
+        <div className="flex justify-center gap-3 mt-6">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i + 1)}
+              className={`px-4 py-2 rounded-lg border ${
+                page === i + 1 ? "bg-mauve text-white" : "border-mauve/40"
+              }`}
+            >
+              {i + 1}
+            </button>
           ))}
         </div>
       </section>

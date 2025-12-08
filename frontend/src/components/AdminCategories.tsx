@@ -35,15 +35,15 @@ const fetchCats = async () => {
   };
 
   /** Supprimer */
-  const deleteCategory = async (name: string) => {
-    if (name === "Autre") return; // protection
+const deleteCategory = async (name: string) => {
+  if (name === "Autre") return;
 
-    await fetch(`${API_URL}${name}/`, {
-      method: "DELETE",
-    });
+  await fetch(`${API_URL}?delete=${name}`, {
+    method: "DELETE",
+  });
 
-    fetchCats();
-  };
+  fetchCats();
+};
 
   /** Enregistrer modification */
   const saveEdit = async (oldName: string) => {

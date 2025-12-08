@@ -293,6 +293,10 @@ def admin_users_api(request, user_id=None, action=None):
 #------------------------------------------------------------------------
                             #CHANTS
 #------------------------------------------------------------------------
+#------------------------------------------------------------------------
+#                            CHANTS
+#------------------------------------------------------------------------
+
 def serialize_chant(c):
     return {
         "id": c.id,
@@ -322,46 +326,86 @@ def serialize_chant(c):
         ]
     }
 
+
 @csrf_exempt
 def chants_api(request, chant_id=None):
 
-    # --------- DETAIL ---------
+    # ============================================================
+    #                      GET (DETAIL)
+    # ============================================================
     if chant_id:
         try:
             c = chant.objects.get(id=chant_id)
         except chant.DoesNotExist:
             return JsonResponse({"error": "Chant introuvable"}, status=404)
 
+        # ---------------- DETAIL
         if request.method == "GET":
             return JsonResponse(serialize_chant(c))
 
         # --------- UPDATE ---------
         if request.method == "PUT":
+            # Mise à jour des champs texte
             c.nom_chant = request.POST.get("nom_chant", c.nom_chant)
             c.auteur = request.POST.get("auteur") or ""
             c.ville_origine = request.POST.get("ville_origine") or ""
             c.paroles = request.POST.get("paroles", c.paroles)
             c.description = request.POST.get("description") or ""
 
-            # fichiers
+            # -----------------------------
+            # Mise à jour des catégories
+            # -----------------------------
+            categories = request.POST.getlist("categories")
+            appartenir.objects.filter(chant=c).delete()
+
+            for cat_name in categories:
+                cat_obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
+                appartenir.objects.create(
+                    chant=c,
+                    categorie=cat_obj,
+                    utilisateur=None
+                )
+
+            # -----------------------------
+            # Remplacement des fichiers
+            # -----------------------------
+
+            # Illustration
             if "illustration_chant" in request.FILES:
+                if c.illustration_chant and c.illustration_chant.path:
+                    if os.path.isfile(c.illustration_chant.path):
+                        os.remove(c.illustration_chant.path)
                 c.illustration_chant = request.FILES["illustration_chant"]
+
+            # PDF paroles
             if "paroles_pdf" in request.FILES:
+                if c.paroles_pdf and c.paroles_pdf.path:
+                    if os.path.isfile(c.paroles_pdf.path):
+                        os.remove(c.paroles_pdf.path)
                 c.paroles_pdf = request.FILES["paroles_pdf"]
+
+            # Partition
             if "partition" in request.FILES:
+                if c.partition and c.partition.path:
+                    if os.path.isfile(c.partition.path):
+                        os.remove(c.partition.path)
                 c.partition = request.FILES["partition"]
 
             c.save()
             return JsonResponse({"success": True})
 
-        # --------- DELETE ---------
+        # ============================================================
+        #                      DELETE
+        # ============================================================
         if request.method == "DELETE":
             c.delete()
             return JsonResponse({"success": True})
 
         return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
-    # --------- LISTE ---------
+    # ============================================================
+    #                      GET (LISTE)
+    # ============================================================
     if request.method == "GET":
         qs = (
             chant.objects
@@ -372,28 +416,39 @@ def chants_api(request, chant_id=None):
         data = [serialize_chant(c) for c in qs]
         return JsonResponse(data, safe=False)
 
-    # --------- CREATION ---------
+    # ============================================================
+    #                      CRÉATION (POST)
+    # ============================================================
     if request.method == "POST":
         nom = request.POST.get("nom_chant")
         paroles = request.POST.get("paroles")
+        categories = request.POST.getlist("categories")
 
         if not nom or not paroles:
             return JsonResponse({"error": "Champs requis manquants"}, status=400)
 
+        # Création du chant
         c = chant.objects.create(
             nom_chant=nom,
-            auteur=request.POST.get("auteur") or "",
-            ville_origine=request.POST.get("ville_origine") or "",
+            auteur=request.POST.get("auteur", ""),
+            ville_origine=request.POST.get("ville_origine", ""),
             paroles=paroles,
-            description=request.POST.get("description") or "",
-            utilisateur=None,  # ou request.user.id si besoin
+            description=request.POST.get("description", ""),
+            utilisateur=None,
         )
 
-        # fichiers
+        # Ajout catégories
+        for cat_name in categories:
+            cat_obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
+            appartenir.objects.create(chant=c, categorie=cat_obj, utilisateur=None)
+
+        # FICHIERS
         if "illustration_chant" in request.FILES:
             c.illustration_chant = request.FILES["illustration_chant"]
+
         if "paroles_pdf" in request.FILES:
             c.paroles_pdf = request.FILES["paroles_pdf"]
+
         if "partition" in request.FILES:
             c.partition = request.FILES["partition"]
 
@@ -401,8 +456,7 @@ def chants_api(request, chant_id=None):
 
         return JsonResponse({"id": c.id}, status=201)
 
-    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
-
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405) 
 #------------------------------------------------------------------------
 #                           CATEGORIES
 #------------------------------------------------------------------------
@@ -711,6 +765,7 @@ def favoris_api(request):
     user_id = body.get("utilisateur_id")
     chant_id = body.get("chant_id")
     date_favori = body.get("date_favori")
+    
 
     # Vérifier si favori existe déjà
     if favoris.objects.filter(utilisateur_id=user_id, chant_id=chant_id).exists():

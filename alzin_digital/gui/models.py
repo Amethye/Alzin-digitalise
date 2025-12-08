@@ -405,3 +405,35 @@ class maitre_chant(models.Model):
 
     def __str__(self):
         return self.nom
+
+
+
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+import os
+
+# ----------------------------
+# Suppression fichiers chant
+# ----------------------------
+@receiver(post_delete, sender=chant)
+def delete_chant_files(sender, instance, **kwargs):
+    if instance.illustration_chant:
+        if os.path.isfile(instance.illustration_chant.path):
+            os.remove(instance.illustration_chant.path)
+
+    if instance.paroles_pdf:
+        if os.path.isfile(instance.paroles_pdf.path):
+            os.remove(instance.paroles_pdf.path)
+
+    if instance.partition:
+        if os.path.isfile(instance.partition.path):
+            os.remove(instance.partition.path)
+
+# ----------------------------
+# Suppression MP3 quand piste_audio supprimée
+# ----------------------------
+@receiver(post_delete, sender=piste_audio)
+def delete_audio_file(sender, instance, **kwargs):
+    if instance.fichier_mp3:
+        if os.path.isfile(instance.fichier_mp3.path):
+            os.remove(instance.fichier_mp3.path)
