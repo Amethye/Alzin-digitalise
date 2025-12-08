@@ -136,8 +136,8 @@ export default function Nav() {
 
   const userMenuLinks = [
     { label: "Mon compte", href: "/account" },
-    { label: "Mes commandes", href: "/myorders" },
-    { label: "Panier", href: "/cart" },
+    { label: "Mes favoris", href: "/favoris" },
+    { label: "Mes commandes", href: "/orders" },
   ];
 
   const toggleMobileMenu = () => {

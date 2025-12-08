@@ -13,15 +13,20 @@ urlpatterns = [
     path("chants/<int:chant_id>/",views.chants_api, name="api_chant_detail"),
     path("categories/", views.categorie_api, name="api_categorie"),
     path("maitres/", views.maitres_api, name="api_maitres"),
+    path("pistes-audio/", views.pistes_audio_api, name="api_pistes_audio"),
+    path("pistes-audio/<int:piste_id>/", views.pistes_audio_api, name="api_pistes_audio_detail"),
 
     path("favoris/", views.favoris_api, name="api_favoris"),
     path("commentaires/", views.commentaires_api, name="api_commentaires"),
-    path("pistes-audio/", views.pistes_audio_api, name="api_pistes_audio"),
+    
     path("chansonniers/", views.chansonniers_api, name="api_chansonniers"),
     path("fournisseurs/", views.fournisseurs_api, name="api_fournisseurs"),
     path("commandes/", views.commandes_api, name="api_commandes"),
     path("commandes-lignes/", views.commander_api, name="api_commander"),
+    
     path("evenements/", views.evenements_api, name="api_evenements"),
+    path("api/evenements/<int:id>/", views.evenement_detail_api, name="api_evenement_detail"),
+    
     path("chanter/", views.chanter_api, name="api_chanter"),
     path("appartenir/", views.appartenir_api, name="api_appartenir"),
     path("contenir/", views.contenir_api, name="api_contenir"),

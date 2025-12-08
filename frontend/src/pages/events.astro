@@ -1,0 +1,15 @@
+---
+import Layout from "../layouts/Layout.astro";
+import EvenementsList from "@components/evenementListe";
+---
+
+<Layout title = "Évènements">
+  <main class="flex flex-col items-center px-4 py-10">
+    <h1 class="mb-4 text-3xl font-bold text-mauve">Évènements</h1>
+    <p class="mb-8 max-w-2xl text-center text-gray-700">
+      Retrouve ici les prochains évènements ainsi que les moments forts passés.
+    </p>
+
+    <EvenementsList client:load />
+  </main>
+</Layout>

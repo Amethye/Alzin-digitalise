@@ -1,0 +1,16 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AdminEvenements from "@components/AdminEvenements.tsx";
+
+const pageTitle = "Admin - Évènements";
+---
+
+<Layout title={pageTitle}>
+  <main class="px-4 py-10">
+    <h1 class="mb-6 text-3xl font-bold text-mauve">
+      Gestion des évènements
+    </h1>
+
+    <AdminEvenements client:load />
+  </main>
+</Layout>

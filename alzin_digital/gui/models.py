@@ -43,54 +43,39 @@ class utilisateur(models.Model):
 # ================================================================================
 
 class chant(models.Model):
-    nom_chant = models.CharField(max_length = 50)
-    auteur = models.CharField(max_length = 100)
-    ville_origine = models.CharField(max_length = 85)
-    illustration_chant = models.FileField(upload_to='illustrations_chant/',null=True, blank=True)
+    nom_chant = models.CharField(max_length=100)
+    auteur = models.CharField(max_length=100, blank=True, null=True)
+    ville_origine = models.CharField(max_length=100, blank=True, null=True)
     paroles = models.TextField()
-    paroles_pdf = models.FileField(upload_to='paroles_pdf/',null=True, blank=True)
-    description = models.CharField(max_length = 255)
-    partition = models.FileField(upload_to='partitions/',null=True, blank=True)
-    categorie =models.ManyToManyField('categorie', blank = True)
-    
-    utilisateur = models.ForeignKey(
-        utilisateur,
-        on_delete=models.SET_NULL, 
-        null=True,
+    description = models.TextField(blank=True, null=True)
+
+    illustration_chant = models.ImageField(upload_to="illustrations/", null=True, blank=True)
+    paroles_pdf = models.FileField(upload_to="paroles_pdf/", null=True, blank=True)
+    partition = models.FileField(upload_to="partitions/", null=True, blank=True)
+
+    # relation avec categories
+    categorie = models.ManyToManyField(
+        "categorie",
+        related_name="chants",
         blank=True
     )
 
     class Meta:
-        db_table = 'chant'
-    
+        db_table = "chant"
+
     def __str__(self):
         return self.nom_chant
-    
-    def serialize(self):
-        return {
-            "id": self.id,
-            "nom_chant": self.nom_chant,
-            "auteur": self.auteur,
-            "ville_origine": self.ville_origine,
-            "paroles": self.paroles,
-            "description": self.description,
-            "illustration_chant_url": self.illustration_chant.url if self.illustration_chant else None,
-            "paroles_pdf_url": self.paroles_pdf.url if self.paroles_pdf else None,
-            "partition_url": self.partition.url if self.partition else None,
-        }
-
-
 
 # ================================================================================
 # CATÉGORIE & APPARTENIR
 # ================================================================================
 
 class categorie(models.Model):
-    nom_categorie = models.CharField(max_length = 50)
+    nom_categorie = models.CharField(max_length=50)
 
     class Meta:
-        db_table = 'catégories'
-    
+        db_table = "categories"
+
     def __str__(self):
         return self.nom_categorie
 
@@ -114,31 +99,33 @@ class appartenir(models.Model):
     class Meta:
         db_table = 'appartenir'
         unique_together = (('nom_categorie', 'chant', 'utilisateur'),)
-        # ça remplace ta clé primaire composée (Access)
+      
 
 # ================================================================================
 # PISTE AUDIO & NOTER
 # ================================================================================
 
 class piste_audio(models.Model):
-    fichier_mp3 = models.FileField(upload_to='pistes_audio/')
+    fichier_mp3 = models.FileField(upload_to="pistes_audio/")
+
     utilisateur = models.ForeignKey(
         utilisateur,
-        on_delete=models.SET_NULL, 
+        on_delete=models.SET_NULL,
         null=True,
         blank=True
     )
+
     chant = models.ForeignKey(
         chant,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="pistes_audio"
     )
-    
+
     class Meta:
-        db_table = 'piste_audio'
-    
+        db_table = "piste_audio"
+
     def __str__(self):
         return self.fichier_mp3.name
-
 
 class noter(models.Model):
     utilisateur = models.ForeignKey(

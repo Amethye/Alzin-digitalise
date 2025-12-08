@@ -283,7 +283,7 @@ def admin_users_api(request, user_id=None, action=None):
     
 
 #CHANTS
-def serialize_chant(c: chant):
+def serialize_chant(c):
     return {
         "id": c.id,
         "nom_chant": c.nom_chant,
@@ -294,59 +294,50 @@ def serialize_chant(c: chant):
         "illustration_chant_url": c.illustration_chant.url if c.illustration_chant else None,
         "paroles_pdf_url": c.paroles_pdf.url if c.paroles_pdf else None,
         "partition_url": c.partition.url if c.partition else None,
-        "categorie": [cat.nom_categorie for cat in c.categorie.all()]
+
+        # relations
+        "categories": [cat.nom_categorie for cat in c.categorie.all()],
+        "pistes_audio": [
+            {
+                "id": pa.id,
+                "fichier_mp3": pa.fichier_mp3.url if pa.fichier_mp3 else None,
+                "utilisateur": pa.utilisateur.id if pa.utilisateur else None,
+            }
+            for pa in c.piste_audio_set.all()
+        ]
     }
 
 @csrf_exempt
 def chants_api(request, chant_id=None):
-    # ---- GET /api/chants/<id>/ (DETAIL) ----
-    if chant_id is not None:
+
+    # ------- DETAIL -------
+    if chant_id:
         try:
             c = chant.objects.get(id=chant_id)
         except chant.DoesNotExist:
             return JsonResponse({"error": "Not found"}, status=404)
 
-        return JsonResponse({
-            "id": c.id,
-            "nom_chant": c.nom_chant,
-            "auteur": c.auteur,
-            "ville_origine": c.ville_origine,
-            "paroles": c.paroles,
-            "description": c.description,
-            "illustration_chant_url": c.illustration_chant.url if c.illustration_chant else None,
-            "paroles_pdf_url": c.paroles_pdf.url if c.paroles_pdf else None,
-            "partition_url": c.partition.url if c.partition else None,
-        })
+        return JsonResponse(serialize_chant(c))
 
-    # ---- GET /api/chants/ (LISTE) ----
+    # ------- LISTE -------
     if request.method == "GET":
-        qs = chant.objects.all().order_by("nom_chant")
-        data = [
-            {
-                "id": c.id,
-                "nom_chant": c.nom_chant,
-                "auteur": c.auteur,
-                "ville_origine": c.ville_origine,
-                "description": c.description,
-            }
-            for c in qs
-        ]
+        data = [serialize_chant(c) for c in chant.objects.all().order_by("nom_chant")]
         return JsonResponse(data, safe=False)
 
-    # ---- POST /api/chants/ (CREATE) ----
+    # ------- CREATION -------
     if request.method == "POST":
-        nom_chant = request.POST.get("nom_chant")
+        nom = request.POST.get("nom_chant")
         paroles = request.POST.get("paroles")
 
         c = chant.objects.create(
-            nom_chant=nom_chant,
-            auteur=request.POST.get("auteur", ""),
-            ville_origine=request.POST.get("ville_origine", ""),
+            nom_chant=nom,
+            auteur=request.POST.get("auteur") or "",
+            ville_origine=request.POST.get("ville_origine") or "",
             paroles=paroles,
-            description=request.POST.get("description", ""),
+            description=request.POST.get("description") or "",
         )
 
-        # Files
+        # files
         if "illustration_chant" in request.FILES:
             c.illustration_chant = request.FILES["illustration_chant"]
         if "paroles_pdf" in request.FILES:
@@ -355,15 +346,77 @@ def chants_api(request, chant_id=None):
             c.partition = request.FILES["partition"]
 
         c.save()
+
+        # catégories reçues sous forme d’une liste JSON
+        cats_raw = request.POST.get("categories", "[]")
+        cats = json.loads(cats_raw)
+
+        for cat_name in cats:
+            obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
+            c.categorie.add(obj)
+
+        c.save()
+
         return JsonResponse({"id": c.id}, status=201)
+
+    # ------- MODIFICATION -------
+    if request.method == "PUT":
+        try:
+            c = chant.objects.get(id=chant_id)
+        except chant.DoesNotExist:
+            return JsonResponse({"error": "Not found"}, status=404)
+
+        # données classiques
+        c.nom_chant = request.POST.get("nom_chant", c.nom_chant)
+        c.auteur = request.POST.get("auteur") or ""
+        c.ville_origine = request.POST.get("ville_origine") or ""
+        c.paroles = request.POST.get("paroles", c.paroles)
+        c.description = request.POST.get("description") or ""
+
+        # fichiers
+        if "illustration_chant" in request.FILES:
+            c.illustration_chant = request.FILES["illustration_chant"]
+        if "paroles_pdf" in request.FILES:
+            c.paroles_pdf = request.FILES["paroles_pdf"]
+        if "partition" in request.FILES:
+            c.partition = request.FILES["partition"]
+
+        c.save()
+
+        # catégories
+        if "categories" in request.POST:
+            cats_raw = request.POST.get("categories", "[]")
+            cats = json.loads(cats_raw)
+
+            # reset relation
+            c.categorie.clear()
+
+            for cat_name in cats:
+                obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
+                c.categorie.add(obj)
+
+        c.save()
+
+        return JsonResponse({"success": True})
+
+    # ------- SUPPRESSION -------
+    if request.method == "DELETE":
+        try:
+            c = chant.objects.get(id=chant_id)
+        except chant.DoesNotExist:
+            return JsonResponse({"error": "Not found"}, status=404)
+
+        c.delete()
+        return JsonResponse({"success": True})
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
 #PISTE AUDIO
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
-def pistes_audio_api(request):
-    if request.method == "GET":
+def pistes_audio_api(request, piste_id=None):
+
+    # ----------- GET /api/pistes-audio/ -------------
+    if request.method == "GET" and piste_id is None:
         qs = piste_audio.objects.select_related("utilisateur", "chant")
         data = [
             {
@@ -376,24 +429,52 @@ def pistes_audio_api(request):
         ]
         return JsonResponse(data, safe=False)
 
-    body = json.loads(request.body.decode("utf-8"))
+    # ----------- GET /api/pistes-audio/<id>/ ----------
+    if request.method == "GET" and piste_id:
+        try:
+            p = piste_audio.objects.get(id=piste_id)
+        except piste_audio.DoesNotExist:
+            return JsonResponse({"error": "Not found"}, status=404)
 
-    p = piste_audio.objects.create(
-        fichier_mp3=body["fichier_mp3"],      # chemin/nom du fichier
-        utilisateur_id=body.get("utilisateur_id"),
-        chant_id=body.get("chant_id"),
-    )
-
-    return JsonResponse(
-        {
+        return JsonResponse({
             "id": p.id,
-            "fichier_mp3": str(p.fichier_mp3),
+            "fichier_mp3": p.fichier_mp3.url if p.fichier_mp3 else None,
             "utilisateur_id": p.utilisateur_id,
             "chant_id": p.chant_id,
-        },
-        status=201,
-    )
+        })
 
+    # ----------- POST : upload --------------
+    if request.method == "POST":
+        chant_id = request.POST.get("chant_id")
+        utilisateur_id = request.POST.get("utilisateur_id")
+
+        if "fichier_mp3" not in request.FILES:
+            return JsonResponse({"error": "MP3 manquant"}, status=400)
+
+        mp3 = request.FILES["fichier_mp3"]
+
+        p = piste_audio.objects.create(
+            fichier_mp3=mp3,
+            chant_id=chant_id,
+            utilisateur_id=utilisateur_id,
+        )
+
+        return JsonResponse({
+            "id": p.id,
+            "fichier_mp3": p.fichier_mp3.url,
+        }, status=201)
+
+    # ----------- DELETE /api/pistes-audio/<id>/ ----------
+    if request.method == "DELETE" and piste_id:
+        try:
+            p = piste_audio.objects.get(id=piste_id)
+        except piste_audio.DoesNotExist:
+            return JsonResponse({"error": "Not found"}, status=404)
+
+        p.delete()
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
 #FAVORIS
 @csrf_exempt
@@ -659,6 +740,47 @@ def evenements_api(request):
         },
         status=201,
     )
+
+@csrf_exempt
+@require_http_methods(["PUT", "DELETE"])
+def evenement_detail_api(request, id):
+    try:
+        e = evenement.objects.get(id=id)
+    except evenement.DoesNotExist:
+        return JsonResponse({"error": "Évènement introuvable"}, status=404)
+
+    if request.method == "DELETE":
+        e.delete()
+        return JsonResponse({"status": "deleted"})
+
+    # PUT → modification (JSON)
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    e.nom_evenement = body.get("nom_evenement", e.nom_evenement)
+    e.date_evenement = body.get("date_evenement", e.date_evenement)
+    e.lieu = body.get("lieu", e.lieu)
+    e.annonce_fil_actu = body.get("annonce_fil_actu", e.annonce_fil_actu)
+    e.histoire = body.get("histoire", e.histoire)
+
+    e.save()
+
+    return JsonResponse(
+        {
+            "id": e.id,
+            "date_evenement": e.date_evenement.isoformat(),
+            "lieu": e.lieu,
+            "nom_evenement": e.nom_evenement,
+            "annonce_fil_actu": e.annonce_fil_actu,
+            "histoire": e.histoire,
+        }
+    )
+
+
+
+
 
 #CHANTER
 @csrf_exempt

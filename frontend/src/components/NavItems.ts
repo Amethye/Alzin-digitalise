@@ -9,6 +9,7 @@ export const navItems: NavItem[] = [
     { label: "Se connecter", href: "/login" },
     { label: "S'inscrire", href: "/register" },
     { label: "Chants", href: "/chants" },
+    { label: "Evènements", href: "/events" },
     { label : "Admin", href: "/admin", adminOnly: true},
     { label : "Site Fédé", href: "https://www.fede.fpms.ac.be/folklore" },
 ];
