@@ -58,55 +58,68 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [noUser, setNoUser] = useState(false);
 
-  useEffect(() => {
-    const email = localStorage.getItem("email");
+useEffect(() => {
+  const email = localStorage.getItem("email");
 
-    // ➜ Pas connecté : on affiche la page "devenir membre"
-    if (!email) {
-      setNoUser(true);
-      setLoading(false);
-      return;
-    }
+  // ➜ Pas d'email dans le navigateur : on considère que l'utilisateur n'est pas connecté
+  if (!email) {
+    setNoUser(true);
+    setLoading(false);
+    return;
+  }
 
-    const headers = {
-      "X-User-Email": email,
-    };
+  const headers = {
+    "X-User-Email": email,
+  };
 
-    async function fetchData() {
-      try {
-        setLoading(true);
-        setError(null);
+  async function fetchData() {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const [resCmd, resAlzins] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/mes-commandes/", {
-            headers,
-          }),
-          fetch("http://127.0.0.1:8000/api/mes-chansonniers/", {
-            headers,
-          }),
-        ]);
+      const [resCmd, resAlzins] = await Promise.all([
+        fetch("http://127.0.0.1:8000/api/mes-commandes/", {
+          headers,
+        }),
+        fetch("http://127.0.0.1:8000/api/mes-chansonniers/", {
+          headers,
+        }),
+      ]);
 
-        if (!resCmd.ok) {
-          throw new Error("Erreur lors du chargement des commandes.");
-        }
-        if (!resAlzins.ok) {
-          throw new Error("Erreur lors du chargement des alzins personnalisés.");
-        }
-
-        const dataCmd: Commande[] = await resCmd.json();
-        const dataAlzins: AlzinPerso[] = await resAlzins.json();
-
-        setCommandes(dataCmd || []);
-        setAlzins(dataAlzins || []);
-      } catch (e: any) {
-        setError(e.message || "Une erreur est survenue.");
-      } finally {
+      // ➜ Si l'API dit "utilisateur inconnu / pas autorisé",
+      // on bascule aussi sur l'écran "devenir membre"
+      if (
+        resCmd.status === 401 ||
+        resCmd.status === 403 ||
+        resCmd.status === 404
+      ) {
+        setNoUser(true);
         setLoading(false);
+        return;
       }
-    }
 
-    fetchData();
-  }, []);
+      if (!resCmd.ok) {
+        throw new Error("Erreur lors du chargement des commandes.");
+      }
+      if (!resAlzins.ok) {
+        throw new Error("Erreur lors du chargement des alzins personnalisés.");
+      }
+
+      const dataCmd: Commande[] = await resCmd.json();
+      const dataAlzins: AlzinPerso[] = await resAlzins.json();
+
+      setCommandes(dataCmd || []);
+      setAlzins(dataAlzins || []);
+    } catch (e: any) {
+      setError(e.message || "Une erreur est survenue.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchData();
+}, []);
+
 
   const commandesEnCours = commandes.filter((c) => !isPastStatus(c.status));
   const commandesPassees = commandes.filter((c) => isPastStatus(c.status));
@@ -114,9 +127,9 @@ export default function OrdersPage() {
   const handleCreateOrder = async () => {
     const email = localStorage.getItem("email");
     if (!email) {
+      setNoUser(true); // on renvoie vers l'écran membre
       setError("Tu dois être connecté pour créer une commande.");
-      return;
-    }
+      return; }
 
     try {
       setCreating(true);
