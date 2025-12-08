@@ -842,44 +842,11 @@ def commentaires_api(request):
 #Chansonnier
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
-def chansonniers_api(request):
-    if request.method == "GET":
-        qs = chansonnier_perso.objects.all()
-        data = [
-            {
-                "id": c.id,
-                "couleur": c.couleur,
-                "type_papier": c.type_papier,
-                "prix_vente_unite": float(c.prix_vente_unite),
-            }
-            for c in qs
-        ]
-        return JsonResponse(data, safe=False)
-
-    body = json.loads(request.body.decode("utf-8"))
-
-    c = chansonnier_perso.objects.create(
-        couleur=body["couleur"],
-        type_papier=body["type_papier"],
-        prix_vente_unite=body["prix_vente_unite"],
-    )
-
-    return JsonResponse(
-        {
-            "id": c.id,
-            "couleur": c.couleur,
-            "type_papier": c.type_papier,
-            "prix_vente_unite": float(c.prix_vente_unite),
-        },
-        status=201,
-    )
-
-
-@csrf_exempt
-@require_http_methods(["GET"])
 def mes_chansonniers_api(request):
     """
-    Retourne les chansonniers personnalisés (alzins perso) de l'utilisateur courant.
+    GET  : retourne les chansonniers personnalisés (alzins perso) de l'utilisateur courant.
+    POST : crée un nouveau chansonnier perso pour l'utilisateur courant
+           + (optionnel) associe une liste de chants via contenir_chant_perso.
     """
     email = request.headers.get("X-User-Email", "").lower()
     if not email:
@@ -890,9 +857,69 @@ def mes_chansonniers_api(request):
     except utilisateur.DoesNotExist:
         return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
 
-    qs = chansonnier_perso.objects.filter(utilisateur=user).order_by("-date_creation", "-id")
+    # --------- GET : liste mes alzins persos ----------
+    if request.method == "GET":
+        qs = chansonnier_perso.objects.filter(utilisateur=user).order_by(
+            "-date_creation", "-id"
+        )
 
-    data = [
+        data = [
+            {
+                "id": c.id,
+                "nom_chansonnier_perso": c.nom_chansonnier_perso,
+                "couleur": c.couleur,
+                "type_papier": c.type_papier,
+                "prix_vente_unite": str(c.prix_vente_unite),
+                "date_creation": c.date_creation.isoformat(),
+                "template_id": c.template_chansonnier_id,
+            }
+            for c in qs
+        ]
+
+        return JsonResponse(data, safe=False)
+
+    # --------- POST : création d'un nouvel alzin perso ----------
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    nom = body.get("nom_chansonnier_perso")
+    couleur = body.get("couleur")
+    type_papier = body.get("type_papier")
+    prix_vente_unite = body.get("prix_vente_unite", 0)
+    template_id = body.get("template_id")
+    chant_ids = body.get("chant_ids", [])
+
+    if not nom or not couleur or not type_papier:
+        return JsonResponse(
+            {"error": "nom_chansonnier_perso, couleur et type_papier sont requis"},
+            status=400,
+        )
+
+    # Création du chansonnier perso
+    c = chansonnier_perso.objects.create(
+        utilisateur=user,
+        nom_chansonnier_perso=nom,
+        couleur=couleur,
+        type_papier=type_papier,
+        prix_vente_unite=prix_vente_unite,
+        template_chansonnier_id=template_id,
+        date_creation=date.today(),
+    )
+
+    # Association des chants, si fournis
+    for chant_id in chant_ids:
+        try:
+            contenir_chant_perso.objects.create(
+                chant_id=chant_id,
+                chansonnier_perso=c,
+            )
+        except Exception:
+            # on ignore les IDs invalides pour l'instant
+            continue
+
+    return JsonResponse(
         {
             "id": c.id,
             "nom_chansonnier_perso": c.nom_chansonnier_perso,
@@ -901,11 +928,92 @@ def mes_chansonniers_api(request):
             "prix_vente_unite": str(c.prix_vente_unite),
             "date_creation": c.date_creation.isoformat(),
             "template_id": c.template_chansonnier_id,
-        }
-        for c in qs
-    ]
+        },
+        status=201,
+    )
 
+
+@csrf_exempt
+@require_http_methods(["GET", "PUT", "DELETE"])
+def chansonnier_perso_detail_api(request, chansonnier_id):
+    try:
+        c = chansonnier_perso.objects.get(id=chansonnier_id)
+    except chansonnier_perso.DoesNotExist:
+        return JsonResponse({"error": "Chansonnier perso introuvable"}, status=404)
+
+    if request.method == "GET":
+        # On renvoie aussi la liste des chants associés
+        chants_ids = list(
+            contenir_chant_perso.objects.filter(chansonnier_perso=c).values_list(
+                "chant_id", flat=True
+            )
+        )
+
+        return JsonResponse(
+            {
+                "id": c.id,
+                "nom_chansonnier_perso": c.nom_chansonnier_perso,
+                "couleur": c.couleur,
+                "type_papier": c.type_papier,
+                "prix_vente_unite": str(c.prix_vente_unite),
+                "date_creation": c.date_creation.isoformat(),
+                "template_id": c.template_chansonnier_id,
+                "chant_ids": chants_ids,
+            }
+        )
+
+    if request.method == "DELETE":
+        c.delete()
+        return JsonResponse({"success": True})
+
+    # PUT = mise à jour
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    c.nom_chansonnier_perso = body.get("nom_chansonnier_perso", c.nom_chansonnier_perso)
+    c.couleur = body.get("couleur", c.couleur)
+    c.type_papier = body.get("type_papier", c.type_papier)
+    c.prix_vente_unite = body.get("prix_vente_unite", c.prix_vente_unite)
+    template_id = body.get("template_id", c.template_chansonnier_id)
+    c.template_chansonnier_id = template_id
+
+    c.save()
+
+    # Si on a "chant_ids", on remplace complètement la liste de chants
+    if "chant_ids" in body:
+        chant_ids = body.get("chant_ids", [])
+
+        contenir_chant_perso.objects.filter(chansonnier_perso=c).delete()
+        for chant_id in chant_ids:
+            try:
+                contenir_chant_perso.objects.create(
+                    chant_id=chant_id,
+                    chansonnier_perso=c,
+                )
+            except Exception:
+                continue
+
+    return JsonResponse({"success": True})
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def templates_chansonniers_api(request):
+    qs = template_chansonnier.objects.all()
+    data = [
+        {
+            "id": t.id,
+            # si ton modèle a un champ "nom_template", on le renvoie,
+            # sinon on utilise str(t)
+            "nom_template": getattr(t, "nom_template", str(t)),
+        }
+        for t in qs
+    ]
     return JsonResponse(data, safe=False)
+
+
 
 
 #----------------------------------------------------------------------------------------

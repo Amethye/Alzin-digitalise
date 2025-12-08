@@ -19,7 +19,18 @@ urlpatterns = [
     
     path("categories/", views.categories_api, name="api_categorie"),
     
-    
+
+    path("details-commande/", views.details_commande_api, name="api_details_commande"),
+    path("commandes-lignes/", views.details_commande_api, name="api_commandes_lignes"),  # alias pour le front
+    path("mes-chansonniers/", views.mes_chansonniers_api, name="api_mes_chansonniers"),
+    path(
+        "mes-chansonniers/<int:chansonnier_id>/",
+        views.chansonnier_perso_detail_api,
+        name="api_chansonnier_perso_detail",
+    ),
+
+    path("templates-chansonniers/", views.templates_chansonniers_api, name="api_templates_chansonniers"),
+
     
     path("pistes-audio/", views.pistes_audio_api, name="api_pistes_audio"),
     path("pistes-audio/<int:piste_id>/", views.pistes_audio_api, name="api_pistes_audio_detail"),
@@ -31,7 +42,7 @@ urlpatterns = [
 
     path("commentaires/", views.commentaires_api, name="api_commentaires"),
     
-    path("chansonniers/", views.chansonniers_api, name="api_chansonniers"),
+    path("chansonniers/", views.mes_chansonniers_api, name="api_chansonniers"),
     path("fournisseurs/", views.fournisseurs_api, name="api_fournisseurs"),
     path("commandes/", views.commandes_api, name="api_commandes"),
     path("mes-commandes/", views.mes_commandes_api, name="api_mes_commandes"),
