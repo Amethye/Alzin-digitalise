@@ -1123,8 +1123,9 @@ def evenement_detail_api(request, id):
 
 
 
-
-#CHANTER
+#---------------------------------------------------------------
+#                            CHANTER
+#---------------------------------------------------------------
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def chanter_api(request):
@@ -1151,6 +1152,21 @@ def chanter_api(request):
         {"id": c.id, "chant_id": c.chant_id, "evenement_id": c.evenement_id},
         status=201,
     )
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def chanter_detail_api(request, chanter_id):
+    try:
+        c = chanter.objects.get(id=chanter_id)
+    except chanter.DoesNotExist:
+        return JsonResponse({"error": "Lien chant-évènement introuvable"}, status=404)
+
+    c.delete()
+    return JsonResponse({"status": "deleted"})
+
+
+
 
 #CONTENIR #
 @csrf_exempt

@@ -1,0 +1,10 @@
+---
+import Layout from "@layouts/Layout.astro";
+import AdminChanter from "@components/AdminChanter.tsx";
+---
+
+<Layout title="Admin - Liens chants / évènements" fullWidth={true}>
+  <main class="flex justify-center bg-white px-4 py-6 sm:px-6 sm:py-8">
+    <AdminChanter client:load />
+  </main>
+</Layout>

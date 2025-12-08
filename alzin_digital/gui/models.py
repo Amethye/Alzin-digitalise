@@ -324,7 +324,7 @@ class details_commande(models.Model):
         return f"Order {self.commande} includes {self.quantite} of {self.chansonnier_perso}"
 
 # ================================================================================
-# FOURNISSEUR (+ relation fournir)
+#                       FOURNISSEUR (+ relation fournir)
 # ================================================================================
 
 class fournisseur(models.Model):
@@ -358,7 +358,7 @@ class fournir(models.Model):
 
 
 # ================================================================================
-# ÉVÉNEMENT & CHANTER
+#                            ÉVÉNEMENT & CHANTER
 # ================================================================================
 
 class evenement(models.Model):
@@ -397,7 +397,7 @@ class chanter(models.Model):
 
 
 # ================================================================================
-# MAÎTRE CHANT
+#                                   MAÎTRE CHANT
 # ================================================================================
 
 class maitre_chant(models.Model):
