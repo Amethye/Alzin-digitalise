@@ -135,8 +135,14 @@ export default function AdminChants() {
     fd.append("ville_origine", form.ville_origine);
     fd.append("paroles", form.paroles);
     fd.append("description", form.description);
-    selectedCats.forEach(cat => {fd.append("categories", cat);
-});
+
+    // --------- FIX : assigner "Autre" si aucune catégorie sélectionnée ---------
+    const finalCategories = selectedCats.length > 0 ? selectedCats : ["Autre"];
+
+    finalCategories.forEach((cat) => {
+      fd.append("categories", cat);
+    });
+    // --------------------------------------------------------------------------
 
     if (form.illustration_chant) fd.append("illustration_chant", form.illustration_chant);
     if (form.paroles_pdf) fd.append("paroles_pdf", form.paroles_pdf);
@@ -148,6 +154,7 @@ export default function AdminChants() {
     const res = await fetch(url, { method, body: fd });
     if (!res.ok) return alert("Erreur lors de l’enregistrement");
 
+    // AUDIO
     if (form.new_audio) {
       const chantId = editingId ?? (await res.json()).id;
       const fd2 = new FormData();
@@ -157,29 +164,6 @@ export default function AdminChants() {
     }
 
     cancelEdit();
-    loadData();
-  };
-
-  const deleteChant = async (id: number) => {
-    if (!confirm("Supprimer ce chant ?")) return;
-    await fetch(`${API_CHANTS}${id}/`, { method: "DELETE" });
-    loadData();
-  };
-
-  const addCategorieToChant = async (chantId: number) => {
-    if (!newCat.trim()) return;
-
-    await fetch(API_APPARTENIR, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chant_id: chantId,
-        categorie: newCat.trim(),
-        utilisateur: null,
-      }),
-    });
-
-    setNewCat("");
     loadData();
   };
 

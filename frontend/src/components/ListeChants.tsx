@@ -24,28 +24,26 @@ export default function ListeChants() {
   const [chants, setChants] = useState<Chant[]>([]);
   const [favoris, setFavoris] = useState<Favori[]>([]);
   const [USER_ID, setUSER_ID] = useState<number | null>(null);
+  const [loadedUser, setLoadedUser] = useState(false); // 🔥 indispensable
 
   const [search, setSearch] = useState("");
 
-  // Charger chants + favoris
   const loadData = async (userId: number | null) => {
     const resChants = await fetch(API_CHANTS);
-    const dataChants = await resChants.json();
-    setChants(dataChants);
+    setChants(await resChants.json());
 
-    if (userId) {
+    if (userId !== null) {
       const resFav = await fetch(`${API_FAVORIS}?utilisateur_id=${userId}`);
-      const dataFav = await resFav.json();
-      setFavoris(dataFav);
+      setFavoris(await resFav.json());
     }
   };
 
   useEffect(() => {
-    const storageId = localStorage.getItem("utilisateur_id");
-    const parsed = storageId && !isNaN(Number(storageId)) ? Number(storageId) : null;
+    const raw = localStorage.getItem("utilisateur_id");
+    const parsed = raw && !isNaN(Number(raw)) ? Number(raw) : null;
 
-    console.log("ID utilisateur récupéré :", parsed);
     setUSER_ID(parsed);
+    setLoadedUser(true); // 🔥 assure le re-render
     loadData(parsed);
   }, []);
 
@@ -53,7 +51,7 @@ export default function ListeChants() {
     favoris.some((f) => f.chant_id === chantId && f.utilisateur_id === USER_ID);
 
   const addFavori = async (chantId: number) => {
-    if (!USER_ID) return;
+    if (USER_ID === null) return;
     await fetch(API_FAVORIS, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -67,9 +65,7 @@ export default function ListeChants() {
   };
 
   const removeFavori = async (chantId: number) => {
-    const fav = favoris.find(
-      (f) => f.chant_id === chantId && f.utilisateur_id === USER_ID
-    );
+    const fav = favoris.find((f) => f.chant_id === chantId && f.utilisateur_id === USER_ID);
     if (!fav) return;
 
     await fetch(`${API_FAVORIS}?id=${fav.id}`, { method: "DELETE" });
@@ -77,28 +73,19 @@ export default function ListeChants() {
   };
 
   const toggleFavori = (chantId: number) => {
-    if (!USER_ID) return;
-    if (isFavoris(chantId)) removeFavori(chantId);
-    else addFavori(chantId);
+    if (USER_ID === null) return;
+    isFavoris(chantId) ? removeFavori(chantId) : addFavori(chantId);
   };
 
-  // ----------------------
-  //    RECHERCHE
-  // ----------------------
   const filteredChants = chants.filter((c) =>
     `${c.nom_chant} ${c.auteur} ${c.ville_origine}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
 
-  // ----------------------
-  //   GROUPER PAR CAT
-  // ----------------------
   const categoriesMap: Record<string, Chant[]> = {};
-
   filteredChants.forEach((chant) => {
     const chantCats = chant.categories.length > 0 ? chant.categories : ["Autre"];
-
     chantCats.forEach((cat) => {
       if (!categoriesMap[cat]) categoriesMap[cat] = [];
       categoriesMap[cat].push(chant);
@@ -110,7 +97,6 @@ export default function ListeChants() {
 
       <h1 className="text-3xl font-bold text-mauve">Chants classés par catégorie</h1>
 
-      {/* Recherche */}
       <input
         type="text"
         placeholder="Rechercher un chant..."
@@ -119,7 +105,6 @@ export default function ListeChants() {
         className="border border-mauve/40 p-3 rounded-lg w-full max-w-md"
       />
 
-      {/* AFFICHAGE PAR CATÉGORIE */}
       {Object.keys(categoriesMap)
         .sort((a, b) => a.localeCompare(b, "fr"))
         .map((cat) => (
@@ -130,15 +115,19 @@ export default function ListeChants() {
               {categoriesMap[cat].map((ch) => (
                 <div
                   key={ch.id}
-                  className="border border-mauve/30 rounded-xl p-5 shadow bg-white"
+                  onClick={() => (window.location.href = `/chants/${ch.id}`)} // 🔥 redirection
+                  className="border border-mauve/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-mauve/5 transition"
                 >
-                  {/* HEADER */}
                   <div className="flex justify-between items-start">
                     <h3 className="text-xl font-bold text-mauve">{ch.nom_chant}</h3>
 
-                    {USER_ID && (
+                    {/* 🔥 Le cœur fonctionne enfin ! */}
+                    {loadedUser && USER_ID !== null && (
                       <button
-                        onClick={() => toggleFavori(ch.id)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // empêche d'ouvrir la page
+                          toggleFavori(ch.id);
+                        }}
                         className="text-3xl"
                       >
                         {isFavoris(ch.id) ? (
@@ -150,14 +139,12 @@ export default function ListeChants() {
                     )}
                   </div>
 
-                  {/* Auteur */}
                   {ch.auteur && (
                     <p className="mt-2 text-gray-600">
                       <strong>Auteur :</strong> {ch.auteur}
                     </p>
                   )}
 
-                  {/* Audio */}
                   {ch.pistes_audio.length > 0 && (
                     <div className="mt-3 flex flex-col gap-2">
                       {ch.pistes_audio.map((p) => (
@@ -167,14 +154,6 @@ export default function ListeChants() {
                       ))}
                     </div>
                   )}
-
-                  {/* Paroles */}
-                  <button
-                    onClick={() => alert(ch.paroles)}
-                    className="mt-4 w-full bg-mauve text-white py-2 rounded-lg hover:bg-mauve/90"
-                  >
-                    Voir les paroles
-                  </button>
                 </div>
               ))}
             </div>
