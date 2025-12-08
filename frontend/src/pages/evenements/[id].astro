@@ -1,0 +1,13 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import EvenementDetail from "@components/EvenementDetail.tsx";
+
+const { id } = Astro.params;
+const pageTitle = "Évènement";
+---
+
+<Layout title={pageTitle}>
+  <main class="px-4 py-10">
+    <EvenementDetail id={Number(id)} client:load />
+  </main>
+</Layout>

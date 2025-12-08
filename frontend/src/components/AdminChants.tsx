@@ -53,7 +53,9 @@ export default function AdminChants() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(initialForm);
   const [newCat, setNewCat] = useState("");
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
 
+  // PREVIEWS
   const [previewIllustration, setPreviewIllustration] = useState<string>();
   const [previewPDF, setPreviewPDF] = useState<string>();
   const [previewPartition, setPreviewPartition] = useState<string>();
@@ -72,17 +74,16 @@ export default function AdminChants() {
 
     if (files) {
       const file = files[0];
-      setForm(f => ({ ...f, [name]: file }));
+      setForm((f) => ({ ...f, [name]: file }));
 
-      if (name === "illustration_chant")
-        setPreviewIllustration(URL.createObjectURL(file));
+      if (name === "illustration_chant") setPreviewIllustration(URL.createObjectURL(file));
       if (name === "paroles_pdf") setPreviewPDF(file.name);
       if (name === "partition") setPreviewPartition(file.name);
 
       return;
     }
 
-    setForm(f => ({ ...f, [name]: value }));
+    setForm((f) => ({ ...f, [name]: value }));
   };
 
   const startEdit = (c: Chant) => {
@@ -99,7 +100,8 @@ export default function AdminChants() {
       partition: null,
       new_audio: null,
     });
-
+    
+    setSelectedCats(c.categories || []);
     setPreviewIllustration(c.illustration_chant_url);
     setPreviewPDF(c.paroles_pdf_url?.split("/").pop());
     setPreviewPartition(c.partition_url?.split("/").pop());
@@ -111,6 +113,7 @@ export default function AdminChants() {
     setPreviewIllustration(undefined);
     setPreviewPDF(undefined);
     setPreviewPartition(undefined);
+    setSelectedCats([]);
   };
 
   const saveChant = async () => {
@@ -120,6 +123,7 @@ export default function AdminChants() {
     fd.append("ville_origine", form.ville_origine);
     fd.append("paroles", form.paroles);
     fd.append("description", form.description);
+    fd.append("categories", JSON.stringify(selectedCats));
 
     if (form.illustration_chant) fd.append("illustration_chant", form.illustration_chant);
     if (form.paroles_pdf) fd.append("paroles_pdf", form.paroles_pdf);
@@ -129,10 +133,7 @@ export default function AdminChants() {
     const method = editingId ? "PUT" : "POST";
 
     const res = await fetch(url, { method, body: fd });
-    if (!res.ok) {
-      alert("Erreur lors de l’enregistrement");
-      return;
-    }
+    if (!res.ok) return alert("Erreur lors de l’enregistrement");
 
     if (form.new_audio) {
       const chantId = editingId ?? (await res.json()).id;
@@ -155,7 +156,7 @@ export default function AdminChants() {
   const addCategorieToChant = async (chantId: number) => {
     if (!newCat.trim()) return;
 
-    const res = await fetch(API_APPARTENIR, {
+    await fetch(API_APPARTENIR, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -165,10 +166,8 @@ export default function AdminChants() {
       }),
     });
 
-    if (res.ok) {
-      setNewCat("");
-      loadData();
-    }
+    setNewCat("");
+    loadData();
   };
 
   const deleteCategorieFromChant = async (chantId: number, cat: string) => {
@@ -177,7 +176,7 @@ export default function AdminChants() {
     });
     loadData();
   };
-  
+
   const clearIllustration = () => {
     setForm(f => ({ ...f, illustration_chant: null }));
     setPreviewIllustration(undefined);
@@ -194,7 +193,7 @@ export default function AdminChants() {
   };
 
   return (
-    <div className="w-full min-h-screen px-10 py-8 flex flex-col gap-10">
+    <div className="w-full min-h-screen px-10 py-8 flex flex-col gap-12">
 
       {/* FORMULAIRE */}
       <section className="w-full rounded-xl border border-mauve/40 bg-white p-8 shadow">
@@ -202,12 +201,64 @@ export default function AdminChants() {
           {editingId ? "Modifier un chant" : "Ajouter un chant"}
         </h2>
 
+        {/* CHAMPS TEXTE */}
         <div className="grid gap-4 w-full">
-          <input name="nom_chant" placeholder="Nom du chant" value={form.nom_chant} onChange={handleChange} className="border p-3 rounded-xl w-full" />
-          <input name="auteur" placeholder="Auteur" value={form.auteur} onChange={handleChange} className="border p-3 rounded-xl w-full" />
-          <input name="ville_origine" placeholder="Ville d'origine" value={form.ville_origine} onChange={handleChange} className="border p-3 rounded-xl w-full" />
-          <textarea name="paroles" placeholder="Paroles" value={form.paroles} onChange={handleChange} className="border p-3 rounded-xl w-full h-28" />
-          <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} className="border p-3 rounded-xl w-full h-20" />
+          <input name="nom_chant" placeholder="Nom du chant" value={form.nom_chant}
+            onChange={handleChange}
+            className="border border-mauve/60 p-3 rounded-xl w-full" />
+
+          <input name="auteur" placeholder="Auteur" value={form.auteur}
+            onChange={handleChange}
+            className="border border-mauve/60 p-3 rounded-xl w-full" />
+
+          <input name="ville_origine" placeholder="Ville d'origine" value={form.ville_origine}
+            onChange={handleChange}
+            className="border border-mauve/60 p-3 rounded-xl w-full" />
+
+          <textarea name="paroles" placeholder="Paroles" value={form.paroles}
+            onChange={handleChange}
+            className="border border-mauve/60 p-3 rounded-xl w-full h-28" />
+
+          <textarea name="description" placeholder="Description" value={form.description}
+            onChange={handleChange}
+            className="border border-mauve/60 p-3 rounded-xl w-full h-20" />
+        </div>
+        {/* Sélection des catégories */}
+        <div className="mt-6">
+          <h3 className="font-semibold text-lg mb-2">Catégories</h3>
+
+          <div className="flex flex-wrap gap-3">
+            {categories.map((cat) => (
+              <label
+                key={cat}
+                className={`px-3 py-1 border rounded-full cursor-pointer select-none ${
+                  selectedCats.includes(cat)
+                    ? "bg-mauve text-white border-mauve"
+                    : "border-gray-300"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={selectedCats.includes(cat)}
+                  onChange={() => {
+                    if (selectedCats.includes(cat)) {
+                      setSelectedCats(selectedCats.filter((c) => c !== cat));
+                    } else {
+                      setSelectedCats([...selectedCats, cat]);
+                    }
+                  }}
+                />
+                {cat}
+              </label>
+            ))}
+          </div>
+
+          {selectedCats.length === 0 && (
+            <p className="text-sm text-gray-500 mt-1">
+              (Aucune catégorie → sera classé dans "Autre")
+            </p>
+          )}
         </div>
 
         {/* FICHIERS */}
@@ -217,25 +268,16 @@ export default function AdminChants() {
           <div className="flex flex-col gap-1">
             <div className="flex justify-between items-center">
               <span className="font-semibold text-lg">Illustration</span>
-
-              {/* Boutons à droite */}
               <div className="flex gap-2">
                 <label className="bg-mauve text-white px-3 py-1 rounded-lg cursor-pointer text-sm">
                   {previewIllustration ? "Changer" : "Ajouter"}
-                  <input
-                    type="file"
-                    name="illustration_chant"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleChange}
-                  />
+                  <input type="file" name="illustration_chant" accept="image/*"
+                    className="hidden" onChange={handleChange} />
                 </label>
 
                 {previewIllustration && (
-                  <button
-                    onClick={clearIllustration}
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600"
-                  >
+                  <button onClick={clearIllustration}
+                    className="bg-red-500 text-white px-3 py-1 text-sm rounded-lg">
                     Retirer
                   </button>
                 )}
@@ -243,14 +285,12 @@ export default function AdminChants() {
             </div>
 
             {previewIllustration && (
-              <img
-                src={previewIllustration}
-                className="mt-2 h-40 w-full max-w-md object-cover rounded-xl shadow"
-              />
+              <img src={previewIllustration}
+                className="mt-2 h-40 w-full max-w-md object-cover rounded-xl shadow" />
             )}
           </div>
 
-          {/* PDF PAROLES */}
+          {/* PDF */}
           <div className="flex flex-col gap-1">
             <div className="flex justify-between items-center">
               <span className="font-semibold text-lg">Paroles PDF</span>
@@ -258,20 +298,13 @@ export default function AdminChants() {
               <div className="flex gap-2">
                 <label className="bg-mauve text-white px-3 py-1 rounded-lg cursor-pointer text-sm">
                   {previewPDF ? "Changer" : "Ajouter"}
-                  <input
-                    type="file"
-                    name="paroles_pdf"
-                    accept="application/pdf"
-                    className="hidden"
-                    onChange={handleChange}
-                  />
+                  <input type="file" name="paroles_pdf" accept="application/pdf"
+                    className="hidden" onChange={handleChange} />
                 </label>
 
                 {previewPDF && (
-                  <button
-                    onClick={clearPDF}
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600"
-                  >
+                  <button onClick={clearPDF}
+                    className="bg-red-500 text-white px-3 py-1 text-sm rounded-lg">
                     Retirer
                   </button>
                 )}
@@ -291,20 +324,13 @@ export default function AdminChants() {
               <div className="flex gap-2">
                 <label className="bg-mauve text-white px-3 py-1 rounded-lg cursor-pointer text-sm">
                   {previewPartition ? "Changer" : "Ajouter"}
-                  <input
-                    type="file"
-                    name="partition"
-                    accept=".pdf,.png,.jpg,.jpeg"
-                    className="hidden"
-                    onChange={handleChange}
-                  />
+                  <input type="file" name="partition" accept=".pdf,.png,.jpg,.jpeg"
+                    className="hidden" onChange={handleChange} />
                 </label>
 
                 {previewPartition && (
-                  <button
-                    onClick={clearPartition}
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600"
-                  >
+                  <button onClick={clearPartition}
+                    className="bg-red-500 text-white px-3 py-1 text-sm rounded-lg">
                     Retirer
                   </button>
                 )}
@@ -324,22 +350,13 @@ export default function AdminChants() {
               <div className="flex gap-2">
                 <label className="bg-mauve text-white px-3 py-1 rounded-lg cursor-pointer text-sm">
                   {form.new_audio ? "Changer" : "Ajouter"}
-                  <input
-                    type="file"
-                    name="new_audio"
-                    accept=".mp3"
-                    className="hidden"
-                    onChange={handleChange}
-                  />
+                  <input type="file" name="new_audio" accept=".mp3"
+                    className="hidden" onChange={handleChange} />
                 </label>
 
                 {form.new_audio && (
-                  <button
-                    onClick={() =>
-                      setForm(f => ({ ...f, new_audio: null }))
-                    }
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600"
-                  >
+                  <button onClick={() => setForm(f => ({ ...f, new_audio: null }))}
+                    className="bg-red-500 text-white px-3 py-1 text-sm rounded-lg">
                     Retirer
                   </button>
                 )}
@@ -350,20 +367,30 @@ export default function AdminChants() {
               <p className="mt-1 text-gray-700 text-sm">🎧 {form.new_audio.name}</p>
             )}
           </div>
-
         </div>
+
+        {/* BOUTON FINAL */}
+        <div className="mt-10 flex justify-center">
+          <button
+            onClick={saveChant}
+            className="bg-mauve text-white px-6 py-3 rounded-xl text-lg font-semibold shadow hover:bg-mauve/80 transition w-full max-w-sm"
+          >
+            {editingId ? "Mettre à jour le chant" : "Créer le chant"}
+          </button>
+        </div>
+
       </section>
 
-      {/* LISTE DES CHANTS */}
+      {/* LISTE */}
       <section className="w-full rounded-xl bg-white p-8 shadow border border-mauve/40">
         <h2 className="text-2xl font-bold text-mauve mb-6">Liste des chants</h2>
 
-        <div className="flex flex-col gap-4 w-full">
+        <div className="flex flex-col gap-6 w-full">
           {chants.map(c => (
             <div key={c.id} className="border rounded-xl p-4 shadow w-full">
 
-              {/* TITRE + BOUTONS EN LIGNE */}
-              <div className="flex items-center justify-between w-full">
+              {/* TITRE */}
+              <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-mauve">{c.nom_chant}</h3>
 
                 <div className="flex gap-2">
@@ -373,6 +400,7 @@ export default function AdminChants() {
                   >
                     Modifier
                   </button>
+
                   <button
                     onClick={() => deleteChant(c.id)}
                     className="bg-red-600 text-white px-3 py-1 text-sm rounded hover:bg-red-700"
@@ -382,10 +410,13 @@ export default function AdminChants() {
                 </div>
               </div>
 
-              {/* catégories */}
-              <div className="mt-2 flex gap-2 flex-wrap w-full">
+              {/* Catégories */}
+              <div className="mt-2 flex gap-2 flex-wrap">
                 {c.categories.map(cat => (
-                  <span key={cat} className="px-3 py-1 bg-gray-200 rounded-full text-sm flex items-center gap-2">
+                  <span
+                    key={cat}
+                    className="px-3 py-1 bg-gray-200 rounded-full text-sm flex items-center gap-2"
+                  >
                     {cat}
                     <button
                       onClick={() => deleteCategorieFromChant(c.id, cat)}
@@ -397,27 +428,25 @@ export default function AdminChants() {
                 ))}
               </div>
 
-              {/* ajouter une catégorie */}
-              <div className="flex gap-2 mt-3 w-full">
+              {/* Ajouter une catégorie */}
+              <div className="flex gap-2 mt-3">
                 <input
                   placeholder="Nouvelle catégorie"
                   value={newCat}
-                  onChange={e => setNewCat(e.target.value)}
-                  className="border p-2 rounded-lg w-full"
+                  onChange={(e) => setNewCat(e.target.value)}
+                  className="border border-mauve/60 p-2 rounded-lg w-full"
                 />
                 <button
                   onClick={() => addCategorieToChant(c.id)}
-                  className="bg-mauve text-white px-4 rounded-lg"
+                  className="bg-mauve text-white px-4 py-2 rounded-lg"
                 >
                   Ajouter
                 </button>
               </div>
-
             </div>
           ))}
         </div>
       </section>
-
     </div>
   );
 }

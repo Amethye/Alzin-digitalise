@@ -1,0 +1,10 @@
+---
+import Layout from "@layouts/Layout.astro";
+import OrdersPage from "@components/OrdersPage.tsx";
+---
+
+<Layout title="Mes commandes d'Alzin">
+  <main class="flex justify-center bg-white px-4 py-6 sm:px-6 sm:py-8">
+    <OrdersPage client:load />
+  </main>
+</Layout>

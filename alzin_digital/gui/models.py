@@ -135,14 +135,15 @@ class noter(models.Model):
         piste_audio,
         on_delete=models.CASCADE
     )
-    date_rating = models.DateField()
+    date_rating = models.DateField(auto_now_add=True)
+    valeur_note = models.PositiveSmallIntegerField()
 
     class Meta:
         db_table = 'noter'
         unique_together = (('utilisateur', 'piste_audio'))
 
     def __str__(self):
-        return f"{self.utilisateur} rated {self.piste_audio} on {self.date_rating}"
+        return f"Note {self.valeur_note} par {self.utilisateur} pour {self.piste_audio}"
 
 
 # ================================================================================
@@ -153,10 +154,12 @@ class favoris(models.Model):
     utilisateur = models.ForeignKey(
         utilisateur,         
         on_delete=models.CASCADE,
+        db_index= True
     )
     chant = models.ForeignKey(
         chant,     
         on_delete=models.CASCADE,
+        db_index=True
     )
     date_favori = models.DateField()
 

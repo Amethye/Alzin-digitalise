@@ -1,0 +1,19 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import EvenementsTimeline from "@components/EvenementsTimeline.tsx";
+
+const pageTitle = "Frise des évènements";
+---
+
+<Layout title={pageTitle}>
+  <main class="px-4 py-10">
+    <h1 class="mb-4 text-3xl font-bold text-mauve">
+      Frise des évènements
+    </h1>
+    <p class="mb-8 max-w-2xl text-sm text-gray-700">
+      Visualise l’historique des évènements sur une ligne du temps.
+    </p>
+
+    <EvenementsTimeline client:load />
+  </main>
+</Layout>

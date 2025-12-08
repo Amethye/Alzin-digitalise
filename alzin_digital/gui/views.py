@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from datetime import date
+
 # Create your views here.
 
 '''
@@ -39,6 +41,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.hashers import check_password, make_password
 from django.forms.models import model_to_dict
 from django.core.files.storage import default_storage
+from django.utils import timezone
 
 def api_root(request):
     return JsonResponse({
@@ -401,7 +404,7 @@ def chants_api(request, chant_id=None):
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
 #------------------------------------------------------------------------
-#CATEGORIES
+#                           CATEGORIES
 #------------------------------------------------------------------------
 @csrf_exempt
 def categories_api(request):
@@ -511,7 +514,7 @@ def appartenir_api(request):
         return JsonResponse({"success": True})
 
 #------------------------------------------------------------------------
-#PISTE AUDIO
+#                           PISTE AUDIO
 #------------------------------------------------------------------------
 @csrf_exempt
 def pistes_audio_api(request, piste_id=None):
@@ -577,13 +580,116 @@ def pistes_audio_api(request, piste_id=None):
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
-#FAVORIS
+#----------------------------------------------------------------------------
+                                #NOTER
+#---------------------------------------------------------------------------
+@csrf_exempt
+def noter_api(request, note_id=None):
+    if request.method == "GET":
+        if note_id:
+            try:
+                n = noter.objects.get(id=note_id)
+            except noter.DoesNotExist:
+                return JsonResponse({"error": "Note introuvable"}, status=404)
+
+            return JsonResponse({
+                "id": n.id,
+                "utilisateur_id": n.utilisateur_id,
+                "piste_audio_id": n.piste_audio_id,
+                "valeur_note": n.valeur_note,
+                "date_rating": n.date_rating.isoformat(),
+            })
+
+        qs = noter.objects.all()
+
+        user_id = request.GET.get("utilisateur_id")
+        piste_id = request.GET.get("piste_id")
+
+        if user_id:
+            qs = qs.filter(utilisateur_id=user_id)
+        if piste_id:
+            qs = qs.filter(piste_audio_id=piste_id)
+
+        data = [
+            {
+                "id": n.id,
+                "utilisateur_id": n.utilisateur_id,
+                "piste_audio_id": n.piste_audio_id,
+                "valeur_note": n.valeur_note,
+                "date_rating": n.date_rating.isoformat(),
+            }
+            for n in qs
+        ]
+
+        return JsonResponse(data, safe=False)
+
+    # ------------------------------------
+    # POST 
+    # ------------------------------------
+    if request.method == "POST":
+        body = json.loads(request.body.decode("utf-8"))
+
+        note = noter.objects.create(
+            utilisateur_id=body["utilisateur_id"],
+            piste_audio_id=body["piste_audio_id"],
+            valeur_note=body["valeur_note"]
+        )
+
+        return JsonResponse({
+            "id": note.id,
+            "utilisateur_id": note.utilisateur_id,
+            "piste_audio_id": note.piste_audio_id,
+            "valeur_note": note.valeur_note,
+            "date_rating": note.date_rating.isoformat(),
+        }, status=201)
+
+    # ------------------------------------
+    # PUT 
+    # ------------------------------------
+    if request.method == "PUT":
+        if not note_id:
+            return JsonResponse({"error": "ID requis"}, status=400)
+
+        try:
+            note = noter.objects.get(id=note_id)
+        except noter.DoesNotExist:
+            return JsonResponse({"error": "Note introuvable"}, status=404)
+
+        body = json.loads(request.body.decode("utf-8"))
+        note.valeur_note = body.get("valeur_note", note.valeur_note)
+        note.save()
+
+        return JsonResponse({"success": True})
+
+    # ------------------------------------
+    # DELETE
+    # ------------------------------------
+    if request.method == "DELETE":
+        if not note_id:
+            return JsonResponse({"error": "ID requis"}, status=400)
+
+        try:
+            note = noter.objects.get(id=note_id)
+        except noter.DoesNotExist:
+            return JsonResponse({"error": "Note introuvable"}, status=404)
+
+        note.delete()
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+    
+#-----------------------------------------------------------
+#                          FAVORIS
+#-----------------------------------------------------------
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def favoris_api(request):
+
     if request.method == "GET":
         user_id = request.GET.get("utilisateur_id")
         qs = favoris.objects.select_related("utilisateur", "chant")
+
         if user_id:
             qs = qs.filter(utilisateur_id=user_id)
 
@@ -600,25 +706,35 @@ def favoris_api(request):
         ]
         return JsonResponse(data, safe=False)
 
-    # POST : ajouter un favori
+    # -------- POST --------
     body = json.loads(request.body.decode("utf-8"))
+    user_id = body.get("utilisateur_id")
+    chant_id = body.get("chant_id")
+    date_favori = body.get("date_favori")
+
+    # Vérifier si favori existe déjà
+    if favoris.objects.filter(utilisateur_id=user_id, chant_id=chant_id).exists():
+        return JsonResponse({"error": "Déjà dans les favoris"}, status=400)
+
+    # Si aucune date fournie → date du jour
+    if not date_favori:
+        date_favori = timezone.now().date()
 
     fav = favoris.objects.create(
-        utilisateur_id=body["utilisateur_id"],
-        chant_id=body["chant_id"],
-        date_favori=body["date_favori"],  # "2025-11-25"
-    )
-    return JsonResponse(
-        {
-            "id": fav.id,
-            "utilisateur_id": fav.utilisateur_id,
-            "chant_id": fav.chant_id,
-            "date_favori": fav.date_favori.isoformat(),
-        },
-        status=201,
+        utilisateur_id=user_id,
+        chant_id=chant_id,
+        date_favori=date_favori
     )
 
-#COMMENTAIRE
+    return JsonResponse({
+        "id": fav.id,
+        "utilisateur_id": fav.utilisateur_id,
+        "chant_id": fav.chant_id,
+        "date_favori": fav.date_favori.isoformat(),
+    }, status=201)
+#-----------------------------------------------------------
+#                         COMMENTAIRE
+#-----------------------------------------------------------
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def commentaires_api(request):
@@ -662,6 +778,11 @@ def commentaires_api(request):
         status=201,
     )
 
+#----------------------------------------------------------------------------------------
+#                           CHANSONNIER 
+#  ----------------------------------------------------------------------------------------
+
+
 
 #Chansonnier
 @csrf_exempt
@@ -697,6 +818,44 @@ def chansonniers_api(request):
         },
         status=201,
     )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def mes_chansonniers_api(request):
+    """
+    Retourne les chansonniers personnalisés (alzins perso) de l'utilisateur courant.
+    """
+    email = request.headers.get("X-User-Email", "").lower()
+    if not email:
+        return JsonResponse({"error": "Email manquant"}, status=400)
+
+    try:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
+        return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    qs = chansonnier_perso.objects.filter(utilisateur=user).order_by("-date_creation", "-id")
+
+    data = [
+        {
+            "id": c.id,
+            "nom_chansonnier_perso": c.nom_chansonnier_perso,
+            "couleur": c.couleur,
+            "type_papier": c.type_papier,
+            "prix_vente_unite": str(c.prix_vente_unite),
+            "date_creation": c.date_creation.isoformat(),
+            "template_id": c.template_chansonnier_id,
+        }
+        for c in qs
+    ]
+
+    return JsonResponse(data, safe=False)
+
+
+#----------------------------------------------------------------------------------------
+#                           COMMANDES
+#  ----------------------------------------------------------------------------------------
 
 
 #Fournisseur
@@ -766,6 +925,7 @@ def commandes_api(request):
         status=201,
     )
 
+
 #details_commande
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
@@ -801,7 +961,73 @@ def details_commande_api(request):
         status=201,
     )
 
-#EVENENMENT
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def mes_commandes_api(request):
+    """
+    Retourne ou crée les commandes de l'utilisateur courant (via X-User-Email).
+    GET  : liste des commandes de l'utilisateur
+           optionnel : ?status=XXX pour filtrer
+    POST : crée une nouvelle commande pour l'utilisateur, avec la date du jour
+           et un status par défaut "PANIER" (sauf si fourni dans le body).
+    """
+    email = request.headers.get("X-User-Email", "").lower()
+    if not email:
+        return JsonResponse({"error": "Email manquant"}, status=400)
+
+    try:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
+        return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    # Récupération
+    if request.method == "GET":
+        status_filter = request.GET.get("status")
+        qs = commande.objects.filter(utilisateur=user).order_by("-date_commande", "-id")
+
+        if status_filter:
+            qs = qs.filter(status__iexact=status_filter)
+
+        data = [
+            {
+                "id": c.id,
+                "date_commande": c.date_commande.isoformat(),
+                "status": c.status,
+            }
+            for c in qs
+        ]
+        return JsonResponse(data, safe=False)
+
+    # Création
+    if request.method == "POST":
+        try:
+            body = json.loads(request.body.decode("utf-8") or "{}")
+        except json.JSONDecodeError:
+            body = {}
+
+        status_value = body.get("status", "PANIER")
+
+        c = commande.objects.create(
+            date_commande=date.today(),
+            status=status_value,
+            utilisateur=user,
+        )
+
+        return JsonResponse(
+            {
+                "id": c.id,
+                "date_commande": c.date_commande.isoformat(),
+                "status": c.status,
+            },
+            status=201,
+        )
+
+
+
+
+#----------------------------------------------------------------
+#                           EVENENMENT
+#----------------------------------------------------------------
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def evenements_api(request):
@@ -843,13 +1069,28 @@ def evenements_api(request):
     )
 
 @csrf_exempt
-@require_http_methods(["PUT", "DELETE"])
+@require_http_methods(["GET", "PUT", "DELETE"])
 def evenement_detail_api(request, id):
     try:
         e = evenement.objects.get(id=id)
     except evenement.DoesNotExist:
         return JsonResponse({"error": "Évènement introuvable"}, status=404)
 
+    if request.method == "GET":
+        qs = evenement.objects.all()
+        data = [
+            {
+                "id": e.id,
+                "date_evenement": e.date_evenement.isoformat(),
+                "lieu": e.lieu,
+                "nom_evenement": e.nom_evenement,
+                "annonce_fil_actu": e.annonce_fil_actu,
+                "histoire": e.histoire,
+            }
+            for e in qs
+        ]
+        return JsonResponse(data, safe=False)
+    
     if request.method == "DELETE":
         e.delete()
         return JsonResponse({"status": "deleted"})
@@ -938,7 +1179,7 @@ def contenir_api(request):
         {"id": c.id, "chant_id": c.chant_id, "chansonnier_perso_id": c.chansonnier_perso_id},
         status=201,
     )
-je me casseeeeeeeeeeee
+
 #FOURNIR
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
@@ -974,40 +1215,7 @@ def fournir_api(request):
         status=201,
     )
 
-#NOTER
-@csrf_exempt
-@require_http_methods(["GET", "POST"])
-def noter_api(request):
-    if request.method == "GET":
-        qs = noter.objects.select_related("utilisateur", "piste_audio")
-        data = [
-            {
-                "id": n.id,
-                "utilisateur_id": n.utilisateur_id,
-                "piste_audio_id": n.piste_audio_id,
-                "date_rating": n.date_rating.isoformat(),
-            }
-            for n in qs
-        ]
-        return JsonResponse(data, safe=False)
 
-    body = json.loads(request.body.decode("utf-8"))
-
-    n = noter.objects.create(
-        utilisateur_id=body["utilisateur_id"],
-        piste_audio_id=body["piste_audio_id"],
-        date_rating=body["date_rating"],
-    )
-
-    return JsonResponse(
-        {
-            "id": n.id,
-            "utilisateur_id": n.utilisateur_id,
-            "piste_audio_id": n.piste_audio_id,
-            "date_rating": n.date_rating.isoformat(),
-        },
-        status=201,
-    )
 
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
