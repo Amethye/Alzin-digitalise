@@ -43,7 +43,7 @@ class utilisateur(models.Model):
 # ================================================================================
 
 class chant(models.Model):
-    nom_chant = models.CharField(max_length=100)
+    nom_chant = models.CharField(max_length=100, db_index=True)
     auteur = models.CharField(max_length=100, blank=True, null=True)
     ville_origine = models.CharField(max_length=100, blank=True, null=True)
     paroles = models.TextField()
@@ -53,10 +53,10 @@ class chant(models.Model):
     paroles_pdf = models.FileField(upload_to="paroles_pdf/", null=True, blank=True)
     partition = models.FileField(upload_to="partitions/", null=True, blank=True)
 
-    # relation avec categories
-    categorie = models.ManyToManyField(
-        "categorie",
-        related_name="chants",
+    utilisateur = models.ForeignKey(
+        "utilisateur",
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True
     )
 
@@ -65,13 +65,11 @@ class chant(models.Model):
 
     def __str__(self):
         return self.nom_chant
-
 # ================================================================================
 # CATÉGORIE & APPARTENIR
 # ================================================================================
-
 class categorie(models.Model):
-    nom_categorie = models.CharField(max_length=50)
+    nom_categorie = models.CharField(max_length=50, unique=True, db_index=True)
 
     class Meta:
         db_table = "categories"
@@ -79,18 +77,19 @@ class categorie(models.Model):
     def __str__(self):
         return self.nom_categorie
 
-
 class appartenir(models.Model):
-    nom_categorie = models.ForeignKey(
+    categorie = models.ForeignKey(
         categorie,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="appartenances"
     )
     chant = models.ForeignKey(
         chant,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="categories_associees"
     )
     utilisateur = models.ForeignKey(
-        utilisateur,
+        "utilisateur",
         on_delete=models.SET_NULL,
         null=True,
         blank=True
@@ -98,8 +97,7 @@ class appartenir(models.Model):
 
     class Meta:
         db_table = 'appartenir'
-        unique_together = (('nom_categorie', 'chant', 'utilisateur'),)
-      
+        unique_together = (('categorie', 'chant', 'utilisateur'),)
 
 # ================================================================================
 # PISTE AUDIO & NOTER
@@ -109,7 +107,7 @@ class piste_audio(models.Model):
     fichier_mp3 = models.FileField(upload_to="pistes_audio/")
 
     utilisateur = models.ForeignKey(
-        utilisateur,
+        "utilisateur",
         on_delete=models.SET_NULL,
         null=True,
         blank=True
@@ -118,15 +116,16 @@ class piste_audio(models.Model):
     chant = models.ForeignKey(
         chant,
         on_delete=models.CASCADE,
-        related_name="pistes_audio"
+        related_name="pistes_audio",
+        db_index=True
     )
 
     class Meta:
         db_table = "piste_audio"
 
     def __str__(self):
-        return self.fichier_mp3.name
-
+        return f"Audio {self.id} - {self.chant.nom_chant}"
+        
 class noter(models.Model):
     utilisateur = models.ForeignKey(
         utilisateur,
@@ -283,7 +282,7 @@ class contenir_chant_template(models.Model):
         return f"{self.template_chansonnier} contient {self.chant}"
 
 # ================================================================================
-# COMMANDE (+ relation commander)
+# COMMANDE (+ relation details_commande)
 # ================================================================================
 
 class commande(models.Model):
@@ -300,8 +299,8 @@ class commande(models.Model):
     def __str__(self):
         return f"- Commande {self.id} {self.utilisateur} - Status: {self.status}"
 
-#une instance de commander représente un panier d'achat
-class commander(models.Model):
+
+class details_commande(models.Model):
     
     commande = models.ForeignKey(
         commande,
@@ -314,7 +313,7 @@ class commander(models.Model):
     quantite = models.IntegerField()
 
     class Meta:
-        db_table = 'commander'
+        db_table = 'details_commande'
         # PRIMARY KEY (num_commande, id_chansonnier)
         unique_together = (('commande', 'chansonnier_perso'),)
     

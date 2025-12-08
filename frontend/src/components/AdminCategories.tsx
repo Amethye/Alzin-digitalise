@@ -38,7 +38,7 @@ const fetchCats = async () => {
   const deleteCategory = async (name: string) => {
     if (name === "Autre") return; // protection
 
-    await fetch(`${API_URL}?delete=${name}`, {
+    await fetch(`${API_URL}${name}/`, {
       method: "DELETE",
     });
 

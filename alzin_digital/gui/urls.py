@@ -9,10 +9,18 @@ urlpatterns = [
     path("admin/users/", views.admin_users_api, name="api_admin_users"),
     path("admin/users/<int:user_id>/", views.admin_users_api, name="api_admin_user_detail"),
     path("admin/users/<int:user_id>/<str:action>/", views.admin_users_api, name="api_admin_user_role"),
+    
+    path("maitres/", views.maitres_api, name="api_maitres"),
+    
     path("chants/", views.chants_api, name="api_chants"),
     path("chants/<int:chant_id>/",views.chants_api, name="api_chant_detail"),
-    path("categories/", views.categorie_api, name="api_categorie"),
-    path("maitres/", views.maitres_api, name="api_maitres"),
+    
+    path("appartenir/", views.appartenir_api, name="api_appartenir"),
+    
+    path("categories/", views.categories_api, name="api_categorie"),
+    
+    
+    
     path("pistes-audio/", views.pistes_audio_api, name="api_pistes_audio"),
     path("pistes-audio/<int:piste_id>/", views.pistes_audio_api, name="api_pistes_audio_detail"),
 
@@ -22,13 +30,13 @@ urlpatterns = [
     path("chansonniers/", views.chansonniers_api, name="api_chansonniers"),
     path("fournisseurs/", views.fournisseurs_api, name="api_fournisseurs"),
     path("commandes/", views.commandes_api, name="api_commandes"),
-    path("commandes-lignes/", views.commander_api, name="api_commander"),
+    path("commandes-lignes/", views.details_commande_api, name="api_details_commande"),
     
     path("evenements/", views.evenements_api, name="api_evenements"),
     path("api/evenements/<int:id>/", views.evenement_detail_api, name="api_evenement_detail"),
     
     path("chanter/", views.chanter_api, name="api_chanter"),
-    path("appartenir/", views.appartenir_api, name="api_appartenir"),
+
     path("contenir/", views.contenir_api, name="api_contenir"),
     path("fournir/", views.fournir_api, name="api_fournir"),
     path("noter/", views.noter_api, name="api_noter"),
