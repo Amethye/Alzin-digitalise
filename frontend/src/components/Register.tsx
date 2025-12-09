@@ -40,7 +40,7 @@ export default function Register({ next = "/" }: SignupFormProps) {
     }
 
     try {
-      const res = await fetch("http://100.72.62.18:8000/api/utilisateurs/", {
+      const res = await fetch("/api/utilisateurs/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

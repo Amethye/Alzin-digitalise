@@ -9,7 +9,7 @@ type Evenement = {
   histoire: string;        // possiblement ""
 };
 
-const API_EVENT = "http://100.72.62.18:8000/api/evenements/";
+const API_EVENT = "/api/evenements/";
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);

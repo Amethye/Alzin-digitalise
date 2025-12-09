@@ -15,7 +15,7 @@ useEffect(() => {
   const loadNotes = async () => {
     if (!userId) return;
 
-    const res = await fetch(`http://100.72.62.18:8000/api/noter/?piste_id=${pisteId}`);
+    const res = await fetch(`/api/noter/?piste_id=${pisteId}`);
     const data = await res.json();
 
     setAverage(data.moyenne);

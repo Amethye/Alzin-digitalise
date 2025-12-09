@@ -28,7 +28,7 @@ export default function Nav() {
       return;
     }
 
-    fetch("http://100.72.62.18:8000/api/me/", {
+    fetch("/api/me/", {
       method: "GET",
       headers: {
         "X-User-Email": email,
@@ -105,7 +105,7 @@ export default function Nav() {
     setShowDesktopMenu(false);
     setIsMobileMenuOpen(false);
 
-    await fetch("http://100.72.62.18:8000/api/auth/logout/", {
+    await fetch("/api/auth/logout/", {
       method: "POST",
       credentials: "include",
     });

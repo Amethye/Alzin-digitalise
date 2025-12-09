@@ -251,7 +251,7 @@ export default function AlzinPersoPage() {
 
       if (isEditMode && editId) {
         const res = await fetch(
-          `http://100.72.62.18:8000/api/mes-chansonniers/${editId}/`,
+          `/api/mes-chansonniers/${editId}/`,
           {
             method: "PUT",
             headers,
@@ -265,7 +265,7 @@ export default function AlzinPersoPage() {
 
         setSuccess("Alzin personnalisé mis à jour avec succès.");
       } else {
-        const res = await fetch("http://100.72.62.18:8000/api/mes-chansonniers/", {
+        const res = await fetch("/api/mes-chansonniers/", {
           method: "POST",
           headers,
           body: JSON.stringify(payload),

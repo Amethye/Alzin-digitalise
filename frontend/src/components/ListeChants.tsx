@@ -17,8 +17,8 @@ type Favori = {
   utilisateur_id: number;
 };
 
-const API_CHANTS = "http://100.72.62.18:8000/api/chants/";
-const API_FAVORIS = "http://100.72.62.18:8000/api/favoris/";
+const API_CHANTS = "https://100.72.62.18:8000/api/chants/";
+const API_FAVORIS = "https://100.72.62.18:8000/api/favoris/";
 
 // SVG cœur rempli
 const HeartFull = () => (

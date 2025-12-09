@@ -100,16 +100,16 @@ export default function OrdersPage() {
         setError(null);
 
         const [resCmd, resAlzins, resMe, resFournisseurs] = await Promise.all([
-          fetch("http://100.72.62.18:8000/api/mes-commandes/", {
+          fetch("/api/mes-commandes/", {
             headers: authHeaders,
           }),
-          fetch("http://100.72.62.18:8000/api/mes-chansonniers/", {
+          fetch("/api/mes-chansonniers/", {
             headers: authHeaders,
           }),
-          fetch("http://100.72.62.18:8000/api/me/", {
+          fetch("/api/me/", {
             headers: authHeaders,
           }),
-          fetch("http://100.72.62.18:8000/api/fournisseurs/"),
+          fetch("/api/fournisseurs/"),
         ]);
 
         if (

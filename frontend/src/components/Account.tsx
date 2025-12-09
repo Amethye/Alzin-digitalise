@@ -33,7 +33,7 @@ export default function AccountPage() {
       return;
     }
 
-    fetch("http://100.72.62.18:8000/api/me/", {
+    fetch("/api/me/", {
       headers: { "X-User-Email": email },
     })
       .then((res) => res.json())
