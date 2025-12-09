@@ -67,10 +67,10 @@ MIDDLEWARE = [
 # -------------------------------------------------------------------
 
 CORS_ALLOWED_ORIGINS = [
-    "http://100.72.62.18:4321",
-    "http://localhost:4321",
-    "http://127.0.0.1:4321",
-    "http://alzin.fede.fpms.ac.be"
+    "https://100.72.62.18:4321",
+    "https://localhost:4321",
+    "https://127.0.0.1:4321",
+    "https://alzin.fede.fpms.ac.be"
 
 ]
 

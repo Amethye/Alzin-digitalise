@@ -80,7 +80,7 @@ export default function FavorisPage() {
       ? true
       : (c.categories.length ? c.categories : ["Autre"]).includes(filterCat)
   );
-
+  
   // Regrouper par catégories
   const categoriesMap: Record<string, Chant[]> = {};
   filtered.forEach((chant) => {
