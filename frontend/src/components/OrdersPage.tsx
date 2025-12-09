@@ -100,16 +100,16 @@ export default function OrdersPage() {
         setError(null);
 
         const [resCmd, resAlzins, resMe, resFournisseurs] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/mes-commandes/", {
+          fetch("http://100.72.62.18:8000/api/mes-commandes/", {
             headers: authHeaders,
           }),
-          fetch("http://127.0.0.1:8000/api/mes-chansonniers/", {
+          fetch("http://100.72.62.18:8000/api/mes-chansonniers/", {
             headers: authHeaders,
           }),
-          fetch("http://127.0.0.1:8000/api/me/", {
+          fetch("http://100.72.62.18:8000/api/me/", {
             headers: authHeaders,
           }),
-          fetch("http://127.0.0.1:8000/api/fournisseurs/"),
+          fetch("http://100.72.62.18:8000/api/fournisseurs/"),
         ]);
 
         if (
@@ -217,7 +217,7 @@ export default function OrdersPage() {
       // CAS 1 : création d'une nouvelle commande
       if (!commandeId) {
         const resCmd = await fetch(
-          "http://127.0.0.1:8000/api/mes-commandes/",
+          "http://100.72.62.18:8000/api/mes-commandes/",
           {
             method: "POST",
             headers: headersWithEmail,
@@ -240,7 +240,7 @@ export default function OrdersPage() {
         // CAS 2 : édition d'une commande existante
         // On vide les lignes de cette commande pour les recréer proprement
         await fetch(
-          `http://127.0.0.1:8000/api/details-commande/?commande_id=${commandeId}`,
+          `http://100.72.62.18:8000/api/details-commande/?commande_id=${commandeId}`,
           {
             method: "DELETE",
           }
@@ -249,7 +249,7 @@ export default function OrdersPage() {
 
       // Ajout / recréation de la ligne de commande
       const resLigne = await fetch(
-        "http://127.0.0.1:8000/api/commandes-lignes/",
+        "http://100.72.62.18:8000/api/commandes-lignes/",
         {
           method: "POST",
           headers: {
@@ -269,7 +269,7 @@ export default function OrdersPage() {
 
       // Enregistrer le fournisseur choisi pour ce chansonnier
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-      const resFournir = await fetch("http://127.0.0.1:8000/api/fournir/", {
+      const resFournir = await fetch("http://100.72.62.18:8000/api/fournir/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -316,7 +316,7 @@ export default function OrdersPage() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/mes-commandes/${commandeId}/`,
+        `http://100.72.62.18:8000/api/mes-commandes/${commandeId}/`,
         {
           method: "DELETE",
           headers: {
@@ -349,7 +349,7 @@ export default function OrdersPage() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/mes-chansonniers/${alzinId}/`,
+        `http://100.72.62.18:8000/api/mes-chansonniers/${alzinId}/`,
         {
           method: "DELETE",
           headers: {

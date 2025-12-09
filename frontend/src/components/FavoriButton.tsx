@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const API_FAVORIS = "http://127.0.0.1:8000/api/favoris/";
+const API_FAVORIS = "http://100.72.62.18:8000/api/favoris/";
 
 const HeartFull = ({ size = 34 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="#8B5CF6">

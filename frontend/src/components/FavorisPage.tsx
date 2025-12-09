@@ -16,8 +16,8 @@ type Favori = {
   chant_id: number;
 };
 
-const API_CHANTS = "http://127.0.0.1:8000/api/chants/";
-const API_FAVORIS = "http://127.0.0.1:8000/api/favoris/";
+const API_CHANTS = "http://100.72.62.18:8000/api/chants/";
+const API_FAVORIS = "http://100.72.62.18:8000/api/favoris/";
 
 export default function FavorisPage() {
   const [USER_ID, setUSER_ID] = useState<number | null>(null);

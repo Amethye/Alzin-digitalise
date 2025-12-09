@@ -17,7 +17,7 @@ type FormState = {
   histoire: string;
 };
 
-const API_URL = "http://127.0.0.1:8000/api/evenements/";
+const API_URL = "http://100.72.62.18:8000/api/evenements/";
 
 const initialForm: FormState = {
   nom_evenement: "",

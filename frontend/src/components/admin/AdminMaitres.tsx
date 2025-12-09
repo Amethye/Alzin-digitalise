@@ -23,7 +23,7 @@ export default function AdminMaitres() {
 
     const loadData = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/maitres/", {
+        const response = await fetch("http://100.72.62.18:8000/api/maitres/", {
           credentials: "include",
           signal: controller.signal,
         });
@@ -54,7 +54,7 @@ export default function AdminMaitres() {
     setSaving(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/maitres/", {
+      const response = await fetch("http://100.72.62.18:8000/api/maitres/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

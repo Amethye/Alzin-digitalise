@@ -31,10 +31,10 @@ type FormState = {
   new_audio: File[]; // MULTIPLE MP3
 };
 
-const API_CHANTS = "http://127.0.0.1:8000/api/chants/";
-const API_CATEGORIES = "http://127.0.0.1:8000/api/categories/";
-const API_APPARTENIR = "http://127.0.0.1:8000/api/appartenir/";
-const API_AUDIO = "http://127.0.0.1:8000/api/pistes-audio/";
+const API_CHANTS = "http://100.72.62.18:8000/api/chants/";
+const API_CATEGORIES = "http://100.72.62.18:8000/api/categories/";
+const API_APPARTENIR = "http://100.72.62.18:8000/api/appartenir/";
+const API_AUDIO = "http://100.72.62.18:8000/api/pistes-audio/";
 
 const initialForm: FormState = {
   nom_chant: "",

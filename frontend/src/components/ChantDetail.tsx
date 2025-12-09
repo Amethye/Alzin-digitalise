@@ -22,7 +22,7 @@ type Chant = {
   }[];
 };
 
-const API_CHANTS = "http://127.0.0.1:8000/api/chants/";
+const API_CHANTS = "http://100.72.62.18:8000/api/chants/";
 
 export default function ChantPage({ id }: { id: number }) {
   const [chant, setChant] = useState<Chant | null>(null);

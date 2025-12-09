@@ -10,7 +10,7 @@ type Evenement = {
 };
 
 const API_BASE_URL =
-  import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+  import.meta.env.PUBLIC_API_URL ?? "http://100.72.62.18:8000";
 
 export default function EvenementsTimeline() {
   const [evenements, setEvenements] = useState<Evenement[]>([]);

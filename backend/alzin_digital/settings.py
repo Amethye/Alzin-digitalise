@@ -15,7 +15,12 @@ SECRET_KEY = "django-insecure-0zkbhi$lheo3ufm=qj!=qp08-)ml$$70e(fku@@2zj!z$52c%n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1"]
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "100.72.62.18",
+    "fpms.ac.be",
+]
 
 
 # -------------------------------------------------------------------
@@ -62,8 +67,11 @@ MIDDLEWARE = [
 # -------------------------------------------------------------------
 
 CORS_ALLOWED_ORIGINS = [
+    "http://100.72.62.18:4321",
     "http://localhost:4321",
     "http://127.0.0.1:4321",
+    "http://alzin.fede.fpms.ac.be"
+
 ]
 
 CORS_ALLOW_CREDENTIALS = True

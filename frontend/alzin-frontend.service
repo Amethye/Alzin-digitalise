@@ -1,0 +1,13 @@
+[Unit]
+Description=Alzin Astro frontend (Node)
+After=network.target
+
+[Service]
+Type=simple
+User=magellan
+WorkingDirectory=/home/magellan/projetBac3/frontend
+ExecStart=/home/magellan/projetBac3/frontend/run_frontend.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

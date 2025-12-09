@@ -28,7 +28,7 @@ export default function AdminUsersTable() {
 
   /** Charger les utilisateurs */
   const fetchUsers = async () => {
-    const res = await fetch("http://127.0.0.1:8000/api/admin/users/", {
+    const res = await fetch("http://100.72.62.18:8000/api/admin/users/", {
       credentials: "include",
     });
 
@@ -44,7 +44,7 @@ export default function AdminUsersTable() {
 
   /** Modifier rôle */
   const changeRole = async (userId: number, role: string) => {
-    const res = await fetch(`http://127.0.0.1:8000/api/admin/users/${userId}/role/`, {
+    const res = await fetch(`http://100.72.62.18:8000/api/admin/users/${userId}/role/`, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -59,7 +59,7 @@ export default function AdminUsersTable() {
   const deleteUser = async (userId: number) => {
     if (!confirm("Supprimer cet utilisateur ?")) return;
 
-    const res = await fetch(`http://127.0.0.1:8000/api/admin/users/${userId}/`, {
+    const res = await fetch(`http://100.72.62.18:8000/api/admin/users/${userId}/`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -70,7 +70,7 @@ export default function AdminUsersTable() {
 
   /** Sauvegarder modification */
   const saveUser = async (userId: number) => {
-    const res = await fetch(`http://127.0.0.1:8000/api/admin/users/${userId}/`, {
+    const res = await fetch(`http://:8000/api/admin/users/${userId}/`, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

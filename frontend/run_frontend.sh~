@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+cd /home/magellan/projetBac3/frontend
+
+# Lancer Django avec le python du venv
+exec /home/magellan/projetBac3/venv/bin/python manage.py runserver 0.0.0.0:8000

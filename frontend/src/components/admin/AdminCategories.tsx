@@ -7,7 +7,7 @@ const AdminCategories = () => {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  const API_URL = "http://127.0.0.1:8000/api/categories/";
+  const API_URL = "http://100.72.62.18:8000/api/categories/";
 
 const fetchCats = async () => {
   const res = await fetch(API_URL);

@@ -20,7 +20,7 @@ type Evenement = {
   date_evenement: string; // ISO string
 };
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "http://100.72.62.18:8000";
 
 const API_CHANTER = `${API_BASE}/api/chanter/`;
 const API_CHANTS = `${API_BASE}/api/chants/`;

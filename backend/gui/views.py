@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from datetime import date
+from json import JSONDecodeError
 
 # Create your views here.
 
@@ -1329,15 +1330,18 @@ def mes_commandes_detail_api(request, commande_id):
 #----------------------------------------------------------------
 #                           EVENENMENT
 #----------------------------------------------------------------
+
+
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def evenements_api(request):
+    # ----------- GET : liste des évènements -----------
     if request.method == "GET":
-        qs = evenement.objects.all()
+        qs = evenement.objects.all().order_by("date_evenement")
         data = [
             {
                 "id": e.id,
-                "date_evenement": e.date_evenement.isoformat(),
+                "date_evenement": e.date_evenement.isoformat() if e.date_evenement else None,
                 "lieu": e.lieu,
                 "nom_evenement": e.nom_evenement,
                 "annonce_fil_actu": e.annonce_fil_actu,
@@ -1347,12 +1351,16 @@ def evenements_api(request):
         ]
         return JsonResponse(data, safe=False)
 
-    body = json.loads(request.body.decode("utf-8"))
+    # ----------- POST : création d'un évènement -----------
+    try:
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except JSONDecodeError:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
 
     e = evenement.objects.create(
-        date_evenement=body["date_evenement"],
-        lieu=body["lieu"],
-        nom_evenement=body["nom_evenement"],
+        date_evenement=body.get("date_evenement"),  # à parser côté front si besoin
+        lieu=body.get("lieu", ""),
+        nom_evenement=body.get("nom_evenement", ""),
         annonce_fil_actu=body.get("annonce_fil_actu", ""),
         histoire=body.get("histoire", ""),
     )
@@ -1360,7 +1368,7 @@ def evenements_api(request):
     return JsonResponse(
         {
             "id": e.id,
-            "date_evenement": e.date_evenement.isoformat(),
+            "date_evenement": e.date_evenement.isoformat() if e.date_evenement else None,
             "lieu": e.lieu,
             "nom_evenement": e.nom_evenement,
             "annonce_fil_actu": e.annonce_fil_actu,
@@ -1368,6 +1376,7 @@ def evenements_api(request):
         },
         status=201,
     )
+
 
 @csrf_exempt
 @require_http_methods(["GET", "PUT", "DELETE"])
@@ -1377,55 +1386,45 @@ def evenement_detail_api(request, id):
     except evenement.DoesNotExist:
         return JsonResponse({"error": "Évènement introuvable"}, status=404)
 
+    # ----------- GET : détail d'un évènement -----------
     if request.method == "GET":
-        qs = evenement.objects.all()
-        data = [
-            {
-                "id": e.id,
-                "date_evenement": e.date_evenement.isoformat(),
-                "lieu": e.lieu,
-                "nom_evenement": e.nom_evenement,
-                "annonce_fil_actu": e.annonce_fil_actu,
-                "histoire": e.histoire,
-            }
-            for e in qs
-        ]
-        return JsonResponse(data, safe=False)
-    
-    if request.method == "DELETE":
-        commande_id = request.GET.get("commande_id")
-        if not commande_id:
-            return JsonResponse({"error": "commande_id requis"}, status=400)
-
-        deleted, _ = details_commande.objects.filter(commande_id=commande_id).delete()
-        return JsonResponse({"success": True, "deleted": deleted})
-
-
-    # PUT → modification (JSON)
-    try:
-        body = json.loads(request.body.decode("utf-8"))
-    except:
-        return JsonResponse({"error": "JSON invalide"}, status=400)
-
-    e.nom_evenement = body.get("nom_evenement", e.nom_evenement)
-    e.date_evenement = body.get("date_evenement", e.date_evenement)
-    e.lieu = body.get("lieu", e.lieu)
-    e.annonce_fil_actu = body.get("annonce_fil_actu", e.annonce_fil_actu)
-    e.histoire = body.get("histoire", e.histoire)
-
-    e.save()
-
-    return JsonResponse(
-        {
+        data = {
             "id": e.id,
-            "date_evenement": e.date_evenement.isoformat(),
+            "date_evenement": e.date_evenement.isoformat() if e.date_evenement else None,
             "lieu": e.lieu,
             "nom_evenement": e.nom_evenement,
             "annonce_fil_actu": e.annonce_fil_actu,
             "histoire": e.histoire,
         }
-    )
+        return JsonResponse(data)
 
+    # ----------- DELETE : suppression de l'évènement -----------
+    if request.method == "DELETE":
+        e.delete()
+        return JsonResponse({"success": True})
+
+    # ----------- PUT : modification d'un évènement -----------
+    try:
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except JSONDecodeError:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    e.nom_evenement = body.get("nom_evenement", e.nom_evenement)
+    e.lieu = body.get("lieu", e.lieu)
+    e.annonce_fil_actu = body.get("annonce_fil_actu", e.annonce_fil_actu)
+    e.histoire = body.get("histoire", e.histoire)
+    # à toi de décider comment tu gères date_evenement (string -> date)
+    e.save()
+
+    data = {
+        "id": e.id,
+        "date_evenement": e.date_evenement.isoformat() if e.date_evenement else None,
+        "lieu": e.lieu,
+        "nom_evenement": e.nom_evenement,
+        "annonce_fil_actu": e.annonce_fil_actu,
+        "histoire": e.histoire,
+    }
+    return JsonResponse(data)
 
 
 
@@ -1600,30 +1599,39 @@ def fournir_api(request):
 
 
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from json import JSONDecodeError
+import json
+from .models import maitre_chant
+
+
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def maitres_api(request):
 
+    # ----------- GET : liste des maîtres -----------
     if request.method == "GET":
-        data = [m.nom for m in maitre_chant.objects.all()]
-        return JsonResponse({"maitres": data}, safe=False)
+        noms = list(maitre_chant.objects.values_list("nom", flat=True))
+        # on renvoie toujours {"maitres": [...]} en 200
+        return JsonResponse({"maitres": noms})
 
-    # POST → remplace toute la liste
+    # ----------- POST : remplace toute la liste -----------
     try:
-        body = json.loads(request.body.decode("utf-8"))
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except JSONDecodeError:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
 
-        maitres = body.get("maitres", None)
-        if maitres is None or not isinstance(maitres, list):
-            return JsonResponse({"error": "Format invalide"}, status=400)
+    maitres = body.get("maitres")
+    if not isinstance(maitres, list):
+        return JsonResponse({"error": "Format invalide (attendu: liste)"}, status=400)
 
-        # On réinitialise la table
-        maitre_chant.objects.all().delete()
+    # On réinitialise la table
+    maitre_chant.objects.all().delete()
 
-        # On insère les nouveaux éléments
-        for nom in maitres:
-            maitre_chant.objects.create(nom=nom)
+    # On insère les nouveaux éléments
+    for nom in maitres:
+        maitre_chant.objects.create(nom=nom)
 
-        return JsonResponse({"maitres": maitres}, status=200)
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"maitres": maitres}, status=200)

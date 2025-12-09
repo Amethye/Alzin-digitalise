@@ -87,9 +87,9 @@ export default function AlzinPersoPage() {
 
         // 1) templates + chants + catégories
         const [resTpl, resChants, resCats] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/templates-chansonniers/"),
-          fetch("http://127.0.0.1:8000/api/chants/"),
-          fetch("http://127.0.0.1:8000/api/categories/"),
+          fetch("http://100.72.62.18:8000/api/templates-chansonniers/"),
+          fetch("http://100.72.62.18:8000/api/chants/"),
+          fetch("http://100.72.62.18:8000/api/categories/"),
         ]);
 
         if (!resTpl.ok) {
@@ -119,7 +119,7 @@ export default function AlzinPersoPage() {
         // 2) si on est en édition, charger le détail
         if (existingId) {
           const resDetail = await fetch(
-            `http://127.0.0.1:8000/api/mes-chansonniers/${existingId}/`,
+            `http://100.72.62.18:8000/api/mes-chansonniers/${existingId}/`,
             {
               headers: authHeaders,
             }
@@ -251,7 +251,7 @@ export default function AlzinPersoPage() {
 
       if (isEditMode && editId) {
         const res = await fetch(
-          `http://127.0.0.1:8000/api/mes-chansonniers/${editId}/`,
+          `http://100.72.62.18:8000/api/mes-chansonniers/${editId}/`,
           {
             method: "PUT",
             headers,
@@ -265,7 +265,7 @@ export default function AlzinPersoPage() {
 
         setSuccess("Alzin personnalisé mis à jour avec succès.");
       } else {
-        const res = await fetch("http://127.0.0.1:8000/api/mes-chansonniers/", {
+        const res = await fetch("http://100.72.62.18:8000/api/mes-chansonniers/", {
           method: "POST",
           headers,
           body: JSON.stringify(payload),
