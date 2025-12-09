@@ -335,9 +335,6 @@ export default function OrdersPage() {
               </p>
             </div>
             <div className="mt-2 flex flex-col items-end gap-2 sm:mt-0">
-              <div className="text-xs font-semibold text-gray-700 sm:text-sm">
-                {a.prix_vente_unite ? `${a.prix_vente_unite} €` : ""}
-              </div>
               {/* Bouton "Modifier" : on branchera la vraie page d'édition dessus plus tard */}
               <a
                 href={`/alzin-perso?id=${a.id}`}

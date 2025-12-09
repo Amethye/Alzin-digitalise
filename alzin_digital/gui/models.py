@@ -205,7 +205,6 @@ class template_chansonnier(models.Model):
     couleur = models.CharField(max_length = 50)
     illustration_template = models.FileField(upload_to='illustrations_template/',null=True, blank=True)
     type_papier = models.CharField(max_length = 100)
-    prix_vente_unite = models.DecimalField(max_digits=5, decimal_places=2)
     
     class Meta:
         db_table = 'template_chansonnier'
@@ -220,7 +219,6 @@ class chansonnier_perso(models.Model):
     couleur = models.CharField(max_length = 50)
     illustration_chansonnier = models.FileField(upload_to='illustrations_chansonnier/',null=True, blank=True)
     type_papier = models.CharField(max_length = 100)
-    prix_vente_unite = models.DecimalField(max_digits=5, decimal_places=2)
     date_creation = models.DateField()
     utilisateur = models.ForeignKey(
         utilisateur,

@@ -24,7 +24,6 @@ type ChansonnierDetail = {
   nom_chansonnier_perso: string;
   couleur: string;
   type_papier: string;
-  prix_vente_unite: string;
   date_creation: string;
   template_id: number | null;
   chant_ids: number[];
@@ -47,7 +46,6 @@ export default function AlzinPersoPage() {
   const [nom, setNom] = useState("");
   const [couleur, setCouleur] = useState("");
   const [typePapier, setTypePapier] = useState("");
-  const [prix, setPrix] = useState<string>("");
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | "">("");
 
   // Chants sélectionnés
@@ -141,7 +139,6 @@ export default function AlzinPersoPage() {
           setNom(detail.nom_chansonnier_perso);
           setCouleur(detail.couleur);
           setTypePapier(detail.type_papier);
-          setPrix(detail.prix_vente_unite || "");
           setSelectedTemplateId(detail.template_id ?? "");
           setSelectedChantIds(detail.chant_ids || []);
         } else {
@@ -149,7 +146,6 @@ export default function AlzinPersoPage() {
           setNom("");
           setCouleur("");
           setTypePapier("");
-          setPrix("");
           setSelectedTemplateId("");
           setSelectedChantIds([]);
         }
@@ -241,7 +237,6 @@ export default function AlzinPersoPage() {
       nom_chansonnier_perso: nom,
       couleur,
       type_papier: typePapier,
-      prix_vente_unite: prix ? Number(prix) : 0,
       template_id: selectedTemplateId || null,
       chant_ids: selectedChantIds,
     };
@@ -444,21 +439,6 @@ export default function AlzinPersoPage() {
                 className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
                 placeholder="Ex. 120g ivoire"
                 required
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-700 sm:text-sm">
-                Prix de vente (€/ex.)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={prix}
-                onChange={(e) => setPrix(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
-                placeholder="Ex. 15.00"
               />
             </div>
           </div>

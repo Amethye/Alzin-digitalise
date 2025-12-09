@@ -929,7 +929,6 @@ def mes_chansonniers_api(request):
                 "nom_chansonnier_perso": c.nom_chansonnier_perso,
                 "couleur": c.couleur,
                 "type_papier": c.type_papier,
-                "prix_vente_unite": str(c.prix_vente_unite),
                 "date_creation": c.date_creation.isoformat(),
                 "template_id": c.template_chansonnier_id,
             }
@@ -947,7 +946,6 @@ def mes_chansonniers_api(request):
     nom = body.get("nom_chansonnier_perso")
     couleur = body.get("couleur")
     type_papier = body.get("type_papier")
-    prix_vente_unite = body.get("prix_vente_unite", 0)
     template_id = body.get("template_id")
     chant_ids = body.get("chant_ids", [])
 
@@ -963,7 +961,6 @@ def mes_chansonniers_api(request):
         nom_chansonnier_perso=nom,
         couleur=couleur,
         type_papier=type_papier,
-        prix_vente_unite=prix_vente_unite,
         template_chansonnier_id=template_id,
         date_creation=date.today(),
     )
@@ -985,7 +982,6 @@ def mes_chansonniers_api(request):
             "nom_chansonnier_perso": c.nom_chansonnier_perso,
             "couleur": c.couleur,
             "type_papier": c.type_papier,
-            "prix_vente_unite": str(c.prix_vente_unite),
             "date_creation": c.date_creation.isoformat(),
             "template_id": c.template_chansonnier_id,
         },
@@ -1015,7 +1011,6 @@ def chansonnier_perso_detail_api(request, chansonnier_id):
                 "nom_chansonnier_perso": c.nom_chansonnier_perso,
                 "couleur": c.couleur,
                 "type_papier": c.type_papier,
-                "prix_vente_unite": str(c.prix_vente_unite),
                 "date_creation": c.date_creation.isoformat(),
                 "template_id": c.template_chansonnier_id,
                 "chant_ids": chants_ids,
@@ -1035,7 +1030,6 @@ def chansonnier_perso_detail_api(request, chansonnier_id):
     c.nom_chansonnier_perso = body.get("nom_chansonnier_perso", c.nom_chansonnier_perso)
     c.couleur = body.get("couleur", c.couleur)
     c.type_papier = body.get("type_papier", c.type_papier)
-    c.prix_vente_unite = body.get("prix_vente_unite", c.prix_vente_unite)
     template_id = body.get("template_id", c.template_chansonnier_id)
     c.template_chansonnier_id = template_id
 
