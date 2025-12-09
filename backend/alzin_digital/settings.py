@@ -19,7 +19,8 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     "100.72.62.18",
-    "fpms.ac.be",
+    "alzin.fede.fpms.ac.be",
+    "www.alzin.fede.fpms.ac.be",
 ]
 
 
