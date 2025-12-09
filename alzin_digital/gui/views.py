@@ -1239,6 +1239,55 @@ def mes_commandes_api(request):
             status=201,
         )
 
+@csrf_exempt
+@require_http_methods(["GET", "PUT", "DELETE"])
+def mes_commandes_detail_api(request, commande_id):
+    """
+    GET    : retourne une commande de l'utilisateur courant
+    PUT    : met à jour le status (optionnel)
+    DELETE : supprime la commande + ses lignes
+    """
+    email = request.headers.get("X-User-Email", "").lower()
+    if not email:
+        return JsonResponse({"error": "Email manquant"}, status=400)
+
+    try:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
+        return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    try:
+        c = commande.objects.get(id=commande_id, utilisateur=user)
+    except commande.DoesNotExist:
+        return JsonResponse({"error": "Commande introuvable"}, status=404)
+
+    # ---------- GET ----------
+    if request.method == "GET":
+        return JsonResponse({
+            "id": c.id,
+            "date_commande": c.date_commande.isoformat(),
+            "status": c.status,
+        })
+
+    # ---------- DELETE ----------
+    if request.method == "DELETE":
+        # On supprime les lignes de cette commande, puis la commande
+        details_commande.objects.filter(commande=c).delete()
+        c.delete()
+        return JsonResponse({"success": True})
+
+    # ---------- PUT ----------
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    new_status = body.get("status")
+    if new_status is not None:
+        c.status = new_status
+        c.save()
+
+    return JsonResponse({"success": True})
 
 
 
@@ -1309,8 +1358,13 @@ def evenement_detail_api(request, id):
         return JsonResponse(data, safe=False)
     
     if request.method == "DELETE":
-        e.delete()
-        return JsonResponse({"status": "deleted"})
+        commande_id = request.GET.get("commande_id")
+        if not commande_id:
+            return JsonResponse({"error": "commande_id requis"}, status=400)
+
+        deleted, _ = details_commande.objects.filter(commande_id=commande_id).delete()
+        return JsonResponse({"success": True, "deleted": deleted})
+
 
     # PUT → modification (JSON)
     try:
@@ -1450,6 +1504,8 @@ def contenir_api(request):
 #FOURNIR
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
 def fournir_api(request):
     if request.method == "GET":
         qs = fournir.objects.select_related("fournisseur", "chansonnier_perso")
@@ -1464,12 +1520,37 @@ def fournir_api(request):
         ]
         return JsonResponse(data, safe=False)
 
-    body = json.loads(request.body.decode("utf-8"))
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    fournisseur_id = body.get("fournisseur_id")
+    chansonnier_perso_id = body.get("chansonnier_perso_id")
+    date_str = body.get("date_fourniture")
+
+    if not fournisseur_id or not chansonnier_perso_id:
+        return JsonResponse(
+            {"error": "fournisseur_id et chansonnier_perso_id sont requis"},
+            status=400,
+        )
+
+    from datetime import datetime
+    try:
+        if date_str:
+            date_obj = datetime.fromisoformat(date_str).date()
+        else:
+            date_obj = timezone.now().date()
+    except Exception:
+        return JsonResponse(
+            {"error": "Format de date_fourniture invalide (attendu YYYY-MM-DD)"},
+            status=400,
+        )
 
     f = fournir.objects.create(
-        fournisseur_id=body["fournisseur_id"],
-        chansonnier_perso_id=body["chansonnier_perso_id"],
-        date_fourniture=body["date_fourniture"],
+        fournisseur_id=int(fournisseur_id),
+        chansonnier_perso_id=int(chansonnier_perso_id),
+        date_fourniture=date_obj,
     )
 
     return JsonResponse(

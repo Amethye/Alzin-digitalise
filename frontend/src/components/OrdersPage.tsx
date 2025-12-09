@@ -70,29 +70,34 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [noUser, setNoUser] = useState(false);
 
-  // Formulaire "Nouvelle commande"
+  // Formulaire "Nouvelle commande" / "Modifier commande"
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [selectedAlzinId, setSelectedAlzinId] = useState<number | "">("");
-  const [selectedFournisseurId, setSelectedFournisseurId] = useState<number | "">("");
+  const [selectedFournisseurId, setSelectedFournisseurId] = useState<
+    number | ""
+  >("");
   const [quantity, setQuantity] = useState<number>(1);
+  const [editingCommandeId, setEditingCommandeId] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     const email = localStorage.getItem("email");
 
-    // ➜ Pas d'email dans le navigateur : on considère que l'utilisateur n'est pas connecté
     if (!email) {
       setNoUser(true);
       setLoading(false);
       return;
     }
-     const authHeaders: Record<string, string> = {
-    "X-User-Email": email,
-  };
 
-  async function fetchAll() {
-    try {
-      setLoading(true);
-      setError(null);
+    const authHeaders: Record<string, string> = {
+      "X-User-Email": email,
+    };
+
+    async function fetchAll() {
+      try {
+        setLoading(true);
+        setError(null);
 
         const [resCmd, resAlzins, resMe, resFournisseurs] = await Promise.all([
           fetch("http://127.0.0.1:8000/api/mes-commandes/", {
@@ -106,11 +111,7 @@ export default function OrdersPage() {
           }),
           fetch("http://127.0.0.1:8000/api/fournisseurs/"),
         ]);
-        const headers = {
-          "X-User-Email": email,
-        };
 
-       
         if (
           resCmd.status === 401 ||
           resCmd.status === 403 ||
@@ -137,7 +138,8 @@ export default function OrdersPage() {
         const dataCmd: Commande[] = await resCmd.json();
         const dataAlzins: AlzinPerso[] = await resAlzins.json();
         const me = await resMe.json();
-        const dataFournisseursRaw: FournisseurBase[] = await resFournisseurs.json();
+        const dataFournisseursRaw: FournisseurBase[] =
+          await resFournisseurs.json();
 
         const villeUser = (me.ville as string | undefined) || "";
 
@@ -168,24 +170,30 @@ export default function OrdersPage() {
   const localFournisseurs = fournisseurs.filter((f) => f.local);
   const otherFournisseurs = fournisseurs.filter((f) => !f.local);
 
+  const resetOrderForm = () => {
+    setSelectedAlzinId("");
+    setSelectedFournisseurId("");
+    setQuantity(1);
+    setEditingCommandeId(null);
+  };
+
   const handleOpenOrderForm = () => {
+    resetOrderForm();
     setShowOrderForm(true);
     setError(null);
   };
 
   const handleCancelOrderForm = () => {
     setShowOrderForm(false);
-    setSelectedAlzinId("");
-    setSelectedFournisseurId("");
-    setQuantity(1);
+    resetOrderForm();
   };
 
-  const handleCreateOrder = async (e: React.FormEvent) => {
+  const handleCreateOrUpdateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const email = localStorage.getItem("email");
     if (!email) {
-      setNoUser(true); // on renvoie vers l'écran membre
+      setNoUser(true);
       setError("Tu dois être connecté pour créer une commande.");
       return;
     }
@@ -204,22 +212,42 @@ export default function OrdersPage() {
         "X-User-Email": email,
       };
 
-      // Créer la commande (via mes-commandes, qui déduit l'utilisateur avec l'email)
-      const resCmd = await fetch("http://127.0.0.1:8000/api/mes-commandes/", {
-        method: "POST",
-        headers: headersWithEmail,
-        body: JSON.stringify({
-          status: "PANIER",
-        }),
-      });
+      let commandeId = editingCommandeId;
 
-      if (!resCmd.ok) {
-        throw new Error("Impossible de créer la commande.");
+      // CAS 1 : création d'une nouvelle commande
+      if (!commandeId) {
+        const resCmd = await fetch(
+          "http://127.0.0.1:8000/api/mes-commandes/",
+          {
+            method: "POST",
+            headers: headersWithEmail,
+            body: JSON.stringify({
+              status: "PANIER",
+            }),
+          }
+        );
+
+        if (!resCmd.ok) {
+          throw new Error("Impossible de créer la commande.");
+        }
+
+        const newCommande: Commande = await resCmd.json();
+        commandeId = newCommande.id;
+
+        // On ajoute la commande dans la liste affichée
+        setCommandes((prev) => [newCommande, ...prev]);
+      } else {
+        // CAS 2 : édition d'une commande existante
+        // On vide les lignes de cette commande pour les recréer proprement
+        await fetch(
+          `http://127.0.0.1:8000/api/details-commande/?commande_id=${commandeId}`,
+          {
+            method: "DELETE",
+          }
+        );
       }
 
-      const newCommande: Commande = await resCmd.json();
-
-      // Ajouter la ligne de commande
+      // Ajout / recréation de la ligne de commande
       const resLigne = await fetch(
         "http://127.0.0.1:8000/api/commandes-lignes/",
         {
@@ -228,7 +256,7 @@ export default function OrdersPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            commande_id: newCommande.id,
+            commande_id: commandeId,
             chansonnier_perso_id: selectedAlzinId,
             quantite: quantity,
           }),
@@ -257,11 +285,7 @@ export default function OrdersPage() {
         throw new Error("Impossible d'enregistrer le fournisseur.");
       }
 
-      // Mettre à jour la liste des commandes (nouvelle commande en tête)
-      setCommandes((prev) => [newCommande, ...prev]);
       setActiveTab("en_cours");
-
-      // Reset du formulaire
       handleCancelOrderForm();
     } catch (e: any) {
       setError(e.message || "Une erreur est survenue lors de la création.");
@@ -270,12 +294,86 @@ export default function OrdersPage() {
     }
   };
 
+  const handleEditCommande = (commandeId: number) => {
+    setEditingCommandeId(commandeId);
+    setShowOrderForm(true);
+    setError(null);
+    // Pour l'instant, on laisse le formulaire vide : l'utilisateur resélectionne alzin/fournisseur/quantité
+    // (si tu veux, on pourra plus tard préremplir en allant chercher les détails de commande)
+  };
+
+  const handleDeleteCommande = async (commandeId: number) => {
+    const confirmDelete = window.confirm(
+      "Es-tu sûr(e) de vouloir supprimer cette commande ?"
+    );
+    if (!confirmDelete) return;
+
+    const email = localStorage.getItem("email");
+    if (!email) {
+      setNoUser(true);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/mes-commandes/${commandeId}/`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-User-Email": email,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Impossible de supprimer cette commande.");
+      }
+
+      setCommandes((prev) => prev.filter((c) => c.id !== commandeId));
+    } catch (e: any) {
+      setError(e.message || "Erreur lors de la suppression de la commande.");
+    }
+  };
+
+  const handleDeleteAlzin = async (alzinId: number) => {
+    const confirmDelete = window.confirm(
+      "Es-tu sûr(e) de vouloir supprimer cet alzin personnalisé ?"
+    );
+    if (!confirmDelete) return;
+
+    const email = localStorage.getItem("email");
+    if (!email) {
+      setNoUser(true);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/mes-chansonniers/${alzinId}/`,
+        {
+          method: "DELETE",
+          headers: {
+            "X-User-Email": email,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Impossible de supprimer cet alzin personnalisé.");
+      }
+
+      setAlzins((prev) => prev.filter((a) => a.id !== alzinId));
+    } catch (e: any) {
+      setError(
+        e.message || "Erreur lors de la suppression de l'alzin personnalisé."
+      );
+    }
+  };
+
   const renderCommandesList = (items: Commande[], emptyText: string) => {
     if (items.length === 0) {
       return (
-        <p className="text-sm text-gray-600 sm:text-base">
-          {emptyText}
-        </p>
+        <p className="text-sm text-gray-600 sm:text-base">{emptyText}</p>
       );
     }
 
@@ -299,49 +397,21 @@ export default function OrdersPage() {
                 </p>
               )}
             </div>
-          </li>
-        ))}
-      </ul>
-    );
-  };
-
-  const renderAlzinsList = () => {
-    if (alzins.length === 0) {
-      return (
-        <p className="text-sm text-gray-600 sm:text-base">
-          Tu n’as pas encore d’alzin personnalisé.
-        </p>
-      );
-    }
-
-    return (
-      <ul className="space-y-3">
-        {alzins.map((a) => (
-          <li
-            key={a.id}
-            className="flex flex-col rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-mauve sm:text-base">
-                {a.nom_chansonnier_perso}
-              </p>
-              <p className="text-xs text-gray-600 sm:text-sm">
-                Créé le : {formatDate(a.date_creation)}
-              </p>
-              <p className="text-xs text-gray-500 sm:text-sm">
-                Couleur : <span className="font-medium">{a.couleur}</span> ·
-                Type de papier :{" "}
-                <span className="font-medium">{a.type_papier}</span>
-              </p>
-            </div>
-            <div className="mt-2 flex flex-col items-end gap-2 sm:mt-0">
-              {/* Bouton "Modifier" : on branchera la vraie page d'édition dessus plus tard */}
-              <a
-                href={`/alzin-perso?id=${a.id}`}
-                className="text-xs font-semibold text-mauve underline hover:text-purple-800 sm:text-sm"
+            <div className="mt-2 flex gap-2 sm:mt-0">
+              <button
+                type="button"
+                onClick={() => handleEditCommande(c.id)}
+                className="rounded-lg border border-mauve px-3 py-1 text-xs font-semibold text-mauve hover:bg-mauve/10 sm:text-sm"
               >
                 Modifier
-              </a>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteCommande(c.id)}
+                className="rounded-lg border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 sm:text-sm"
+              >
+                Supprimer
+              </button>
             </div>
           </li>
         ))}
@@ -349,7 +419,61 @@ export default function OrdersPage() {
     );
   };
 
-  // ➜ Cas "pas connecté" : on affiche la page blanche spéciale
+const renderAlzinsList = () => {
+  if (alzins.length === 0) {
+    return (
+      <p className="text-sm text-gray-600 sm:text-base">
+        Tu n’as pas encore d’alzin personnalisé.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="space-y-3">
+      {alzins.map((a) => (
+        <li
+          key={a.id}
+          className="flex flex-col rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-mauve sm:text-base">
+              {a.nom_chansonnier_perso}
+            </p>
+            <p className="text-xs text-gray-600 sm:text-sm">
+              Créé le : {formatDate(a.date_creation)}
+            </p>
+            <p className="text-xs text-gray-500 sm:text-sm">
+              Couleur : <span className="font-medium">{a.couleur}</span> · Type de papier :{" "}
+              <span className="font-medium">{a.type_papier}</span>
+            </p>
+          </div>
+
+          <div className="mt-3 flex gap-2 sm:mt-0">
+            {/* Bouton Modifier (même style que commandes) */}
+            <a
+              href={`/alzin-perso?id=${a.id}`}
+              className="rounded-lg border border-mauve px-3 py-1 text-xs font-semibold text-mauve hover:bg-mauve/10 sm:text-sm"
+            >
+              Modifier
+            </a>
+
+            {/* Bouton Supprimer (même style que commandes) */}
+            <button
+              type="button"
+              onClick={() => handleDeleteAlzin(a.id)}
+              className="rounded-lg border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 sm:text-sm"
+            >
+              Supprimer
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+
+  // ➜ Cas "pas connecté"
   if (noUser) {
     return (
       <div className="flex w-full max-w-3xl flex-col items-center justify-center rounded-xl bg-white px-6 py-10 text-center shadow-lg sm:px-10 sm:py-14">
@@ -362,9 +486,9 @@ export default function OrdersPage() {
           Deviens membre pour commander ton Alzin
         </h1>
         <p className="mb-6 max-w-xl text-sm text-gray-600 sm:text-base">
-          Les commandes d&apos;Alzin sont réservées aux membres connectés.
-          Crée ton compte ou connecte-toi pour accéder à la boutique et
-          suivre tes commandes.
+          Les commandes d&apos;Alzin sont réservées aux membres connectés. Crée ton
+          compte ou connecte-toi pour accéder à la boutique et suivre tes
+          commandes.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <a
@@ -400,7 +524,7 @@ export default function OrdersPage() {
             Commandes d&apos;Alzin
           </h1>
           <p className="mt-1 text-sm text-gray-600 sm:text-base">
-            Consulte tes commandes, ton historique et tes alzins personnalisés.
+            Consulte tes commandes, ton historique et tes alzins personnalisés.  <br /> Nous te mettrons en contact avec le fournisseur au plus vite !
           </p>
         </div>
       </div>
@@ -455,9 +579,7 @@ export default function OrdersPage() {
               }`}
             >
               <span>Mes alzins personnalisés</span>
-              <span className="text-xs opacity-80">
-                {alzins.length}
-              </span>
+              <span className="text-xs opacity-80">{alzins.length}</span>
             </button>
           </nav>
 
@@ -469,7 +591,13 @@ export default function OrdersPage() {
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-mauve px-3 py-2 text-sm font-semibold text-mauve duration-150 hover:bg-mauve hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
           >
             <span className="text-lg leading-none">+</span>
-            <span>{creating ? "En cours..." : "Nouvelle commande"}</span>
+            <span>
+              {editingCommandeId
+                ? "Modifier la commande"
+                : creating
+                ? "En cours..."
+                : "Nouvelle commande"}
+            </span>
           </button>
 
           {/* Bouton + nouvel alzin perso */}
@@ -484,14 +612,16 @@ export default function OrdersPage() {
 
         {/* Contenu principal */}
         <section className="flex-1 rounded-xl bg-white">
-          {/* Formulaire de nouvelle commande */}
+          {/* Formulaire commande */}
           {showOrderForm && (
             <form
-              onSubmit={handleCreateOrder}
+              onSubmit={handleCreateOrUpdateOrder}
               className="mb-6 space-y-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 sm:py-5"
             >
               <h2 className="text-base font-semibold text-mauve sm:text-lg">
-                Nouvelle commande
+                {editingCommandeId
+                  ? `Modifier la commande #${editingCommandeId}`
+                  : "Nouvelle commande"}
               </h2>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -534,7 +664,9 @@ export default function OrdersPage() {
                     type="number"
                     min={1}
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value) || 1)}
+                    onChange={(e) =>
+                      setQuantity(Number(e.target.value) || 1)
+                    }
                     className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
                     required
                   />
@@ -581,8 +713,8 @@ export default function OrdersPage() {
                 </select>
                 {localFournisseurs.length === 0 && (
                   <p className="mt-1 text-xs text-gray-500">
-                    Aucun fournisseur local détecté, tu peux en choisir un dans la liste
-                    globale.
+                    Aucun fournisseur local détecté, tu peux en choisir un dans
+                    la liste globale.
                   </p>
                 )}
               </div>
@@ -600,7 +732,13 @@ export default function OrdersPage() {
                   disabled={creating}
                   className="rounded-lg bg-mauve px-4 py-1.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
                 >
-                  {creating ? "Création..." : "Valider la commande"}
+                  {creating
+                    ? editingCommandeId
+                      ? "Mise à jour..."
+                      : "Création..."
+                    : editingCommandeId
+                    ? "Mettre à jour la commande"
+                    : "Valider la commande"}
                 </button>
               </div>
             </form>

@@ -47,6 +47,8 @@ urlpatterns = [
     path("fournisseurs/", views.fournisseurs_api, name="api_fournisseurs"),
     path("commandes/", views.commandes_api, name="api_commandes"),
     path("mes-commandes/", views.mes_commandes_api, name="api_mes_commandes"),
+    path("mes-commandes/<int:commande_id>/",views.mes_commandes_detail_api,name="api_mes_commandes_detail",),
+
     path("commandes-lignes/", views.details_commande_api, name="api_details_commande"),
     path("mes-chansonniers/", views.mes_chansonniers_api, name="api_mes_chansonniers"),
     
