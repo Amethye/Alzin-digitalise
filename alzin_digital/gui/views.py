@@ -76,6 +76,8 @@ from .models import (
     noter,
     maitre_chant,
     role,
+    demande_support,
+    piece_jointe_support
 )
 #------------------------------------------------------------------------
                             #UTILISATEURS
@@ -1423,3 +1425,75 @@ def maitres_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+    
+
+    #--------------------------------------------------------
+    #                           SUPPORT
+    #--------------------------------------------------------
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def support_api(request):
+    """
+    GET  : (optionnel) liste des demandes de support de l'utilisateur courant
+    POST : création d'une nouvelle demande de support + pièces jointes.
+           Reçoit un formulaire multipart/form-data.
+    """
+    email = request.headers.get("X-User-Email", "").lower()
+    if not email:
+        return JsonResponse({"error": "Email manquant"}, status=400)
+
+    try:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
+        return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    # ---------- GET : liste des demandes de cet utilisateur ----------
+    if request.method == "GET":
+        qs = demande_support.objects.filter(utilisateur=user).order_by("-date_creation")
+        data = []
+        for d in qs:
+            data.append({
+                "id": d.id,
+                "objet": d.objet,
+                "description": d.description,
+                "date_creation": d.date_creation.isoformat(),
+                "statut": d.statut,
+            })
+        return JsonResponse(data, safe=False)
+
+    # ---------- POST : création d'une demande ----------
+    # On attend un formulaire multipart (FormData côté front)
+    objet = request.POST.get("objet", "").strip()
+    description = request.POST.get("description", "").strip()
+
+    if not objet or not description:
+        return JsonResponse(
+            {"error": "objet et description sont requis"},
+            status=400,
+        )
+
+    # Création de la demande
+    demande = demande_support.objects.create(
+        utilisateur=user,
+        objet=objet,
+        description=description,
+    )
+
+    # Gestion des éventuelles pièces jointes (champ "fichiers" côté front)
+    fichiers = request.FILES.getlist("fichiers")
+    for f in fichiers:
+        piece_jointe_support.objects.create(
+            demande=demande,
+            fichier=f,
+        )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "id": demande.id,
+            "objet": demande.objet,
+            "date_creation": demande.date_creation.isoformat(),
+        },
+        status=201,
+    )

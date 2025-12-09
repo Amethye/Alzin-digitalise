@@ -57,6 +57,7 @@ urlpatterns = [
 
     path("contenir/", views.contenir_api, name="api_contenir"),
     path("fournir/", views.fournir_api, name="api_fournir"),
+    path("support/", views.support_api, name="api_support"),
     
     
 ]
