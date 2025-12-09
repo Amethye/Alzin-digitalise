@@ -43,6 +43,7 @@ from django.forms.models import model_to_dict
 from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.db import models
+import os
 
 def api_root(request):
     return JsonResponse({
@@ -395,11 +396,22 @@ def serialize_chant(request, c):
         })
 
     return data
+
+
+def delete_file_field(instance, field_name):
+    """Supprime physiquement un fichier et réinitialise le champ."""
+    field = getattr(instance, field_name, None)
+    if field and hasattr(field, "path") and os.path.exists(field.path):
+        os.remove(field.path)
+    setattr(instance, field_name, None)
+    instance.save()
+
+
 @csrf_exempt
 def chants_api(request, chant_id=None):
 
     # ============================================================
-    #                   GET (DETAIL)
+    #                     DETAIL (chant_id donné)
     # ============================================================
     if chant_id:
         try:
@@ -411,51 +423,76 @@ def chants_api(request, chant_id=None):
         if request.method == "GET":
             return JsonResponse(serialize_chant(request, c))
 
-        # ---------- UPDATE (PUT) ----------
-        if request.method == "PUT":
-            # Mise à jour champs texte
+        # ========================================================
+        #        DELETE D'UN FICHIER SPÉCIFIQUE (field=xxx)
+        # ========================================================
+        if request.method == "DELETE" and request.GET.get("field"):
+            field = request.GET.get("field")
+
+            mapping = {
+                "illustration": "illustration_chant",
+                "pdf": "paroles_pdf",
+                "partition": "partition"
+            }
+
+            if field not in mapping:
+                return JsonResponse({"error": "Champ invalide"}, status=400)
+
+            file_field = mapping[field]
+            f = getattr(c, file_field)
+
+            if f:
+                f.delete()
+                setattr(c, file_field, None)
+                c.save()
+
+            return JsonResponse({"success": True})
+
+        # ---------- DELETE du chant entier ----------
+        if request.method == "DELETE":
+            c.delete()
+            return JsonResponse({"success": True})
+
+        # ========================================================
+        #               MAJ (PUT ou PATCH)
+        # ========================================================
+        if request.method in ("PUT", "PATCH"):
+
+            # Champs texte
             c.nom_chant = request.POST.get("nom_chant", c.nom_chant)
-            c.auteur = request.POST.get("auteur") or ""
-            c.ville_origine = request.POST.get("ville_origine") or ""
+            c.auteur = request.POST.get("auteur", c.auteur)
+            c.ville_origine = request.POST.get("ville_origine", c.ville_origine)
             c.paroles = request.POST.get("paroles", c.paroles)
-            c.description = request.POST.get("description") or ""
+            c.description = request.POST.get("description", c.description)
 
-            # ---------- Catégories ----------
+            # MAJ Catégories
             categories = request.POST.getlist("categories")
-            appartenir.objects.filter(chant=c).delete()
+            if categories:
+                appartenir.objects.filter(chant=c).delete()
+                for cat_name in categories:
+                    cat_obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
+                    appartenir.objects.create(
+                        chant=c, categorie=cat_obj, utilisateur=None
+                    )
 
-            for cat_name in categories:
-                cat_obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
-                appartenir.objects.create(
-                    chant=c,
-                    categorie=cat_obj,
-                    utilisateur=None
-                )
-
-            # ---------- Illustration ----------
+            # MAJ fichiers si envoyés
             if "illustration_chant" in request.FILES:
                 c.illustration_chant = request.FILES["illustration_chant"]
 
-            # ---------- PDF paroles ----------
             if "paroles_pdf" in request.FILES:
                 c.paroles_pdf = request.FILES["paroles_pdf"]
 
-            # ---------- Partition --------
             if "partition" in request.FILES:
                 c.partition = request.FILES["partition"]
 
             c.save()
-            return JsonResponse({"success": True})
 
-        # ---------- DELETE ----------
-        if request.method == "DELETE":
-            c.delete()
             return JsonResponse({"success": True})
 
         return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
     # ============================================================
-    #                      GET (LISTE)
+    #                     LISTE DES CHANTS
     # ============================================================
     if request.method == "GET":
         qs = (
@@ -464,12 +501,13 @@ def chants_api(request, chant_id=None):
             .prefetch_related("pistes_audio", "categories_associees__categorie")
             .order_by("nom_chant")
         )
-
-        data = [serialize_chant(request, c) for c in qs]
-        return JsonResponse(data, safe=False)
+        return JsonResponse(
+            [serialize_chant(request, c) for c in qs],
+            safe=False
+        )
 
     # ============================================================
-    #                   CRÉATION (POST)
+    #                     CREATION D'UN CHANT
     # ============================================================
     if request.method == "POST":
         nom = request.POST.get("nom_chant")
@@ -478,7 +516,6 @@ def chants_api(request, chant_id=None):
         if not nom or not paroles:
             return JsonResponse({"error": "Champs requis manquants"}, status=400)
 
-        # Création
         c = chant.objects.create(
             nom_chant=nom,
             auteur=request.POST.get("auteur", ""),
@@ -488,13 +525,12 @@ def chants_api(request, chant_id=None):
             utilisateur=None,
         )
 
-        # ---------- Catégories ----------
-        categories = request.POST.getlist("categories")
-        for cat_name in categories:
+        # Catégories
+        for cat_name in request.POST.getlist("categories"):
             cat_obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
             appartenir.objects.create(chant=c, categorie=cat_obj, utilisateur=None)
 
-        # ---------- Fichiers ----------
+        # Fichiers
         if "illustration_chant" in request.FILES:
             c.illustration_chant = request.FILES["illustration_chant"]
 
@@ -508,8 +544,7 @@ def chants_api(request, chant_id=None):
 
         return JsonResponse({"id": c.id}, status=201)
 
-    # Méthode non autorisée
-    return JsonResponse({"error": "Méthode non autorisée"}, status=405) 
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 #------------------------------------------------------------------------
 #                           CATEGORIES
 #------------------------------------------------------------------------
