@@ -60,7 +60,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
       // email pour le compte
       localStorage.setItem("email", payload.email);
 
-      // ID pour les favoris ❤️ et l’état connecté
+      // ID pour les favoris et l’état connecté
       if (data.user_id || data.id) {
         const uid = data.user_id ?? data.id;
         localStorage.setItem("utilisateur_id", String(uid));
@@ -142,13 +142,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
           `}
         </style>
       </form>
-
-      <a
-        href="/RequestPasswordReset"
-        className="text-sm text-gray-600 hover:underline"
-      >
-        Mot de passe oublié ?
-      </a>
     </div>
   );
 };

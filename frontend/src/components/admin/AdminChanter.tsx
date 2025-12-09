@@ -252,7 +252,6 @@ export default function AdminChanter() {
                       </td>
                       <td className="px-4 py-2">
                         <div className="flex justify-end">
-                          {/* Ce bouton ne fonctionnera que si tu as ajouté chanter_detail_api + route */}
                           <button
                             type="button"
                             onClick={() => handleDelete(l.id)}

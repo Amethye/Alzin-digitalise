@@ -101,27 +101,22 @@ export default function ListeChants() {
     isFavoris(chantId) ? removeFavori(chantId) : addFavori(chantId);
   };
 
-  // -------------------------------
-  // 🔍 RECHERCHE
-  // -------------------------------
+  //  RECHERCHE
   const searched = chants.filter((c) =>
     `${c.nom_chant} ${c.auteur} ${c.ville_origine}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
 
-  // -------------------------------
-  // 🎯 FILTRE PAR CATÉGORIE
-  // -------------------------------
+
+  // FILTRE PAR CATÉGORIE
   const filtered = searched.filter((c) =>
     filterCat === "Toutes"
       ? true
       : (c.categories.length ? c.categories : ["Autre"]).includes(filterCat)
   );
 
-  // -------------------------------
-  // 📌 GROUPER PAR CATÉGORIE
-  // -------------------------------
+  //  GROUPER PAR CATÉGORIE
   const categoriesMap: Record<string, Chant[]> = {};
 
   filtered.forEach((chant) => {
@@ -132,9 +127,8 @@ export default function ListeChants() {
     });
   });
 
-  // -------------------------------
-  // 🧮 CATÉGORIES DISPONIBLES
-  // -------------------------------
+
+  // CATÉGORIES DISPONIBLES
   const allCategories = [
     "Toutes",
     ...Array.from(
@@ -148,7 +142,7 @@ export default function ListeChants() {
     <div className="px-10 py-10 flex flex-col gap-10 w-full">
       <h1 className="text-3xl font-bold text-mauve">Liste de chants</h1>
 
-      {/* 🔍 Recherche + filtre */}
+      {/* Recherche + filtre */}
       <div className="flex flex-col md:flex-row gap-4">
         <input
           type="text"
@@ -175,7 +169,7 @@ export default function ListeChants() {
         </select>
       </div>
 
-      {/* 📌 AFFICHAGE GROUPÉ PAR CATÉGORIE */}
+      {/* AFFICHAGE GROUPÉ PAR CATÉGORIE */}
       {Object.keys(categoriesMap)
         .sort((a, b) => a.localeCompare(b, "fr"))
         .map((cat) => {
@@ -213,16 +207,6 @@ export default function ListeChants() {
                       <p className="mt-2 text-gray-600">
                         <strong>Auteur :</strong> {ch.auteur}
                       </p>
-                    )}
-
-                    {ch.pistes_audio.length > 0 && (
-                      <div className="mt-3 flex flex-col gap-2">
-                        {ch.pistes_audio.map((p) => (
-                          <audio key={p.id} controls className="w-full">
-                            <source src={p.fichier_mp3} type="audio/mpeg" />
-                          </audio>
-                        ))}
-                      </div>
                     )}
                   </div>
                 ))}

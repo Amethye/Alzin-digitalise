@@ -111,8 +111,13 @@ export default function Nav() {
     });
 
     localStorage.removeItem("email");
+    localStorage.removeItem("utilisateur_id");
+    localStorage.removeItem("role");
+
+
     setMe(null);
     setRole("guest");
+
     window.location.href = "/";
   };
 

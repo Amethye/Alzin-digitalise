@@ -8,6 +8,6 @@ const { id } = Astro.params;
 
 <Layout title="Chant">
   <main class="py-6">
-    <ChantDetail id={id} client:load />
+    <ChantDetail id={Number(id)} client:load />
   </main>
 </Layout>

@@ -136,13 +136,12 @@ export default function AdminChants() {
     fd.append("paroles", form.paroles);
     fd.append("description", form.description);
 
-    // --------- FIX : assigner "Autre" si aucune catégorie sélectionnée ---------
+    // Catégories
     const finalCategories = selectedCats.length > 0 ? selectedCats : ["Autre"];
-
+    
     finalCategories.forEach((cat) => {
       fd.append("categories", cat);
     });
-    // --------------------------------------------------------------------------
 
     if (form.illustration_chant) fd.append("illustration_chant", form.illustration_chant);
     if (form.paroles_pdf) fd.append("paroles_pdf", form.paroles_pdf);
@@ -154,9 +153,25 @@ export default function AdminChants() {
     const res = await fetch(url, { method, body: fd });
     if (!res.ok) return alert("Erreur lors de l’enregistrement");
 
-    // AUDIO
+    const chantId = editingId ?? (await res.json()).id;
+
+  
+    await fetch(`${API_APPARTENIR}?chant_id=${chantId}`, {
+      method: "DELETE",
+    });
+
+    for (const cat of finalCategories) {
+      await fetch(API_APPARTENIR, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chant_id: chantId,
+          categorie: cat,
+        }),
+      });
+    }
+
     if (form.new_audio) {
-      const chantId = editingId ?? (await res.json()).id;
       const fd2 = new FormData();
       fd2.append("fichier_mp3", form.new_audio);
       fd2.append("chant_id", chantId.toString());
@@ -171,6 +186,15 @@ export default function AdminChants() {
     await fetch(`${API_APPARTENIR}?chant_id=${chantId}&categorie=${cat}`, {
       method: "DELETE",
     });
+    loadData();
+  };
+  const deleteChant = async (id: number) => {
+    if (!confirm("Supprimer ce chant ?")) return;
+
+    await fetch(`${API_CHANTS}${id}/`, {
+      method: "DELETE",
+    });
+
     loadData();
   };
 
@@ -189,7 +213,7 @@ export default function AdminChants() {
     setPreviewPartition(undefined);
   };
 
-    // --------------------- FILTRE / TRI ---------------------
+
   const filtered = chants
     .filter(c => filterCat === "Toutes" || c.categories.includes(filterCat))
     .filter(c =>

@@ -1,11 +1,10 @@
 ---
-import AdminCategories from '@components/AdminCategories';
+import AdminCategories from '@admincomponents/AdminCategories';
 import Layout from '@layouts/Layout.astro';
-
 ---
 
 <Layout title="Admin - Catégories">
   <main class="flex justify-center bg-white px-4 py-6 sm:px-6 sm:py-8">
-      <AdminCategories client:load />
+    <AdminCategories client:load />
   </main>
 </Layout>

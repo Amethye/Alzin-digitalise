@@ -9,8 +9,7 @@ type Evenement = {
   histoire: string;        // possiblement ""
 };
 
-const API_BASE_URL =
-  import.meta.env.PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const API_EVENT = "http://127.0.0.1:8000/api/évènements";
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -40,7 +39,7 @@ export default function EvenementsList() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`${API_BASE_URL}/api/evenements/`);
+      const res = await fetch(API_EVENT);
       if (!res.ok) {
         throw new Error("Erreur lors du chargement des évènements");
       }

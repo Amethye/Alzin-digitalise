@@ -171,16 +171,6 @@ export default function FavorisPage() {
                       <FavoriButton chantId={ch.id} USER_ID={USER_ID} />
                     </div>
                   </div>
-
-                  {ch.pistes_audio.length > 0 && (
-                    <div className="mt-3 flex flex-col gap-2">
-                      {ch.pistes_audio.map((p) => (
-                        <audio key={p.id} controls className="w-full">
-                          <source src={p.fichier_mp3} type="audio/mpeg" />
-                        </audio>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

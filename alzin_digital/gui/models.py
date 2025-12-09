@@ -9,7 +9,7 @@ from django.db import models
 
 #--  CHECK (Email_adress LIKE '%_@__%.%__%')
 class role(models.Model):
-    nom_role = models.CharField(max_length = 50, unique=True)
+    nom_role = models.CharField(max_length = 50, unique=True,default = "user", db_index=True)
 
     class Meta:
         db_table = 'role'
@@ -143,7 +143,7 @@ class noter(models.Model):
         unique_together = (('utilisateur', 'piste_audio'))
 
     def __str__(self):
-        return f"Note {self.valeur_note} par {self.utilisateur} pour {self.piste_audio}"
+        return f"{self.utilisateur} note {self.piste_audio} le {self.date_rating} : {self.valeur_note}/5"
 
 
 # ================================================================================
@@ -161,14 +161,14 @@ class favoris(models.Model):
         on_delete=models.CASCADE,
         db_index=True
     )
-    date_favori = models.DateField()
+    date_favori = models.DateField(auto_now_add=True)
 
     class Meta:
         db_table = 'favoris'
         unique_together = (('utilisateur', 'chant'),)
 
     def __str__(self):
-        return f"{self.utilisateur} favoris {self.chant} on {self.date_favori}"
+        return f"{self.utilisateur} favoris {self.chant} le {self.date_favori}"
 
 
 # ================================================================================

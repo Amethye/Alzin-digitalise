@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import FavoriButton from "@components/FavoriButton";
+import RatingStars from "@components/RatingStars";
 
 type Chant = {
   id: number;
@@ -12,7 +13,13 @@ type Chant = {
   paroles_pdf_url?: string;
   partition_url?: string;
   categories: string[];
-  pistes_audio: { id: number; fichier_mp3: string }[];
+
+  pistes_audio: {
+    id: number;
+    fichier_mp3: string;
+    note_moyenne: number;
+    nb_notes: number;
+  }[];
 };
 
 const API_CHANTS = "http://127.0.0.1:8000/api/chants/";
@@ -51,22 +58,6 @@ export default function ChantPage({ id }: { id: number }) {
         )}
       </div>
 
-      {/* Auteur / ville */}
-      <div className="text-gray-700 text-lg space-y-1">
-        <p><strong>Auteur :</strong> {chant.auteur || "—"}</p>
-        <p><strong>Ville d'origine :</strong> {chant.ville_origine || "—"}</p>
-      </div>
-
-      {/* Illustration */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Illustration</p>
-        {chant.illustration_chant_url ? (
-          <img src={chant.illustration_chant_url} className="w-full max-h-96 object-cover rounded-xl shadow" />
-        ) : (
-          <p className="text-gray-500 italic">Aucune illustration</p>
-        )}
-      </div>
-
       {/* Catégories */}
       <div>
         <p className="text-sm font-semibold text-mauve mb-1">Catégories</p>
@@ -82,19 +73,77 @@ export default function ChantPage({ id }: { id: number }) {
           <p className="text-gray-500 italic">Aucune catégorie</p>
         )}
       </div>
-
-      {/* Description */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Description</p>
-        <p className="text-gray-700">{chant.description || "—"}</p>
-      </div>
-
+      
       {/* Paroles */}
       <div>
         <h2 className="text-2xl font-semibold text-mauve mb-3">Paroles</h2>
         <pre className="whitespace-pre-wrap bg-purple-50 p-4 rounded-xl border border-mauve/20 font-sans tracking-wide leading-relaxed">
           {chant.paroles || "Aucune parole disponible."}
         </pre>
+      </div>
+      
+      {/* Audio */}
+      <div>
+        <h2 className="text-2xl font-semibold text-mauve mb-3">Audio</h2>
+
+        {chant.pistes_audio.length > 0 ? (
+          chant.pistes_audio.map((p) => (
+            <div key={p.id} className="mb-6">
+              
+              {/* AUDIO */}
+              <audio controls className="w-full mb-2">
+                <source src={p.fichier_mp3} type="audio/mpeg" />
+              </audio>
+
+              {/* Affichage moyenne et notes */}
+              <div className="flex items-center gap-3 text-gray-700 text-sm mb-1">
+                <span className="font-semibold text-mauve">Note :</span>
+
+                <span className="text-lg font-bold">
+                  {p.note_moyenne?.toFixed(1) || "0.0"}★
+                </span>
+
+                <span className="text-gray-500">
+                  ({p.nb_notes} vote{p.nb_notes > 1 ? "s" : ""})
+                </span>
+              </div>
+
+              {/* Notation utilisateur */}
+              {USER_ID && (
+                <div>
+                  <p className="text-sm text-mauve font-semibold mb-1">
+                    Noter cette piste :
+                  </p>
+                  <RatingStars pisteId={p.id} userId={USER_ID} />
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500 italic">Aucun audio disponible.</p>
+        )}
+      </div>
+      
+      {/* Auteur / ville */}
+      <div className="text-gray-700 text-lg space-y-1">
+        <p><strong>Auteur :</strong> {chant.auteur || "—"}</p>
+        <p><strong>Ville d'origine :</strong> {chant.ville_origine || "—"}</p>
+      </div>
+      
+      {/* Description */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Description</p>
+        <p className="text-gray-700">{chant.description || "—"}</p>
+      </div>
+
+      {/* Illustration */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Illustration</p>
+        {chant.illustration_chant_url ? (
+          <img src={chant.illustration_chant_url} className="w-full max-h-96 object-cover rounded-xl shadow" />
+        ) : (
+          <p className="text-gray-500 italic">Aucune illustration</p>
+        )}
       </div>
 
       {/* PDF */}
@@ -121,19 +170,7 @@ export default function ChantPage({ id }: { id: number }) {
         )}
       </div>
 
-      {/* Audio */}
-      <div>
-        <h2 className="text-2xl font-semibold text-mauve mb-3">Audio</h2>
-        {chant.pistes_audio.length > 0 ? (
-          chant.pistes_audio.map((p) => (
-            <audio key={p.id} controls className="w-full mb-2">
-              <source src={p.fichier_mp3} type="audio/mpeg" />
-            </audio>
-          ))
-        ) : (
-          <p className="text-gray-500 italic">Aucun audio disponible.</p>
-        )}
-      </div>
+      
 
       <button
         onClick={() => history.back()}

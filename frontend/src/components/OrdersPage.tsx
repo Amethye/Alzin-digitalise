@@ -4,7 +4,7 @@ import LogoUrl from "@images/LogoFPMs.svg?url";
 type Commande = {
   id: number;
   date_commande: string;
-  status?: string; // éventuellement, si tu ajoutes un statut plus tard
+  status?: string;
 };
 
 type AlzinPerso = {
@@ -42,7 +42,6 @@ function formatDate(iso: string) {
   });
 }
 
-// Heuristique simple pour classer les statuts "passés"
 function isPastStatus(status: string | undefined) {
   if (!status) return false;
   const s = status.toLowerCase();
@@ -112,9 +111,6 @@ export default function OrdersPage() {
         };
 
        
-
-        // ➜ Si l'API commande dit "utilisateur inconnu / pas autorisé",
-        // on bascule aussi sur l'écran "devenir membre"
         if (
           resCmd.status === 401 ||
           resCmd.status === 403 ||
@@ -208,7 +204,7 @@ export default function OrdersPage() {
         "X-User-Email": email,
       };
 
-      // 1) Créer la commande (via mes-commandes, qui déduit l'utilisateur avec l'email)
+      // Créer la commande (via mes-commandes, qui déduit l'utilisateur avec l'email)
       const resCmd = await fetch("http://127.0.0.1:8000/api/mes-commandes/", {
         method: "POST",
         headers: headersWithEmail,
@@ -223,7 +219,7 @@ export default function OrdersPage() {
 
       const newCommande: Commande = await resCmd.json();
 
-      // 2) Ajouter la ligne de commande
+      // Ajouter la ligne de commande
       const resLigne = await fetch(
         "http://127.0.0.1:8000/api/commandes-lignes/",
         {
@@ -243,7 +239,7 @@ export default function OrdersPage() {
         throw new Error("Impossible d'ajouter l'alzin à la commande.");
       }
 
-      // 3) Enregistrer le fournisseur choisi pour ce chansonnier
+      // Enregistrer le fournisseur choisi pour ce chansonnier
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
       const resFournir = await fetch("http://127.0.0.1:8000/api/fournir/", {
         method: "POST",

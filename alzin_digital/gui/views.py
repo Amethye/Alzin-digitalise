@@ -42,6 +42,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.forms.models import model_to_dict
 from django.core.files.storage import default_storage
 from django.utils import timezone
+from django.db import models
 
 def api_root(request):
     return JsonResponse({
@@ -215,7 +216,11 @@ def reset_password_api(request):
     if request.method != "POST":
         return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
-    body = json.loads(request.body.decode("utf-8"))
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
     email = body.get("email")
     old_password = body.get("old_password")
     new_password = body.get("new_password")
@@ -224,13 +229,15 @@ def reset_password_api(request):
         return JsonResponse({"error": "Champs manquants"}, status=400)
 
     try:
-        user = utilisateurs.objects.get(email=email)
-    except utilisateurs.DoesNotExist:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
         return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
 
+    # Vérification ancien mdp
     if not check_password(old_password, user.password):
         return JsonResponse({"error": "Ancien mot de passe incorrect"}, status=401)
 
+    # Mettre à jour
     user.password = make_password(new_password)
     user.save()
 
@@ -324,41 +331,75 @@ def admin_users_api(request, user_id=None, action=None):
                             #CHANTS
 #------------------------------------------------------------------------
 
-def serialize_chant(c):
-    return {
+from django.db.models import Avg
+
+def serialize_chant(request, c):
+    """
+    Sérialisation complète d'un chant,
+    avec URLs absolues et statistiques sur les pistes audio.
+    """
+
+    # ----------- Construction du JSON principal -----------
+    data = {
         "id": c.id,
         "nom_chant": c.nom_chant,
         "auteur": c.auteur or "",
         "ville_origine": c.ville_origine or "",
         "paroles": c.paroles,
         "description": c.description or "",
-        "illustration_chant_url": c.illustration_chant.url if c.illustration_chant else None,
-        "paroles_pdf_url": c.paroles_pdf.url if c.paroles_pdf else None,
-        "partition_url": c.partition.url if c.partition else None,
 
-        # catégories via appartenir
+        # FICHIERS (URLs absolues)
+        "illustration_chant_url": (
+            request.build_absolute_uri(c.illustration_chant.url)
+            if c.illustration_chant else None
+        ),
+        "paroles_pdf_url": (
+            request.build_absolute_uri(c.paroles_pdf.url)
+            if c.paroles_pdf else None
+        ),
+        "partition_url": (
+            request.build_absolute_uri(c.partition.url)
+            if c.partition else None
+        ),
+
+        # CATÉGORIES
         "categories": [
             rel.categorie.nom_categorie
             for rel in c.categories_associees.all()
         ],
 
-        # pistes audio
-        "pistes_audio": [
-            {
-                "id": pa.id,
-                "fichier_mp3": pa.fichier_mp3.url if pa.fichier_mp3 else None,
-                "utilisateur": pa.utilisateur.id if pa.utilisateur else None,
-            }
-            for pa in c.pistes_audio.all()
-        ]
+        # PISTES AUDIO (avec notes)
+        "pistes_audio": [],
     }
 
+    # ----------- Ajouter pistes audio + notes -----------
+    for pa in c.pistes_audio.all():
 
+        notes_qs = noter.objects.filter(piste_audio=pa)
+
+        nb_notes = notes_qs.count()
+
+        note_moyenne = notes_qs.aggregate(
+            Avg("valeur_note")
+        )["valeur_note__avg"] or 0.0
+
+        data["pistes_audio"].append({
+            "id": pa.id,
+            "fichier_mp3": (
+                request.build_absolute_uri(pa.fichier_mp3.url)
+                if pa.fichier_mp3 else None
+            ),
+            "utilisateur": pa.utilisateur.id if pa.utilisateur else None,
+            "note_moyenne": float(note_moyenne),
+            "nb_notes": nb_notes,
+        })
+
+    return data
 @csrf_exempt
 def chants_api(request, chant_id=None):
 
     # ============================================================
-    #                      GET (DETAIL)
+    #                   GET (DETAIL)
     # ============================================================
     if chant_id:
         try:
@@ -366,22 +407,20 @@ def chants_api(request, chant_id=None):
         except chant.DoesNotExist:
             return JsonResponse({"error": "Chant introuvable"}, status=404)
 
-        # ---------------- DETAIL
+        # ---------- GET ----------
         if request.method == "GET":
-            return JsonResponse(serialize_chant(c))
+            return JsonResponse(serialize_chant(request, c))
 
-        # --------- UPDATE ---------
+        # ---------- UPDATE (PUT) ----------
         if request.method == "PUT":
-            # Mise à jour des champs texte
+            # Mise à jour champs texte
             c.nom_chant = request.POST.get("nom_chant", c.nom_chant)
             c.auteur = request.POST.get("auteur") or ""
             c.ville_origine = request.POST.get("ville_origine") or ""
             c.paroles = request.POST.get("paroles", c.paroles)
             c.description = request.POST.get("description") or ""
 
-            # -----------------------------
-            # Mise à jour des catégories
-            # -----------------------------
+            # ---------- Catégories ----------
             categories = request.POST.getlist("categories")
             appartenir.objects.filter(chant=c).delete()
 
@@ -393,37 +432,22 @@ def chants_api(request, chant_id=None):
                     utilisateur=None
                 )
 
-            # -----------------------------
-            # Remplacement des fichiers
-            # -----------------------------
-
-            # Illustration
+            # ---------- Illustration ----------
             if "illustration_chant" in request.FILES:
-                if c.illustration_chant and c.illustration_chant.path:
-                    if os.path.isfile(c.illustration_chant.path):
-                        os.remove(c.illustration_chant.path)
                 c.illustration_chant = request.FILES["illustration_chant"]
 
-            # PDF paroles
+            # ---------- PDF paroles ----------
             if "paroles_pdf" in request.FILES:
-                if c.paroles_pdf and c.paroles_pdf.path:
-                    if os.path.isfile(c.paroles_pdf.path):
-                        os.remove(c.paroles_pdf.path)
                 c.paroles_pdf = request.FILES["paroles_pdf"]
 
-            # Partition
+            # ---------- Partition --------
             if "partition" in request.FILES:
-                if c.partition and c.partition.path:
-                    if os.path.isfile(c.partition.path):
-                        os.remove(c.partition.path)
                 c.partition = request.FILES["partition"]
 
             c.save()
             return JsonResponse({"success": True})
 
-        # ============================================================
-        #                      DELETE
-        # ============================================================
+        # ---------- DELETE ----------
         if request.method == "DELETE":
             c.delete()
             return JsonResponse({"success": True})
@@ -440,21 +464,21 @@ def chants_api(request, chant_id=None):
             .prefetch_related("pistes_audio", "categories_associees__categorie")
             .order_by("nom_chant")
         )
-        data = [serialize_chant(c) for c in qs]
+
+        data = [serialize_chant(request, c) for c in qs]
         return JsonResponse(data, safe=False)
 
     # ============================================================
-    #                      CRÉATION (POST)
+    #                   CRÉATION (POST)
     # ============================================================
     if request.method == "POST":
         nom = request.POST.get("nom_chant")
         paroles = request.POST.get("paroles")
-        categories = request.POST.getlist("categories")
 
         if not nom or not paroles:
             return JsonResponse({"error": "Champs requis manquants"}, status=400)
 
-        # Création du chant
+        # Création
         c = chant.objects.create(
             nom_chant=nom,
             auteur=request.POST.get("auteur", ""),
@@ -464,12 +488,13 @@ def chants_api(request, chant_id=None):
             utilisateur=None,
         )
 
-        # Ajout catégories
+        # ---------- Catégories ----------
+        categories = request.POST.getlist("categories")
         for cat_name in categories:
             cat_obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
             appartenir.objects.create(chant=c, categorie=cat_obj, utilisateur=None)
 
-        # FICHIERS
+        # ---------- Fichiers ----------
         if "illustration_chant" in request.FILES:
             c.illustration_chant = request.FILES["illustration_chant"]
 
@@ -483,6 +508,7 @@ def chants_api(request, chant_id=None):
 
         return JsonResponse({"id": c.id}, status=201)
 
+    # Méthode non autorisée
     return JsonResponse({"error": "Méthode non autorisée"}, status=405) 
 #------------------------------------------------------------------------
 #                           CATEGORIES
@@ -600,35 +626,48 @@ def appartenir_api(request):
 @csrf_exempt
 def pistes_audio_api(request, piste_id=None):
 
-    # ----------- GET /api/pistes-audio/ -------------
+    # ---------- GET LISTE ----------
     if request.method == "GET" and piste_id is None:
-        qs = piste_audio.objects.select_related("utilisateur", "chant")
-        data = [
-            {
+        qs = piste_audio.objects.all()
+
+        data = []
+        for p in qs:
+            notes = noter.objects.filter(piste_audio=p)
+            avg = notes.aggregate(avg=Avg("valeur_note"))["avg"] or 0
+            count = notes.count()
+
+            data.append({
                 "id": p.id,
                 "fichier_mp3": p.fichier_mp3.url if p.fichier_mp3 else None,
-                "utilisateur_id": p.utilisateur_id,
                 "chant_id": p.chant_id,
-            }
-            for p in qs
-        ]
+                "utilisateur_id": p.utilisateur_id,
+                "note_moyenne": round(avg, 2),
+                "nb_notes": count,
+            })
+
         return JsonResponse(data, safe=False)
 
-    # ----------- GET /api/pistes-audio/<id>/ ----------
+    # ---------- GET DETAIL ----------
     if request.method == "GET" and piste_id:
         try:
             p = piste_audio.objects.get(id=piste_id)
         except piste_audio.DoesNotExist:
             return JsonResponse({"error": "Not found"}, status=404)
 
+        notes = noter.objects.filter(piste_audio=p)
+        avg = notes.aggregate(avg=Avg("valeur_note"))["avg"] or 0
+        count = notes.count()
+
         return JsonResponse({
             "id": p.id,
             "fichier_mp3": p.fichier_mp3.url if p.fichier_mp3 else None,
-            "utilisateur_id": p.utilisateur_id,
             "chant_id": p.chant_id,
+            "utilisateur_id": p.utilisateur_id,
+            "note_moyenne": round(avg, 2),
+            "nb_notes": count,
         })
 
-    # ----------- POST : upload --------------
+    # ---------- POST UPLOAD ----------
     if request.method == "POST":
         chant_id = request.POST.get("chant_id")
         utilisateur_id = request.POST.get("utilisateur_id")
@@ -649,8 +688,8 @@ def pistes_audio_api(request, piste_id=None):
             "fichier_mp3": p.fichier_mp3.url,
         }, status=201)
 
-    # ----------- DELETE /api/pistes-audio/<id>/ ----------
-    if request.method == "DELETE" and piste_id:
+    # ---------- DELETE ----------
+    if request.method == "DELETE":
         try:
             p = piste_audio.objects.get(id=piste_id)
         except piste_audio.DoesNotExist:
@@ -660,38 +699,22 @@ def pistes_audio_api(request, piste_id=None):
         return JsonResponse({"success": True})
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
-
 #----------------------------------------------------------------------------
                                 #NOTER
 #---------------------------------------------------------------------------
 @csrf_exempt
 def noter_api(request, note_id=None):
-    if request.method == "GET":
-        if note_id:
-            try:
-                n = noter.objects.get(id=note_id)
-            except noter.DoesNotExist:
-                return JsonResponse({"error": "Note introuvable"}, status=404)
 
-            return JsonResponse({
-                "id": n.id,
-                "utilisateur_id": n.utilisateur_id,
-                "piste_audio_id": n.piste_audio_id,
-                "valeur_note": n.valeur_note,
-                "date_rating": n.date_rating.isoformat(),
-            })
+    # ---------- GET (liste + moyenne) ----------
+    if request.method == "GET":
+        piste_id = request.GET.get("piste_id")
 
         qs = noter.objects.all()
 
-        user_id = request.GET.get("utilisateur_id")
-        piste_id = request.GET.get("piste_id")
-
-        if user_id:
-            qs = qs.filter(utilisateur_id=user_id)
         if piste_id:
             qs = qs.filter(piste_audio_id=piste_id)
 
-        data = [
+        notes_list = [
             {
                 "id": n.id,
                 "utilisateur_id": n.utilisateur_id,
@@ -702,18 +725,28 @@ def noter_api(request, note_id=None):
             for n in qs
         ]
 
-        return JsonResponse(data, safe=False)
+        moyenne = qs.aggregate(models.Avg("valeur_note"))["valeur_note__avg"]
+        nb_notes = qs.count()
 
-    # ------------------------------------
-    # POST 
-    # ------------------------------------
+        return JsonResponse({
+            "notes": notes_list,
+            "moyenne": round(moyenne, 2) if moyenne else 0,
+            "nb_notes": nb_notes
+        })
+
+    # ---------- POST (créer ou modifier note) ----------
     if request.method == "POST":
         body = json.loads(request.body.decode("utf-8"))
 
-        note = noter.objects.create(
-            utilisateur_id=body["utilisateur_id"],
-            piste_audio_id=body["piste_audio_id"],
-            valeur_note=body["valeur_note"]
+        user_id = body["utilisateur_id"]
+        piste_id = body["piste_audio_id"]
+        valeur = body["valeur_note"]
+
+        # update_or_create = AUTO : met à jour si existe, sinon crée
+        note, created = noter.objects.update_or_create(
+            utilisateur_id=user_id,
+            piste_audio_id=piste_id,
+            defaults={"valeur_note": valeur}
         )
 
         return JsonResponse({
@@ -722,29 +755,10 @@ def noter_api(request, note_id=None):
             "piste_audio_id": note.piste_audio_id,
             "valeur_note": note.valeur_note,
             "date_rating": note.date_rating.isoformat(),
+            "created": created
         }, status=201)
 
-    # ------------------------------------
-    # PUT 
-    # ------------------------------------
-    if request.method == "PUT":
-        if not note_id:
-            return JsonResponse({"error": "ID requis"}, status=400)
-
-        try:
-            note = noter.objects.get(id=note_id)
-        except noter.DoesNotExist:
-            return JsonResponse({"error": "Note introuvable"}, status=404)
-
-        body = json.loads(request.body.decode("utf-8"))
-        note.valeur_note = body.get("valeur_note", note.valeur_note)
-        note.save()
-
-        return JsonResponse({"success": True})
-
-    # ------------------------------------
-    # DELETE
-    # ------------------------------------
+    # ---------- DELETE ----------
     if request.method == "DELETE":
         if not note_id:
             return JsonResponse({"error": "ID requis"}, status=400)
@@ -758,7 +772,6 @@ def noter_api(request, note_id=None):
         return JsonResponse({"success": True})
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
-
     
 #-----------------------------------------------------------
 #                          FAVORIS

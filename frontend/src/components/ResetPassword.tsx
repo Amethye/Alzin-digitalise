@@ -1,107 +1,110 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-export default function ResetPassword() {
-  const email = localStorage.getItem("email") || "";
-
+export default function ResetPasswordForm() {
+  const [email, setEmail] = useState("");
   const [oldPwd, setOldPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirm, setConfirm] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("email");
+    if (storedEmail) setEmail(storedEmail);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!email) {
+      setMessage("Impossible de déterminer l'utilisateur.");
+      return;
+    }
+
     if (newPwd !== confirm) {
-      setMessage("❌ Les mots de passe ne correspondent pas.");
+      setMessage("Les mots de passe ne correspondent pas.");
       return;
     }
 
     setLoading(true);
 
-    const res = await fetch("http://127.0.0.1:8000/api/auth/reset-password/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        old_password: oldPwd,
-        new_password: newPwd,
-      }),
-    });
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/auth/reset-password/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          old_password: oldPwd,
+          new_password: newPwd,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.ok) {
-      setMessage("✅ Mot de passe modifié avec succès !");
-    } else {
-      setMessage("❌ " + data.error);
+      if (!res.ok) {
+        setMessage(data.error || "Erreur lors du changement.");
+      } else {
+        setMessage("Mot de passe modifié avec succès !");
+      }
+    } catch {
+      setMessage("Erreur serveur.");
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="flex justify-center px-4 py-10">
-      <div className="w-full max-w-md bg-white border border-mauve/30 rounded-xl shadow p-6">
-        <h1 className="text-2xl font-bold text-mauve mb-4">
-          Modifier mon mot de passe
-        </h1>
+    <form onSubmit={handleSubmit} className="space-y-4 p-6 rounded-xl bg-purple-50/40 border border-mauve/30">
 
-        {message && (
-          <div className="mb-4 rounded-lg bg-mauve/10 border border-mauve px-4 py-3 text-mauve">
-            {message}
-          </div>
-        )}
+      {message && (
+        <p className="rounded-lg border border-mauve bg-mauve/10 px-3 py-2 text-mauve">
+          {message}
+        </p>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="font-medium text-mauve block mb-1">
-              Ancien mot de passe
-            </label>
-            <input
-              type="password"
-              value={oldPwd}
-              onChange={(e) => setOldPwd(e.target.value)}
-              required
-              className="w-full px-3 py-2 rounded-lg border border-mauve/40 focus:ring-2 focus:ring-mauve"
-            />
-          </div>
+      <p className="text-sm">Utilisateur : <strong>{email || "Inconnu"}</strong></p>
 
-          <div>
-            <label className="font-medium text-mauve block mb-1">
-              Nouveau mot de passe
-            </label>
-            <input
-              type="password"
-              value={newPwd}
-              onChange={(e) => setNewPwd(e.target.value)}
-              required
-              className="w-full px-3 py-2 rounded-lg border border-mauve/40 focus:ring-2 focus:ring-mauve"
-            />
-          </div>
-
-          <div>
-            <label className="font-medium text-mauve block mb-1">
-              Confirmer le mot de passe
-            </label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              required
-              className="w-full px-3 py-2 rounded-lg border border-mauve/40 focus:ring-2 focus:ring-mauve"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-mauve text-white font-semibold px-4 py-2 rounded-lg shadow hover:bg-mauve/80 transition disabled:opacity-50"
-          >
-            {loading ? "En cours…" : "Mettre à jour"}
-          </button>
-        </form>
+      <div>
+        <label>Ancien mot de passe</label>
+        <input
+          type="password"
+          value={oldPwd}
+          onChange={(e) => setOldPwd(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2"
+          required
+        />
       </div>
-    </div>
+
+      <div>
+        <label>Nouveau mot de passe</label>
+        <input
+          type="password"
+          value={newPwd}
+          onChange={(e) => setNewPwd(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2"
+          required
+        />
+      </div>
+
+      <div>
+        <label>Confirmer le mot de passe</label>
+        <input
+          type="password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2"
+          required
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="bg-mauve text-white px-4 py-2 rounded-lg shadow hover:bg-mauve/80 transition"
+      >
+        {loading ? "En cours..." : "Modifier le mot de passe"}
+      </button>
+
+    </form>
   );
 }

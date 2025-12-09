@@ -9,6 +9,8 @@ interface UserInfo {
   ville: string;
 }
 
+type ApiUserResponse = UserInfo | { error: string };
+
 export default function AccountPage() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +37,8 @@ export default function AccountPage() {
       headers: { "X-User-Email": email },
     })
       .then((res) => res.json())
-      .then((data: UserInfo) => {
-        if (data.error) {
+      .then((data: ApiUserResponse) => {
+        if ("error" in data) {
           setError(data.error);
           return;
         }
@@ -50,7 +52,9 @@ export default function AccountPage() {
           ville: data.ville,
         });
       })
-      .catch(() => setError("Impossible de récupérer les informations."));
+      .catch(() =>
+        setError("Impossible de récupérer les informations.")
+      );
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -85,14 +89,15 @@ export default function AccountPage() {
 
   if (!user)
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-center text-gray-500 text-lg">Chargement…</p>
       </div>
     );
 
   return (
-    <div className="flex flex-col items-center px-4 py-10">
-      <div className="w-full max-w-2xl">
+    <div className="flex flex-col items-center px-4 pt-10 min-h-[calc(100vh-200px)]">
+
+      <div className="w-full max-w-2xl mb-10">
         <h1 className="text-3xl font-bold text-mauve mb-6">
           Mon compte
         </h1>
@@ -103,7 +108,7 @@ export default function AccountPage() {
           </p>
         )}
 
-        {/* MODE EDITION */}
+        {/* MODE ÉDITION */}
         {editMode ? (
           <form
             onSubmit={handleSubmit}
@@ -150,6 +155,7 @@ export default function AccountPage() {
             </div>
           </form>
         ) : (
+          // MODE AFFICHAGE
           <div className="rounded-2xl bg-purple-50/40 border border-mauve/30 p-6 shadow-md space-y-3">
             <p><span className="font-semibold text-mauve">Nom :</span> {user.nom}</p>
             <p><span className="font-semibold text-mauve">Prénom :</span> {user.prenom}</p>
@@ -166,7 +172,7 @@ export default function AccountPage() {
               </button>
 
               <button
-                onClick={() => alert("À créer : page changement de mot de passe")}
+                onClick={() => (window.location.href = "/reset-password")}
                 className="rounded-lg bg-mauve px-4 py-2 text-white shadow hover:bg-mauve/80 transition"
               >
                 Changer mon mot de passe
