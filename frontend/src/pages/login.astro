@@ -4,7 +4,7 @@ import LoginForm from "@components/Login";
 const next = Astro.url.searchParams.get("next") || "/";
 ---
 
-<Layout title="gros test - Login">
+<Layout title="gro Login">
   <main class="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6">
     <section class="w-full max-w-md">
       <LoginForm next={next} client:load />
