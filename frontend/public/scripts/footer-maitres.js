@@ -11,7 +11,7 @@ if (!list) {
 
 async function loadMaitres() {
   try {
-    const res = await fetch("http://100.0.0.1:8000/api/maitres/", {
+    const res = await fetch("/api/maitres/", {
       method: "GET"
     });
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../../lib/api";
 
 type Evenement = {
   id: number;
@@ -17,7 +18,7 @@ type FormState = {
   histoire: string;
 };
 
-const API_URL = "http://100.72.62.18:8000/api/evenements/";
+const API_URL = "/api/evenements/";
 
 const initialForm: FormState = {
   nom_evenement: "",
@@ -37,7 +38,7 @@ export default function AdminEvenements() {
   /** Charger les évènements */
   const loadEvenements = async () => {
     setLoading(true);
-    const res = await fetch(API_URL);
+    const res = await fetch(apiUrl(API_URL));
     const data = await res.json();
     setEvenements(data);
     setLoading(false);
@@ -90,7 +91,7 @@ export default function AdminEvenements() {
     };
 
     const method = id ? "PUT" : "POST";
-    const url = id ? `${API_URL}${id}/` : API_URL;
+    const url = apiUrl(id ? `${API_URL}${id}/` : API_URL);
 
     const res = await fetch(url, {
       method,
@@ -111,7 +112,7 @@ export default function AdminEvenements() {
   const deleteEvenement = async (id: number) => {
     if (!confirm("Supprimer cet évènement ?")) return;
 
-    const res = await fetch(`${API_URL}${id}/`, { method: "DELETE" });
+    const res = await fetch(apiUrl(`${API_URL}${id}/`), { method: "DELETE" });
     if (res.ok) {
       loadEvenements();
     } else {

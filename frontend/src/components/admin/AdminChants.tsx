@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../../lib/api";
 
 type Chant = {
   id: number;
@@ -31,10 +32,10 @@ type FormState = {
   new_audio: File[]; // MULTIPLE MP3
 };
 
-const API_CHANTS = "http://100.72.62.18:8000/api/chants/";
-const API_CATEGORIES = "http://100.72.62.18:8000/api/categories/";
-const API_APPARTENIR = "http://100.72.62.18:8000/api/appartenir/";
-const API_AUDIO = "http://100.72.62.18:8000/api/pistes-audio/";
+const API_CHANTS = "/api/chants/";
+const API_CATEGORIES = "/api/categories/";
+const API_APPARTENIR = "/api/appartenir/";
+const API_AUDIO = "/api/pistes-audio/";
 
 const initialForm: FormState = {
   nom_chant: "",
@@ -72,11 +73,11 @@ export default function AdminChants() {
   const PER_PAGE = 10;
 
   const loadData = () => {
-    fetch(API_CHANTS)
+    fetch(apiUrl(API_CHANTS))
       .then((r) => r.json())
       .then(setChants);
 
-    fetch(API_CATEGORIES)
+    fetch(apiUrl(API_CATEGORIES))
       .then((r) => r.json())
       .then((data) => setCategories(data.map((c: any) => c.nom_categorie)));
   };
@@ -89,7 +90,7 @@ export default function AdminChants() {
   const deleteAudio = async (id: number) => {
     if (!confirm("Supprimer cette piste audio ?")) return;
 
-    await fetch(`${API_AUDIO}${id}/`, { method: "DELETE" });
+    await fetch(apiUrl(`${API_AUDIO}${id}/`), { method: "DELETE" });
     loadData();
   };
 
@@ -228,19 +229,19 @@ export default function AdminChants() {
       fd.append("partition", form.partition);
 
     // URL + méthode
-    const url = editingId ? `${API_CHANTS}${editingId}/` : API_CHANTS;
+    const target = editingId ? `${API_CHANTS}${editingId}/` : API_CHANTS;
     const method = editingId ? "PUT" : "POST"; // ← CORRECTION IMPORTANTE
 
-    const res = await fetch(url, { method, body: fd });
+    const res = await fetch(apiUrl(target), { method, body: fd });
     if (!res.ok) return alert("Erreur lors de l’enregistrement");
 
     const chantId = editingId ?? (await res.json()).id;
 
     // Mise à jour catégories
-    await fetch(`${API_APPARTENIR}?chant_id=${chantId}`, { method: "DELETE" });
+    await fetch(apiUrl(`${API_APPARTENIR}?chant_id=${chantId}`), { method: "DELETE" });
 
     for (const cat of finalCategories) {
-      await fetch(API_APPARTENIR, {
+      await fetch(apiUrl(API_APPARTENIR), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -255,7 +256,7 @@ export default function AdminChants() {
       const fd2 = new FormData();
       fd2.append("fichier_mp3", mp3);
       fd2.append("chant_id", chantId.toString());
-      await fetch(API_AUDIO, { method: "POST", body: fd2 });
+      await fetch(apiUrl(API_AUDIO), { method: "POST", body: fd2 });
     }
 
     cancelEdit();
@@ -268,7 +269,7 @@ export default function AdminChants() {
   const deleteChant = async (id: number) => {
     if (!confirm("Supprimer ce chant ?")) return;
 
-    await fetch(`${API_CHANTS}${id}/`, { method: "DELETE" });
+    await fetch(apiUrl(`${API_CHANTS}${id}/`), { method: "DELETE" });
     loadData();
   };
   const resetFileInput = (name: string) => {
@@ -397,7 +398,7 @@ export default function AdminChants() {
                       resetFileInput("illustration_chant");
 
                       if (editingId) {
-                        await fetch(`${API_CHANTS}${editingId}/?field=illustration`, {
+                        await fetch(apiUrl(`${API_CHANTS}${editingId}/?field=illustration`), {
                           method: "DELETE",
                         });
                         loadData();
@@ -446,7 +447,7 @@ export default function AdminChants() {
                       resetFileInput("paroles_pdf");
 
                       if (editingId) {
-                        await fetch(`${API_CHANTS}${editingId}/?field=pdf`, {
+                        await fetch(apiUrl(`${API_CHANTS}${editingId}/?field=pdf`), {
                           method: "DELETE",
                         });
                         loadData();
@@ -490,7 +491,7 @@ export default function AdminChants() {
                       resetFileInput("partition");
 
                       if (editingId) {
-                        await fetch(`${API_CHANTS}${editingId}/?field=partition`, {
+                        await fetch(apiUrl(`${API_CHANTS}${editingId}/?field=partition`), {
                           method: "DELETE",
                         });
                         loadData();

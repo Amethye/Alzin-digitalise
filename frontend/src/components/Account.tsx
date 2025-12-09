@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiUrl } from "../lib/api";
 
 interface UserInfo {
   id: number;
@@ -33,7 +34,7 @@ export default function AccountPage() {
       return;
     }
 
-    fetch("/api/me/", {
+    fetch(apiUrl("/api/me/"), {
       headers: { "X-User-Email": email },
     })
       .then((res) => res.json())
@@ -66,7 +67,7 @@ export default function AccountPage() {
 
     const email = localStorage.getItem("email");
 
-    const res = await fetch("http://100.72.62.18:8000/api/me/", {
+    const res = await fetch(apiUrl("/api/me/"), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

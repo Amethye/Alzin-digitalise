@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../../lib/api";
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState<string[]>([]);
@@ -7,10 +8,10 @@ const AdminCategories = () => {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  const API_URL = "http://100.72.62.18:8000/api/categories/";
+  const API_PATH = "/api/categories/";
 
 const fetchCats = async () => {
-  const res = await fetch(API_URL);
+  const res = await fetch(apiUrl(API_PATH));
   const data = await res.json();
 
   setCategories(data.map((c: any) => c.nom_categorie));
@@ -24,7 +25,7 @@ const fetchCats = async () => {
   const addCategory = async () => {
     if (!newCat.trim()) return;
 
-    await fetch(API_URL, {
+    await fetch(apiUrl(API_PATH), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nom_categorie: newCat }),
@@ -38,7 +39,7 @@ const fetchCats = async () => {
 const deleteCategory = async (name: string) => {
   if (name === "Autre") return;
 
-  await fetch(`${API_URL}?delete=${name}`, {
+  await fetch(apiUrl(`/api/categories/?delete=${name}`), {
     method: "DELETE",
   });
 
@@ -47,7 +48,7 @@ const deleteCategory = async (name: string) => {
 
   /** Enregistrer modification */
   const saveEdit = async (oldName: string) => {
-    await fetch(API_URL, {
+    await fetch(apiUrl(API_PATH), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

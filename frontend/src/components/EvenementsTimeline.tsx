@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 type Evenement = {
   id: number;
@@ -9,9 +10,6 @@ type Evenement = {
   histoire: string;
 };
 
-const API_BASE_URL =
-  import.meta.env.PUBLIC_API_URL ?? "http://100.72.62.18:8000";
-
 export default function EvenementsTimeline() {
   const [evenements, setEvenements] = useState<Evenement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +18,7 @@ export default function EvenementsTimeline() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/evenements/`);
+        const res = await fetch(apiUrl("/api/evenements/"));
         if (!res.ok) throw new Error("Erreur lors du chargement");
 
         const data: Evenement[] = await res.json();

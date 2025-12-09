@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import LogoUrl from "@images/LogoFPMs.svg?url";
+import { apiUrl } from "../lib/api";
 
 type Commande = {
   id: number;
@@ -100,16 +101,16 @@ export default function OrdersPage() {
         setError(null);
 
         const [resCmd, resAlzins, resMe, resFournisseurs] = await Promise.all([
-          fetch("/api/mes-commandes/", {
+          fetch(apiUrl("/api/mes-commandes/"), {
             headers: authHeaders,
           }),
-          fetch("/api/mes-chansonniers/", {
+          fetch(apiUrl("/api/mes-chansonniers/"), {
             headers: authHeaders,
           }),
-          fetch("/api/me/", {
+          fetch(apiUrl("/api/me/"), {
             headers: authHeaders,
           }),
-          fetch("/api/fournisseurs/"),
+          fetch(apiUrl("/api/fournisseurs/")),
         ]);
 
         if (
@@ -216,16 +217,13 @@ export default function OrdersPage() {
 
       // CAS 1 : création d'une nouvelle commande
       if (!commandeId) {
-        const resCmd = await fetch(
-          "http://100.72.62.18:8000/api/mes-commandes/",
-          {
-            method: "POST",
-            headers: headersWithEmail,
-            body: JSON.stringify({
-              status: "PANIER",
-            }),
-          }
-        );
+        const resCmd = await fetch(apiUrl("/api/mes-commandes/"), {
+          method: "POST",
+          headers: headersWithEmail,
+          body: JSON.stringify({
+            status: "PANIER",
+          }),
+        });
 
         if (!resCmd.ok) {
           throw new Error("Impossible de créer la commande.");
@@ -240,7 +238,7 @@ export default function OrdersPage() {
         // CAS 2 : édition d'une commande existante
         // On vide les lignes de cette commande pour les recréer proprement
         await fetch(
-          `http://100.72.62.18:8000/api/details-commande/?commande_id=${commandeId}`,
+          apiUrl(`/api/details-commande/?commande_id=${commandeId}`),
           {
             method: "DELETE",
           }
@@ -249,7 +247,7 @@ export default function OrdersPage() {
 
       // Ajout / recréation de la ligne de commande
       const resLigne = await fetch(
-        "http://100.72.62.18:8000/api/commandes-lignes/",
+        apiUrl("/api/commandes-lignes/"),
         {
           method: "POST",
           headers: {
@@ -269,7 +267,7 @@ export default function OrdersPage() {
 
       // Enregistrer le fournisseur choisi pour ce chansonnier
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-      const resFournir = await fetch("http://100.72.62.18:8000/api/fournir/", {
+      const resFournir = await fetch(apiUrl("/api/fournir/"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -316,7 +314,7 @@ export default function OrdersPage() {
 
     try {
       const res = await fetch(
-        `http://100.72.62.18:8000/api/mes-commandes/${commandeId}/`,
+        apiUrl(`/api/mes-commandes/${commandeId}/`),
         {
           method: "DELETE",
           headers: {
@@ -349,7 +347,7 @@ export default function OrdersPage() {
 
     try {
       const res = await fetch(
-        `http://100.72.62.18:8000/api/mes-chansonniers/${alzinId}/`,
+        apiUrl(`/api/mes-chansonniers/${alzinId}/`),
         {
           method: "DELETE",
           headers: {

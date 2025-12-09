@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../../lib/api";
 
 type ChanterRow = {
   id: number;
@@ -20,11 +21,9 @@ type Evenement = {
   date_evenement: string; // ISO string
 };
 
-const API_BASE = "http://100.72.62.18:8000";
-
-const API_CHANTER = `${API_BASE}/api/chanter/`;
-const API_CHANTS = `${API_BASE}/api/chants/`;
-const API_EVENTS = `${API_BASE}/api/evenements/`;
+const API_CHANTER = "/api/chanter/";
+const API_CHANTS = "/api/chants/";
+const API_EVENTS = "/api/evenements/";
 
 export default function AdminChanter() {
   const [links, setLinks] = useState<ChanterRow[]>([]);
@@ -42,9 +41,9 @@ export default function AdminChanter() {
       setError(null);
 
       const [resLinks, resChants, resEvents] = await Promise.all([
-        fetch(API_CHANTER),
-        fetch(API_CHANTS),
-        fetch(API_EVENTS),
+        fetch(apiUrl(API_CHANTER)),
+        fetch(apiUrl(API_CHANTS)),
+        fetch(apiUrl(API_EVENTS)),
       ]);
 
       if (!resLinks.ok || !resChants.ok || !resEvents.ok) {
@@ -84,7 +83,7 @@ export default function AdminChanter() {
     };
 
     try {
-      const res = await fetch(API_CHANTER, {
+      const res = await fetch(apiUrl(API_CHANTER), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -106,7 +105,7 @@ export default function AdminChanter() {
     if (!confirm("Supprimer ce lien chant-évènement ?")) return;
 
     try {
-      const res = await fetch(`${API_CHANTER}${id}/`, {
+      const res = await fetch(apiUrl(`/api/chanter/${id}/`), {
         method: "DELETE",
       });
 

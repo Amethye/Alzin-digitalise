@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import LogoUrl from "@images/LogoFPMs.svg?url";
+import { apiUrl } from "../lib/api";
 
 const logoSrc = LogoUrl.split("?")[0];
 
@@ -87,9 +88,9 @@ export default function AlzinPersoPage() {
 
         // 1) templates + chants + catégories
         const [resTpl, resChants, resCats] = await Promise.all([
-          fetch("http://100.72.62.18:8000/api/templates-chansonniers/"),
-          fetch("http://100.72.62.18:8000/api/chants/"),
-          fetch("http://100.72.62.18:8000/api/categories/"),
+          fetch(apiUrl("/api/templates-chansonniers/")),
+          fetch(apiUrl("/api/chants/")),
+          fetch(apiUrl("/api/categories/")),
         ]);
 
         if (!resTpl.ok) {
@@ -119,7 +120,7 @@ export default function AlzinPersoPage() {
         // 2) si on est en édition, charger le détail
         if (existingId) {
           const resDetail = await fetch(
-            `http://100.72.62.18:8000/api/mes-chansonniers/${existingId}/`,
+            apiUrl(`/api/mes-chansonniers/${existingId}/`),
             {
               headers: authHeaders,
             }
@@ -250,14 +251,11 @@ export default function AlzinPersoPage() {
       setSaving(true);
 
       if (isEditMode && editId) {
-        const res = await fetch(
-          `/api/mes-chansonniers/${editId}/`,
-          {
-            method: "PUT",
-            headers,
-            body: JSON.stringify(payload),
-          }
-        );
+        const res = await fetch(apiUrl(`/api/mes-chansonniers/${editId}/`), {
+          method: "PUT",
+          headers,
+          body: JSON.stringify(payload),
+        });
 
         if (!res.ok) {
           throw new Error("Impossible de mettre à jour cet alzin personnalisé.");
@@ -265,7 +263,7 @@ export default function AlzinPersoPage() {
 
         setSuccess("Alzin personnalisé mis à jour avec succès.");
       } else {
-        const res = await fetch("/api/mes-chansonniers/", {
+        const res = await fetch(apiUrl("/api/mes-chansonniers/"), {
           method: "POST",
           headers,
           body: JSON.stringify(payload),

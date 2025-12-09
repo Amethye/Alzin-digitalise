@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 type Evenement = {
   id: number;
@@ -9,9 +10,6 @@ type Evenement = {
   histoire: string;
 };
 
-const API =
-  import.meta.env.PUBLIC_API_URL ?? "http://100.72.62.18:8000";
-
 export default function EvenementDetail({ id }: { id: number }) {
   const [event, setEvent] = useState<Evenement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,7 +18,7 @@ export default function EvenementDetail({ id }: { id: number }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${API}/api/evenements/${id}/`);
+        const res = await fetch(apiUrl(`/api/evenements/${id}/`));
         if (!res.ok) throw new Error("Évènement introuvable");
 
         const data = await res.json();

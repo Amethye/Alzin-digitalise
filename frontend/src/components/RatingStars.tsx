@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 interface RatingProps {
   pisteId: number;
@@ -15,7 +16,7 @@ useEffect(() => {
   const loadNotes = async () => {
     if (!userId) return;
 
-    const res = await fetch(`/api/noter/?piste_id=${pisteId}`);
+    const res = await fetch(apiUrl(`/api/noter/?piste_id=${pisteId}`));
     const data = await res.json();
 
     setAverage(data.moyenne);
@@ -35,7 +36,7 @@ useEffect(() => {
   const handleRate = async (value: number) => {
     setRating(value);
 
-    await fetch("http://100.72.62.18:8000/api/noter/", {
+    await fetch(apiUrl("/api/noter/"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -45,9 +46,7 @@ useEffect(() => {
       }),
     });
 
-    const res = await fetch(
-      `http://100.72.62.18:8000/api/noter/?piste_id=${pisteId}`
-    );
+    const res = await fetch(apiUrl(`/api/noter/?piste_id=${pisteId}`));
     const data = await res.json();
 
     setAverage(data.moyenne);
