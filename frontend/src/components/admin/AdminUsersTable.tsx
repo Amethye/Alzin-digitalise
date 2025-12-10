@@ -1,6 +1,7 @@
 // src/components/AdminUsersTable.tsx
 import { useEffect, useState } from "react";
 import { apiUrl } from "../../lib/api";
+import DeleteButton from "../DeleteButton";
 
 type User = {
   id: number;
@@ -53,19 +54,6 @@ export default function AdminUsersTable() {
     });
 
     if (!res.ok) return alert("Erreur lors du changement de rôle");
-    await fetchUsers();
-  };
-
-  /** Supprimer utilisateur */
-  const deleteUser = async (userId: number) => {
-    if (!confirm("Supprimer cet utilisateur ?")) return;
-
-    const res = await fetch(apiUrl(`/api/admin/users/${userId}/`), {
-      method: "DELETE",
-      credentials: "include",
-    });
-
-    if (!res.ok) return alert("Erreur lors de la suppression");
     await fetchUsers();
   };
 
@@ -203,7 +191,15 @@ export default function AdminUsersTable() {
                         ✏️
                       </button>
 
-                      <button className="btn-red" onClick={() => deleteUser(u.id)}>🗑</button>
+                      <DeleteButton
+                        endpoint={`/api/admin/users/${u.id}/`}
+                        label="🗑"
+                        confirmMessage="Supprimer cet utilisateur ?"
+                        requestInit={{ credentials: "include" }}
+                        onSuccess={fetchUsers}
+                        onError={(message) => alert(message || "Erreur lors de la suppression")}
+                        className="btn-red"
+                      />
                     </>
                   )}
                 </td>

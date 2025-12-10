@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { apiUrl } from "../../lib/api";
+import DeleteButton from "../DeleteButton";
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState<string[]>([]);
@@ -39,17 +40,6 @@ const fetchCats = async () => {
     setNewCat("");
     fetchCats();
   };
-
-  /** Supprimer */
-const deleteCategory = async (name: string) => {
-  if (name === "Autre") return;
-
-  await fetch(apiUrl(`/api/categories/?delete=${name}`), {
-    method: "DELETE",
-  });
-
-  fetchCats();
-};
 
   /** Enregistrer modification */
   const saveEdit = async (oldName: string) => {
@@ -146,12 +136,14 @@ const deleteCategory = async (name: string) => {
 
                   {/* Supprimer */}
                   {cat !== "Autre" && (
-                    <button
-                      onClick={() => deleteCategory(cat)}
+                    <DeleteButton
+                      endpoint={`/api/categories/?delete=${encodeURIComponent(
+                        cat
+                      )}`}
+                      confirmMessage={`Supprimer la catégorie « ${cat} » ?`}
+                      onSuccess={fetchCats}
                       className="rounded-lg bg-red-500 px-3 py-1 text-white hover:bg-red-600"
-                    >
-                      Supprimer
-                    </button>
+                    />
                   )}
                 </div>
               </>

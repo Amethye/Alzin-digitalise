@@ -1,39 +1,49 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiUrl } from "../lib/api";
 
 interface RatingProps {
   pisteId: number;
   userId: number;
+  onStatsChange?: (stats: { average: number; total: number }) => void;
 }
 
-export default function RatingStars({ pisteId, userId }: RatingProps) {
+export default function RatingStars({ pisteId, userId, onStatsChange }: RatingProps) {
   const [rating, setRating] = useState<number | null>(null);     // note utilisateur
-  const [average, setAverage] = useState<number | null>(null);   // moyenne
-  const [total, setTotal] = useState<number>(0);                 // nombre de votes
+  const [noteId, setNoteId] = useState<number | null>(null);     // id de la note utilisateur
 
-
-useEffect(() => {
-  const loadNotes = async () => {
+  const refreshStats = useCallback(async () => {
     if (!userId) return;
 
     const res = await fetch(apiUrl(`/api/noter/?piste_id=${pisteId}`));
+    if (!res.ok) return;
+
     const data = await res.json();
+    const averageValue = typeof data.moyenne === "number" ? data.moyenne : 0;
+    const totalValue = typeof data.nb_notes === "number" ? data.nb_notes : 0;
 
-    setAverage(data.moyenne);
+    const my = Array.isArray(data.notes)
+      ? data.notes.find((n: any) => n.utilisateur_id === userId)
+      : null;
 
-
-    const my = data.notes.find((n: any) => n.utilisateur_id == userId);
     if (my) {
       setRating(my.valeur_note);
+      setNoteId(my.id);
+    } else {
+      setRating(null);
+      setNoteId(null);
     }
-  };
 
-  loadNotes();
-}, [pisteId, userId]);
+    onStatsChange?.({ average: averageValue, total: totalValue });
+  }, [pisteId, userId, onStatsChange]);
+
+  useEffect(() => {
+    refreshStats();
+  }, [refreshStats]);
 
 
 
   const handleRate = async (value: number) => {
+    if (!userId) return;
     setRating(value);
 
     await fetch(apiUrl("/api/noter/"), {
@@ -46,13 +56,18 @@ useEffect(() => {
       }),
     });
 
-    const res = await fetch(apiUrl(`/api/noter/?piste_id=${pisteId}`));
-    const data = await res.json();
-
-    setAverage(data.moyenne);
-    setTotal(data.nb_notes);
+    await refreshStats();
   };
 
+  const handleRemove = async () => {
+    if (!noteId) return;
+
+    await fetch(apiUrl(`/api/noter/${noteId}/`), {
+      method: "DELETE",
+    });
+
+    await refreshStats();
+  };
 
   return (
     <div className="flex items-center gap-3 mt-2">
@@ -73,6 +88,18 @@ useEffect(() => {
           </span>
         ))}
       </div>
+
+      {/* Supprimer ma note */}
+      {rating !== null && (
+        <button
+          onClick={handleRemove}
+          className="w-6 h-6 flex items-center justify-center rounded-full border border-mauve/40 text-mauve text-sm font-bold hover:bg-mauve/10 transition"
+          title="Supprimer ma note"
+          aria-label="Supprimer ma note"
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }

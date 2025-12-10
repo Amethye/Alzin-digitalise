@@ -99,6 +99,13 @@ class appartenir(models.Model):
         db_table = 'appartenir'
         unique_together = (('categorie', 'chant', 'utilisateur'),)
 
+    def __str__(self):
+        user = self.utilisateur.pseudo if self.utilisateur else "inconnu"
+        return (
+            f"{self.chant.nom_chant} appartient à "
+            f"{self.categorie.nom_categorie} ajouté par {user}"
+        )
+
 # ================================================================================
 # PISTE AUDIO & NOTER
 # ================================================================================
@@ -124,7 +131,7 @@ class piste_audio(models.Model):
         db_table = "piste_audio"
 
     def __str__(self):
-        return f"Audio {self.id} - {self.chant.nom_chant}"
+        return f"Audio {self.id} - {self.chant.nom_chant} ajouté par {self.utilisateur.pseudo if self.utilisateur else 'inconnu'}"
         
 class noter(models.Model):
     utilisateur = models.ForeignKey(

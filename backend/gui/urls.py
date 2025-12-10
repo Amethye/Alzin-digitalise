@@ -10,7 +10,7 @@ urlpatterns = [
     path("admin/users/", views.admin_users_api, name="api_admin_users"),
     path("admin/users/<int:user_id>/", views.admin_users_api, name="api_admin_user_detail"),
     path("admin/users/<int:user_id>/<str:action>/", views.admin_users_api, name="api_admin_user_role"),
-     path("admin/support/", views.admin_support_api, name="api_admin_support"),
+    path("admin/support/", views.admin_support_api, name="api_admin_support"),
     path("admin/support/<int:ticket_id>/", views.admin_support_api, name="api_admin_support_detail"),
     path("maitres/", views.maitres_api, name="api_maitres"),
     
@@ -56,7 +56,7 @@ urlpatterns = [
     path("mes-chansonniers/", views.mes_chansonniers_api, name="api_mes_chansonniers"),
     
     path("evenements/", views.evenements_api, name="api_evenements"),
-    path("api/evenements/<int:id>/", views.evenement_detail_api, name="api_evenement_detail"),
+    path("evenements/<int:id>/", views.evenement_detail_api, name="api_evenement_detail"),
     
     path("chanter/", views.chanter_api, name="api_chanter"),
 

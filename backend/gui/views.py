@@ -1,40 +1,12 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, QueryDict
 from datetime import date
 from django.views.decorators.http import require_http_methods
-
 from json import JSONDecodeError
-
-# Create your views here.
-
-'''
-# copier coller du site CAP ?????
-from django . urls import reverse_lazy
-from django . views . generic import CreateView , DeleteView , UpdateView , ListView
-
-from django.shortcuts import render
-
-def home(request):
-    return render(request, "index.html")
-
-def login_page(request):
-    return render(request, "login.html")
-
-def cart_page(request):
-    return render(request, "cart.html")
-
-def pins_page(request):
-    return render(request, "pins.html")
-
-def demande_penne_page(request):
-    return render(request, "DemandePenne.html")
-
-def register_page(request):
-    return render(request, "register.html")
-
-def reset_password_page(request):
-    return render(request, "RequestPasswordReset.html")
-'''
+from django.http.multipartparser import MultiPartParser, MultiPartParserError
+from django.utils.datastructures import MultiValueDict
+from io import BytesIO
+from django.conf import settings
 
 #views pour le site Alzin
 import json
@@ -84,6 +56,30 @@ from .models import (
     demande_support,
     piece_jointe_support
 )
+
+
+def _extract_body_data(request):
+    """
+    Django ne remplit pas request.POST/FILES pour PUT/PATCH multipart.
+    On parse donc manuellement lorsqu'on reçoit ces méthodes.
+    """
+    if request.method not in ("PUT", "PATCH"):
+        return request.POST, request.FILES
+
+    content_type = request.META.get("CONTENT_TYPE", "")
+    if content_type.startswith("multipart/"):
+        stream = BytesIO(request.body)
+        parser = MultiPartParser(
+            request.META,
+            stream,
+            request.upload_handlers,
+            request.encoding or settings.DEFAULT_CHARSET,
+        )
+        return parser.parse()
+
+    encoding = request.encoding or settings.DEFAULT_CHARSET
+    body = request.body.decode(encoding or "utf-8")
+    return QueryDict(body, encoding=encoding), MultiValueDict()
 #------------------------------------------------------------------------
                             #UTILISATEURS
 #------------------------------------------------------------------------
@@ -365,6 +361,8 @@ def serialize_chant(request, c):
         "ville_origine": c.ville_origine or "",
         "paroles": c.paroles,
         "description": c.description or "",
+        "utilisateur_id": c.utilisateur_id,
+        "utilisateur_pseudo": c.utilisateur.pseudo if c.utilisateur else None,
 
         # FICHIERS (URLs absolues)
         "illustration_chant_url": _absolute_media_url(
@@ -406,7 +404,8 @@ def serialize_chant(request, c):
             "fichier_mp3": (
                 pa.fichier_mp3.url if pa.fichier_mp3 else None
             ),
-            "utilisateur": pa.utilisateur.id if pa.utilisateur else None,
+            "utilisateur_id": pa.utilisateur_id,
+            "utilisateur_pseudo": pa.utilisateur.pseudo if pa.utilisateur else None,
             "note_moyenne": float(note_moyenne),
             "nb_notes": nb_notes,
         })
@@ -473,33 +472,50 @@ def chants_api(request, chant_id=None):
         #               MAJ (PUT ou PATCH)
         # ========================================================
         if request.method in ("PUT", "PATCH"):
+            try:
+                form_data, form_files = _extract_body_data(request)
+            except MultiPartParserError:
+                return JsonResponse({"error": "Fichiers ou données invalides"}, status=400)
+
+            utilisateur_id = form_data.get("utilisateur_id")
+            user_obj = None
+            if utilisateur_id:
+                try:
+                    user_obj = utilisateur.objects.get(id=utilisateur_id)
+                except utilisateur.DoesNotExist:
+                    return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
 
             # Champs texte
-            c.nom_chant = request.POST.get("nom_chant", c.nom_chant)
-            c.auteur = request.POST.get("auteur", c.auteur)
-            c.ville_origine = request.POST.get("ville_origine", c.ville_origine)
-            c.paroles = request.POST.get("paroles", c.paroles)
-            c.description = request.POST.get("description", c.description)
+            c.nom_chant = form_data.get("nom_chant", c.nom_chant)
+            c.auteur = form_data.get("auteur", c.auteur)
+            c.ville_origine = form_data.get("ville_origine", c.ville_origine)
+            c.paroles = form_data.get("paroles", c.paroles)
+            c.description = form_data.get("description", c.description)
+
+            if user_obj:
+                c.utilisateur = user_obj
 
             # MAJ Catégories
-            categories = request.POST.getlist("categories")
+            categories = form_data.getlist("categories")
             if categories:
                 appartenir.objects.filter(chant=c).delete()
                 for cat_name in categories:
                     cat_obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
                     appartenir.objects.create(
-                        chant=c, categorie=cat_obj, utilisateur=None
+                        chant=c,
+                        categorie=cat_obj,
+                        utilisateur=user_obj or c.utilisateur
                     )
 
             # MAJ fichiers si envoyés
-            if "illustration_chant" in request.FILES:
-                c.illustration_chant = request.FILES["illustration_chant"]
+            if "illustration_chant" in form_files:
+                c.illustration_chant = form_files["illustration_chant"]
 
-            if "paroles_pdf" in request.FILES:
-                c.paroles_pdf = request.FILES["paroles_pdf"]
+            if "paroles_pdf" in form_files:
+                c.paroles_pdf = form_files["paroles_pdf"]
 
-            if "partition" in request.FILES:
-                c.partition = request.FILES["partition"]
+            if "partition" in form_files:
+                c.partition = form_files["partition"]
 
             c.save()
 
@@ -528,6 +544,14 @@ def chants_api(request, chant_id=None):
     if request.method == "POST":
         nom = request.POST.get("nom_chant")
         paroles = request.POST.get("paroles")
+        utilisateur_id = request.POST.get("utilisateur_id")
+
+        user_obj = None
+        if utilisateur_id:
+            try:
+                user_obj = utilisateur.objects.get(id=utilisateur_id)
+            except utilisateur.DoesNotExist:
+                return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
 
         if not nom or not paroles:
             return JsonResponse({"error": "Champs requis manquants"}, status=400)
@@ -538,13 +562,21 @@ def chants_api(request, chant_id=None):
             ville_origine=request.POST.get("ville_origine", ""),
             paroles=paroles,
             description=request.POST.get("description", ""),
-            utilisateur=None,
+            utilisateur=user_obj,
         )
 
-        # Catégories
-        for cat_name in request.POST.getlist("categories"):
+        # Catégories (valeur par défaut "Autre")
+        categories = request.POST.getlist("categories")
+        if not categories:
+            categories = ["Autre"]
+
+        for cat_name in categories:
             cat_obj, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
-            appartenir.objects.create(chant=c, categorie=cat_obj, utilisateur=None)
+            appartenir.objects.create(
+                chant=c,
+                categorie=cat_obj,
+                utilisateur=user_obj
+            )
 
         # Fichiers
         if "illustration_chant" in request.FILES:
@@ -641,11 +673,13 @@ def appartenir_api(request):
             return JsonResponse({"error": "JSON invalide"}, status=400)
 
         chant_id = body.get("chant_id")
-        cat_name = body.get("nom_categorie")  # ⚠ corrige selon TON frontend
-        utilisateur_id = body.get("utilisateur_id")  # ✔ identique au frontend
+        cat_name = body.get("nom_categorie") or body.get("categorie")
+        utilisateur_id = body.get("utilisateur_id")
 
-        if not chant_id or not cat_name:
+        if not chant_id:
             return JsonResponse({"error": "Champs manquants"}, status=400)
+        if not cat_name:
+            cat_name = "Autre"
 
         # --- Vérifier le chant ---
         try:
@@ -653,13 +687,15 @@ def appartenir_api(request):
         except chant.DoesNotExist:
             return JsonResponse({"error": "Chant introuvable"}, status=404)
 
-        # --- Vérifier l’utilisateur ---
-        utilisateur = None
+        # --- Vérifier / déduire l’utilisateur ---
+        user_obj = None
         if utilisateur_id:
             try:
-                utilisateur = utilisateur.objects.get(id=utilisateur_id)
+                user_obj = utilisateur.objects.get(id=utilisateur_id)
             except utilisateur.DoesNotExist:
                 return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+        elif ch.utilisateur:
+            user_obj = ch.utilisateur
 
         # --- Récupérer / créer la catégorie ---
         cat, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
@@ -668,34 +704,34 @@ def appartenir_api(request):
         rel, created = appartenir.objects.get_or_create(
             chant=ch,
             categorie=cat,
-            utilisateur=utilisateur   # ✔ ENREGISTRE CORRECTEMENT L'USER
+            utilisateur=user_obj
         )
 
         return JsonResponse({
             "success": True,
             "created": created,
             "categorie": cat_name,
-            "utilisateur_id": utilisateur_id
+            "utilisateur_id": user_obj.id if user_obj else None
         })
 
     # === SUPPRIMER UNE CATEGORIE D’UN CHANT ===
     if request.method == "DELETE":
         chant_id = request.GET.get("chant_id")
-        cat_name = request.GET.get("nom_categorie")
+        cat_name = request.GET.get("nom_categorie") or request.GET.get("categorie")
 
-        if not chant_id or not cat_name:
-            return JsonResponse({"error": "Champs manquants"}, status=400)
+        if not chant_id:
+            return JsonResponse({"error": "chant_id requis"}, status=400)
 
-        try:
-            rel = appartenir.objects.get(
-                chant_id=chant_id,
-                categorie__nom_categorie=cat_name
-            )
-        except appartenir.DoesNotExist:
+        rels = appartenir.objects.filter(chant_id=chant_id)
+        if cat_name:
+            rels = rels.filter(categorie__nom_categorie=cat_name)
+
+        count = rels.count()
+        if count == 0:
             return JsonResponse({"error": "Relation introuvable"}, status=404)
 
-        rel.delete()
-        return JsonResponse({"success": True})
+        rels.delete()
+        return JsonResponse({"success": True, "deleted": count})
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
@@ -754,17 +790,35 @@ def pistes_audio_api(request, piste_id=None):
         if "fichier_mp3" not in request.FILES:
             return JsonResponse({"error": "MP3 manquant"}, status=400)
 
+        if not chant_id:
+            return JsonResponse({"error": "chant_id requis"}, status=400)
+
+        if not utilisateur_id:
+            return JsonResponse({"error": "utilisateur_id requis"}, status=400)
+
+        try:
+            ch = chant.objects.get(id=chant_id)
+        except chant.DoesNotExist:
+            return JsonResponse({"error": "Chant introuvable"}, status=404)
+
+        try:
+            user_obj = utilisateur.objects.get(id=utilisateur_id)
+        except utilisateur.DoesNotExist:
+            return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
         mp3 = request.FILES["fichier_mp3"]
 
         p = piste_audio.objects.create(
             fichier_mp3=mp3,
-            chant_id=chant_id,
-            utilisateur_id=utilisateur_id,
+            chant=ch,
+            utilisateur=user_obj,
         )
 
         return JsonResponse({
             "id": p.id,
             "fichier_mp3": p.fichier_mp3.url,
+            "chant_id": p.chant_id,
+            "utilisateur_id": p.utilisateur_id,
         }, status=201)
 
     # ---------- DELETE ----------

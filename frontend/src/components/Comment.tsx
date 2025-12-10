@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import DeleteButton from "./DeleteButton";
 
 type CommentType = {
   id: number;
@@ -95,29 +96,6 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
       .catch(() => alert("Impossible de modifier le commentaire."));
   };
 
-  // Supprimer -----------------------------------------------------------
-  const deleteComment = (id: number) => {
-    if (!userId) return;
-
-    fetch("/api/commentaires/", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id,
-        userId,
-      }),
-    })
-      .then(async (res) => {
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok || payload?.error) {
-          alert(payload?.error || "Impossible de supprimer le commentaire.");
-          return;
-        }
-        setComments((prev) => prev.filter((c) => c.id !== id));
-      })
-      .catch(() => alert("Impossible de supprimer le commentaire."));
-  };
-
   // ---------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------
@@ -174,12 +152,27 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
                     >
                       Modifier
                     </button>
-                    <button
+                    <DeleteButton
+                      endpoint="/api/commentaires/"
+                      confirmMessage="Supprimer ce commentaire ?"
+                      disabled={!userId}
+                      requestInit={{
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          id: comment.id,
+                          userId,
+                        }),
+                      }}
+                      onSuccess={() =>
+                        setComments((prev) =>
+                          prev.filter((c) => c.id !== comment.id)
+                        )
+                      }
+                      onError={(message) =>
+                        alert(message || "Impossible de supprimer le commentaire.")
+                      }
                       className="px-3 py-1 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition"
-                      onClick={() => deleteComment(comment.id)}
-                    >
-                      Supprimer
-                    </button>
+                    />
                   </div>
                 )}
               </div>

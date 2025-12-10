@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { apiUrl } from "../../lib/api";
+import DeleteButton from "../DeleteButton";
 
 type ChanterRow = {
   id: number;
@@ -98,24 +99,6 @@ export default function AdminChanter() {
       setSelectedEventId("");
     } catch (e: any) {
       setError(e?.message ?? "Erreur lors de l'ajout.");
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm("Supprimer ce lien chant-évènement ?")) return;
-
-    try {
-      const res = await fetch(apiUrl(`/api/chanter/${id}/`), {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        throw new Error("Impossible de supprimer ce lien.");
-      }
-
-      await loadAll();
-    } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de la suppression.");
     }
   };
 
@@ -251,13 +234,13 @@ export default function AdminChanter() {
                       </td>
                       <td className="px-4 py-2">
                         <div className="flex justify-end">
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(l.id)}
-                            className="rounded-lg bg-red-500 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-red-600"
-                          >
-                            Supprimer
-                          </button>
+                          <DeleteButton
+                            endpoint={`${API_CHANTER}${l.id}/`}
+                            confirmMessage="Supprimer ce lien chant-évènement ?"
+                            onSuccess={loadAll}
+                            onError={(message) => setError(message)}
+                            className="px-3 py-1 text-xs"
+                          />
                         </div>
                       </td>
                     </tr>

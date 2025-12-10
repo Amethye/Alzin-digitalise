@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import FavoriButton from "@components/FavoriButton";
 import RatingStars from "@components/RatingStars";
 import Comments from "@components/Comment";
@@ -10,6 +10,8 @@ type Chant = {
   ville_origine: string | null;
   paroles: string | null;
   description: string | null;
+  utilisateur_id?: number | null;
+  utilisateur_pseudo?: string | null;
   illustration_chant_url?: string;
   paroles_pdf_url?: string;
   partition_url?: string;
@@ -20,6 +22,8 @@ type Chant = {
     fichier_mp3: string;
     note_moyenne: number;
     nb_notes: number;
+    utilisateur_id?: number | null;
+    utilisateur_pseudo?: string | null;
   }[];
 };
 
@@ -78,7 +82,22 @@ export default function ChantPage({ id }: { id: number }) {
     load();
   }, [id]);
 
+  const handlePisteStats = useCallback((pisteId: number, stats: { average: number; total: number }) => {
+    setChant((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        pistes_audio: prev.pistes_audio.map((p) =>
+          p.id === pisteId ? { ...p, note_moyenne: stats.average, nb_notes: stats.total } : p
+        ),
+      };
+    });
+  }, []);
+
   if (loading || !chant) return <p className="text-center mt-10">Chargement…</p>;
+
+  const displayCategories =
+    chant.categories && chant.categories.length > 0 ? chant.categories : ["Autre"];
 
   return (
     <div className="px-10 py-10 flex flex-col gap-8 max-w-4xl mx-auto font-sans">
@@ -95,17 +114,13 @@ export default function ChantPage({ id }: { id: number }) {
       {/* Catégories */}
       <div>
         <p className="text-sm font-semibold text-mauve mb-1">Catégories</p>
-        {chant.categories.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {chant.categories.map((cat) => (
-              <span key={cat} className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm">
-                {cat}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 italic">Aucune catégorie</p>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {displayCategories.map((cat) => (
+            <span key={cat} className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm">
+              {cat}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Paroles */}
@@ -148,7 +163,11 @@ export default function ChantPage({ id }: { id: number }) {
                     <p className="text-sm text-mauve font-semibold mb-1">
                       Noter cette piste :
                     </p>
-                    <RatingStars pisteId={p.id} userId={USER_ID} />
+                    <RatingStars
+                      pisteId={p.id}
+                      userId={USER_ID}
+                      onStatsChange={(stats) => handlePisteStats(p.id, stats)}
+                    />
                   </div>
                 )}
               </div>
@@ -159,16 +178,23 @@ export default function ChantPage({ id }: { id: number }) {
         )}
       </div>
 
-      {/* Auteur / ville */}
-      <div className="text-gray-700 text-lg space-y-1">
-        <p><strong>Auteur :</strong> {chant.auteur || "—"}</p>
-        <p><strong>Ville d'origine :</strong> {chant.ville_origine || "—"}</p>
+      {/* Ville */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Auteur</p>
+        <p className="text-gray-700">{chant.auteur || "Aucune ville d'origine identifiée"}</p>
       </div>
+
+      {/* Ville */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Ville d'origine</p>
+        <p className="text-gray-700">{chant.ville_origine || "Aucune ville d'origine identifiée"}</p>
+      </div>
+
 
       {/* Description */}
       <div>
         <p className="text-sm font-semibold text-mauve mb-1">Description</p>
-        <p className="text-gray-700">{chant.description || "—"}</p>
+        <p className="text-gray-700">{chant.description || "Aucune description"}</p>
       </div>
 
       {/* Illustration */}
@@ -217,6 +243,14 @@ export default function ChantPage({ id }: { id: number }) {
           <p className="text-gray-500 italic">Aucune partition</p>
         )}
       </div>
+      
+      {/* Ajouté par */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Chant ajouté par</p>
+           <p className="text-gray-700">{chant.utilisateur_pseudo || "Un membre"}
+        </p>
+      </div>
+      
       {/* ZONE COMMENTAIRES */}
       <Comments 
         chantId={chant.id}

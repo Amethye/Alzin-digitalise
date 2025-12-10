@@ -63,11 +63,12 @@ export default function EvenementDetail({ id }: { id: number }) {
         </section>
       )}
 
-       <a
-        href="/evenements"
-        className="mt-4 inline-flex w-fit items-center rounded-full border border-mauve px-4 py-1.5 text-xs font-semibold text-mauve hover:bg-mauve/10"
-       >
-        
+      <a
+        href="/events"
+        className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-mauve px-4 py-1.5 text-xs font-semibold text-mauve hover:bg-mauve/10"
+      >
+        <span aria-hidden>←</span>
+        Retour aux évènements
       </a>
     </article>
   );

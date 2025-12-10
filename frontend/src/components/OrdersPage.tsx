@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import LogoUrl from "@images/LogoFPMs.svg?url";
 import { apiUrl } from "../lib/api";
+import DeleteButton from "./DeleteButton";
 
 type Commande = {
   id: number;
@@ -70,6 +71,7 @@ export default function OrdersPage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [noUser, setNoUser] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   // Formulaire "Nouvelle commande" / "Modifier commande"
   const [showOrderForm, setShowOrderForm] = useState(false);
@@ -90,6 +92,7 @@ export default function OrdersPage() {
       setLoading(false);
       return;
     }
+    setUserEmail(email);
 
     const authHeaders: Record<string, string> = {
       "X-User-Email": email,
@@ -300,74 +303,6 @@ export default function OrdersPage() {
     // (si tu veux, on pourra plus tard préremplir en allant chercher les détails de commande)
   };
 
-  const handleDeleteCommande = async (commandeId: number) => {
-    const confirmDelete = window.confirm(
-      "Es-tu sûr(e) de vouloir supprimer cette commande ?"
-    );
-    if (!confirmDelete) return;
-
-    const email = localStorage.getItem("email");
-    if (!email) {
-      setNoUser(true);
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        apiUrl(`/api/mes-commandes/${commandeId}/`),
-        {
-          method: "DELETE",
-          headers: {
-            "X-User-Email": email,
-          },
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("Impossible de supprimer cette commande.");
-      }
-
-      setCommandes((prev) => prev.filter((c) => c.id !== commandeId));
-    } catch (e: any) {
-      setError(e.message || "Erreur lors de la suppression de la commande.");
-    }
-  };
-
-  const handleDeleteAlzin = async (alzinId: number) => {
-    const confirmDelete = window.confirm(
-      "Es-tu sûr(e) de vouloir supprimer cet alzin personnalisé ?"
-    );
-    if (!confirmDelete) return;
-
-    const email = localStorage.getItem("email");
-    if (!email) {
-      setNoUser(true);
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        apiUrl(`/api/mes-chansonniers/${alzinId}/`),
-        {
-          method: "DELETE",
-          headers: {
-            "X-User-Email": email,
-          },
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("Impossible de supprimer cet alzin personnalisé.");
-      }
-
-      setAlzins((prev) => prev.filter((a) => a.id !== alzinId));
-    } catch (e: any) {
-      setError(
-        e.message || "Erreur lors de la suppression de l'alzin personnalisé."
-      );
-    }
-  };
-
   const renderCommandesList = (items: Commande[], emptyText: string) => {
     if (items.length === 0) {
       return (
@@ -403,13 +338,25 @@ export default function OrdersPage() {
               >
                 Modifier
               </button>
-              <button
-                type="button"
-                onClick={() => handleDeleteCommande(c.id)}
-                className="rounded-lg border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 sm:text-sm"
-              >
-                Supprimer
-              </button>
+              <DeleteButton
+                endpoint={`/api/mes-commandes/${c.id}/`}
+                confirmMessage="Es-tu sûr(e) de vouloir supprimer cette commande ?"
+                requestInit={
+                  userEmail
+                    ? {
+                        headers: {
+                          "X-User-Email": userEmail,
+                        },
+                      }
+                    : undefined
+                }
+                disabled={!userEmail}
+                onSuccess={() =>
+                  setCommandes((prev) => prev.filter((cmd) => cmd.id !== c.id))
+                }
+                onError={(message) => setError(message)}
+                className="rounded-lg border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 bg-transparent hover:bg-red-50 sm:text-sm"
+              />
             </div>
           </li>
         ))}
@@ -456,13 +403,30 @@ const renderAlzinsList = () => {
             </a>
 
             {/* Bouton Supprimer (même style que commandes) */}
-            <button
-              type="button"
-              onClick={() => handleDeleteAlzin(a.id)}
-              className="rounded-lg border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 sm:text-sm"
-            >
-              Supprimer
-            </button>
+            <DeleteButton
+              endpoint={`/api/mes-chansonniers/${a.id}/`}
+              confirmMessage="Es-tu sûr(e) de vouloir supprimer cet alzin personnalisé ?"
+              requestInit={
+                userEmail
+                  ? {
+                      headers: {
+                        "X-User-Email": userEmail,
+                      },
+                    }
+                  : undefined
+              }
+              disabled={!userEmail}
+              onSuccess={() =>
+                setAlzins((prev) => prev.filter((al) => al.id !== a.id))
+              }
+              onError={(message) =>
+                setError(
+                  message ||
+                    "Erreur lors de la suppression de l'alzin personnalisé."
+                )
+              }
+              className="rounded-lg border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 bg-transparent hover:bg-red-50 sm:text-sm"
+            />
           </div>
         </li>
       ))}

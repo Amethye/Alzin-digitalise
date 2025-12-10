@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { apiUrl } from "../../lib/api";
+import DeleteButton from "../DeleteButton";
 
 type Chant = {
   id: number;
@@ -56,6 +57,7 @@ export default function AdminChants() {
 
   const [form, setForm] = useState<FormState>(initialForm);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [userId, setUserId] = useState<number | null>(null);
 
   // PREVIEWS
   const [previewIllustration, setPreviewIllustration] = useState<string>();
@@ -82,17 +84,11 @@ export default function AdminChants() {
       .then((data) => setCategories(data.map((c: any) => c.nom_categorie)));
   };
 
-  useEffect(() => loadData(), []);
-
-  // ---------------------------------------------------------------------
-  // DELETE AUDIO (BACKEND)
-  // ---------------------------------------------------------------------
-  const deleteAudio = async (id: number) => {
-    if (!confirm("Supprimer cette piste audio ?")) return;
-
-    await fetch(apiUrl(`${API_AUDIO}${id}/`), { method: "DELETE" });
+  useEffect(() => {
     loadData();
-  };
+    const storedId = localStorage.getItem("utilisateur_id");
+    setUserId(storedId ? Number(storedId) : null);
+  }, []);
 
   // ---------------------------------------------------------------------
   // REMOVE AUDIO BEFORE SAVE (LOCAL)
@@ -194,6 +190,11 @@ export default function AdminChants() {
   // SAVE CHANT
   // ---------------------------------------------------------------------
   const saveChant = async () => {
+    if (!userId) {
+      alert("Utilisateur non identifié. Merci de vous reconnecter.");
+      return;
+    }
+
     const fd = new FormData();
 
     fd.append("nom_chant", form.nom_chant);
@@ -201,6 +202,7 @@ export default function AdminChants() {
     fd.append("ville_origine", form.ville_origine);
     fd.append("paroles", form.paroles);
     fd.append("description", form.description);
+    fd.append("utilisateur_id", userId.toString());
 
     // Vérification doublon
     // Empêcher les doublons même si les données ne sont pas à jour
@@ -246,7 +248,8 @@ export default function AdminChants() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chant_id: chantId,
-          categorie: cat,
+          nom_categorie: cat,
+          utilisateur_id: userId,
         }),
       });
     }
@@ -256,6 +259,7 @@ export default function AdminChants() {
       const fd2 = new FormData();
       fd2.append("fichier_mp3", mp3);
       fd2.append("chant_id", chantId.toString());
+      fd2.append("utilisateur_id", userId.toString());
       await fetch(apiUrl(API_AUDIO), { method: "POST", body: fd2 });
     }
 
@@ -263,20 +267,28 @@ export default function AdminChants() {
     loadData();
 };
 
-  // ---------------------------------------------------------------------
-  // DELETE CHANT
-  // ---------------------------------------------------------------------
-  const deleteChant = async (id: number) => {
-    if (!confirm("Supprimer ce chant ?")) return;
-
-    await fetch(apiUrl(`${API_CHANTS}${id}/`), { method: "DELETE" });
-    loadData();
-  };
   const resetFileInput = (name: string) => {
     const el = document.querySelector(`input[name="${name}"]`) as HTMLInputElement;
     if (el) el.value = ""; // reset complet du champ file
   };
 
+  const clearIllustration = () => {
+    setPreviewIllustration(undefined);
+    setForm((f) => ({ ...f, illustration_chant: null }));
+    resetFileInput("illustration_chant");
+  };
+
+  const clearPDF = () => {
+    setPreviewPDF(undefined);
+    setForm((f) => ({ ...f, paroles_pdf: null }));
+    resetFileInput("paroles_pdf");
+  };
+
+  const clearPartition = () => {
+    setPreviewPartition(undefined);
+    setForm((f) => ({ ...f, partition: null }));
+    resetFileInput("partition");
+  };
   // ---------------------------------------------------------------------
   // FILTRES + AFFICHAGE
   // ---------------------------------------------------------------------
@@ -389,25 +401,25 @@ export default function AdminChants() {
                 </label>
 
                 {/* BOUTON SUPPRIMER */}
-                {previewIllustration && (
-                  <button
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
-                    onClick={async () => {
-                      setPreviewIllustration(undefined);
-                      setForm((f) => ({ ...f, illustration_chant: null }));
-                      resetFileInput("illustration_chant");
-
-                      if (editingId) {
-                        await fetch(apiUrl(`${API_CHANTS}${editingId}/?field=illustration`), {
-                          method: "DELETE",
-                        });
+                {previewIllustration &&
+                  (editingId ? (
+                    <DeleteButton
+                      endpoint={`${API_CHANTS}${editingId}/?field=illustration`}
+                      confirmMessage="Supprimer cette illustration ?"
+                      onSuccess={() => {
+                        clearIllustration();
                         loadData();
-                      }
-                    }}
-                  >
-                    Supprimer
-                  </button>
-                )}
+                      }}
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                    />
+                  ) : (
+                    <button
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                      onClick={clearIllustration}
+                    >
+                      Supprimer
+                    </button>
+                  ))}
               </div>
             </div>
 
@@ -438,25 +450,25 @@ export default function AdminChants() {
                 </label>
 
                 {/* SUPPRIMER */}
-                {previewPDF && (
-                  <button
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
-                    onClick={async () => {
-                      setPreviewPDF(undefined);
-                      setForm((f) => ({ ...f, paroles_pdf: null }));
-                      resetFileInput("paroles_pdf");
-
-                      if (editingId) {
-                        await fetch(apiUrl(`${API_CHANTS}${editingId}/?field=pdf`), {
-                          method: "DELETE",
-                        });
+                {previewPDF &&
+                  (editingId ? (
+                    <DeleteButton
+                      endpoint={`${API_CHANTS}${editingId}/?field=pdf`}
+                      confirmMessage="Supprimer ce PDF ?"
+                      onSuccess={() => {
+                        clearPDF();
                         loadData();
-                      }
-                    }}
-                  >
-                    Supprimer
-                  </button>
-                )}
+                      }}
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                    />
+                  ) : (
+                    <button
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                      onClick={clearPDF}
+                    >
+                      Supprimer
+                    </button>
+                  ))}
               </div>
             </div>
 
@@ -482,25 +494,25 @@ export default function AdminChants() {
                 </label>
 
                 {/* SUPPRIMER */}
-                {previewPartition && (
-                  <button
-                    className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
-                    onClick={async () => {
-                      setPreviewPartition(undefined);
-                      setForm((f) => ({ ...f, partition: null }));
-                      resetFileInput("partition");
-
-                      if (editingId) {
-                        await fetch(apiUrl(`${API_CHANTS}${editingId}/?field=partition`), {
-                          method: "DELETE",
-                        });
+                {previewPartition &&
+                  (editingId ? (
+                    <DeleteButton
+                      endpoint={`${API_CHANTS}${editingId}/?field=partition`}
+                      confirmMessage="Supprimer cette partition ?"
+                      onSuccess={() => {
+                        clearPartition();
                         loadData();
-                      }
-                    }}
-                  >
-                    Supprimer
-                  </button>
-                )}
+                      }}
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                    />
+                  ) : (
+                    <button
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                      onClick={clearPartition}
+                    >
+                      Supprimer
+                    </button>
+                  ))}
               </div>
             </div>
 
@@ -548,12 +560,12 @@ export default function AdminChants() {
                       🎧 {p.fichier_mp3.split("/").pop()}
                     </a>
 
-                    <button
-                      onClick={() => deleteAudio(p.id)}
-                      className="bg-red-600 text-white px-2 py-1 rounded text-sm"
-                    >
-                      Supprimer
-                    </button>
+                    <DeleteButton
+                      endpoint={`${API_AUDIO}${p.id}/`}
+                      confirmMessage="Supprimer cette piste audio ?"
+                      onSuccess={loadData}
+                      className="px-2 py-1 text-xs"
+                    />
                   </div>
                 ))}
               </div>
@@ -641,12 +653,14 @@ export default function AdminChants() {
                           Modifier
                         </button>
 
-                        <button
-                          onClick={() => deleteChant(c.id)}
-                          className="bg-red-600 text-white px-2 py-1 rounded text-sm"
-                        >
-                          Supprimer
-                        </button>
+                        <DeleteButton
+                          endpoint={`${API_CHANTS}${c.id}/`}
+                          confirmMessage="Supprimer ce chant ?"
+                          onSuccess={() => {
+                            if (editingId === c.id) cancelEdit();
+                            loadData();
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
