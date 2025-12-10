@@ -9,7 +9,8 @@ urlpatterns = [
     path("admin/users/", views.admin_users_api, name="api_admin_users"),
     path("admin/users/<int:user_id>/", views.admin_users_api, name="api_admin_user_detail"),
     path("admin/users/<int:user_id>/<str:action>/", views.admin_users_api, name="api_admin_user_role"),
-    
+     path("admin/support/", views.admin_support_api, name="api_admin_support"),
+    path("admin/support/<int:ticket_id>/", views.admin_support_api, name="api_admin_support_detail"),
     path("maitres/", views.maitres_api, name="api_maitres"),
     
     path("chants/", views.chants_api, name="api_chants"),
