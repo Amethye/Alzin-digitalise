@@ -334,6 +334,18 @@ def admin_users_api(request, user_id=None, action=None):
 #------------------------------------------------------------------------
 
 from django.db.models import Avg
+from django.core.exceptions import DisallowedHost
+
+def _absolute_media_url(request, relative_url: str | None):
+    if not relative_url:
+        return None
+    if relative_url.startswith(("http://", "https://")):
+        return relative_url
+    try:
+        return request.build_absolute_uri(relative_url)
+    except DisallowedHost:
+        return relative_url
+
 
 def serialize_chant(request, c):
     """
@@ -351,17 +363,17 @@ def serialize_chant(request, c):
         "description": c.description or "",
 
         # FICHIERS (URLs absolues)
-        "illustration_chant_url": (
-            request.build_absolute_uri(c.illustration_chant.url)
-            if c.illustration_chant else None
+        "illustration_chant_url": _absolute_media_url(
+            request,
+            c.illustration_chant.url if c.illustration_chant else None
         ),
-        "paroles_pdf_url": (
-            request.build_absolute_uri(c.paroles_pdf.url)
-            if c.paroles_pdf else None
+        "paroles_pdf_url": _absolute_media_url(
+            request,
+            c.paroles_pdf.url if c.paroles_pdf else None
         ),
-        "partition_url": (
-            request.build_absolute_uri(c.partition.url)
-            if c.partition else None
+        "partition_url": _absolute_media_url(
+            request,
+            c.partition.url if c.partition else None
         ),
 
         # CATÉGORIES
@@ -388,8 +400,7 @@ def serialize_chant(request, c):
         data["pistes_audio"].append({
             "id": pa.id,
             "fichier_mp3": (
-                request.build_absolute_uri(pa.fichier_mp3.url)
-                if pa.fichier_mp3 else None
+                pa.fichier_mp3.url if pa.fichier_mp3 else None
             ),
             "utilisateur": pa.utilisateur.id if pa.utilisateur else None,
             "note_moyenne": float(note_moyenne),
@@ -886,121 +897,152 @@ def favoris_api(request):
 #-----------------------------------------------------------
 #                         COMMENTAIRE
 #-----------------------------------------------------------
-from django.http import JsonResponse
+# ================================
+#        COMMENTAIRES API
+# ================================
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
 import json
-from datetime import date
-
 from .models import commentaire, utilisateur, chant
+from django.db import IntegrityError
+
+
+def _user_is_admin(user: utilisateur) -> bool:
+    role_name = getattr(getattr(user, "role", None), "nom_role", "")
+    return isinstance(role_name, str) and role_name.lower() == "admin"
 
 
 @csrf_exempt
-@require_http_methods(["GET", "POST", "PUT", "DELETE"])
 def commentaires_api(request):
 
-    # -------------------------------------------------------
-    # GET : liste des commentaires d’un chant
-    # -------------------------------------------------------
+    # ============ GET - récupérer commentaires d’un chant =============
     if request.method == "GET":
         chant_id = request.GET.get("chant_id")
         if not chant_id:
             return JsonResponse({"error": "chant_id manquant"}, status=400)
 
-        coms = commentaire.objects.filter(chant_id=chant_id).select_related("utilisateur")
+        comments = commentaire.objects.filter(chant_id=chant_id).select_related("utilisateur")
 
         data = [
             {
                 "id": c.id,
-                "utilisateur": c.utilisateur.id,
-                "utilisateur_nom": c.utilisateur.nom,
+                "utilisateur_id": c.utilisateur_id,
+                "utilisateur_pseudo": c.utilisateur.pseudo,
                 "texte": c.texte,
-                "date_comment": str(c.date_comment),
-                "chant": c.chant.id,
+                "date_comment": c.date_comment.isoformat(),
+                "chant": c.chant_id,
             }
-            for c in coms
+            for c in comments
         ]
+
         return JsonResponse(data, safe=False)
 
-    # -------------------------------------------------------
-    # POST : ajouter un commentaire
-    # -------------------------------------------------------
-    if request.method == "POST":
+    # Lire le body JSON pour POST/PUT/DELETE
+    try:
         body = json.loads(request.body.decode("utf-8"))
-        user_id = body.get("utilisateur")
-        chant_id = body.get("chant")
-        texte = body.get("texte")
+    except:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
 
-        if not (user_id and chant_id and texte):
-            return JsonResponse({"error": "champs manquants"}, status=400)
+    # ============ POST - ajouter un commentaire ======================
+    if request.method == "POST":
+        required = ["utilisateur_id", "chant_id", "texte"]
+        for field in required:
+            if field not in body:
+                return JsonResponse({"error": f"{field} manquant"}, status=400)
 
-        user = utilisateur.objects.get(id=user_id)
-        ch = chant.objects.get(id=chant_id)
+        try:
+            user = utilisateur.objects.get(id=body["utilisateur_id"])
+        except utilisateur.DoesNotExist:
+            return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
 
-        new_comment = commentaire.objects.create(
-            utilisateur=user,
-            chant=ch,
-            texte=texte,
-            date_comment=date.today()
-        )
+        try:
+            c = chant.objects.get(id=body["chant_id"])
+        except chant.DoesNotExist:
+            return JsonResponse({"error": "Chant introuvable"}, status=404)
+
+        if commentaire.objects.filter(utilisateur=user, chant=c).exists():
+            return JsonResponse({"error": "Vous avez déjà commenté ce chant."}, status=400)
+
+        try:
+            com = commentaire.objects.create(
+                utilisateur=user,
+                chant=c,
+                texte=body["texte"],
+            )
+        except IntegrityError:
+            return JsonResponse({"error": "Vous avez déjà commenté ce chant."}, status=400)
 
         return JsonResponse({
-            "id": new_comment.id,
-            "utilisateur": user.id,
-            "utilisateur_nom": user.nom,
-            "texte": new_comment.texte,
-            "date_comment": str(new_comment.date_comment),
-            "chant": ch.id
-        })
+            "id": com.id,
+            "utilisateur_id": user.id,
+            "utilisateur_pseudo": user.pseudo,
+            "texte": com.texte,
+            "date_comment": com.date_comment.isoformat(),
+            "chant": c.id,
+        }, status=201)
 
-    # -------------------------------------------------------
-    # PUT : modifier un commentaire
-    # -------------------------------------------------------
+    # ============ PUT - modifier un commentaire ======================
     if request.method == "PUT":
-        body = json.loads(request.body.decode("utf-8"))
-        com_id = body.get("id")
-        new_text = body.get("texte")
-        user_id = body.get("utilisateur")
+        comment_id = body.get("id")
+        user_id = body.get("userId")
+        texte = body.get("texte")
 
-        if not (com_id and new_text and user_id):
-            return JsonResponse({"error": "champs manquants"}, status=400)
+        if not comment_id or not user_id or texte is None:
+            return JsonResponse({"error": "Champs manquants"}, status=400)
 
-        com = commentaire.objects.get(id=com_id)
-        user = utilisateur.objects.get(id=user_id)
+        try:
+            com = commentaire.objects.get(id=comment_id)
+        except commentaire.DoesNotExist:
+            return JsonResponse({"error": "Commentaire introuvable"}, status=404)
 
-        # ----- Vérification permission -----
-        if (com.utilisateur.id != user.id) and (not getattr(user, "is_admin", False)):
+        try:
+            actor = utilisateur.objects.get(id=user_id)
+        except utilisateur.DoesNotExist:
+            return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+        # Vérifier permissions (admin = role)
+        if actor.id != com.utilisateur_id and not _user_is_admin(actor):
             return JsonResponse({"error": "Permission refusée"}, status=403)
 
-        com.texte = new_text
+        com.texte = texte
         com.save()
 
         return JsonResponse({
             "id": com.id,
-            "utilisateur": com.utilisateur.id,
-            "utilisateur_nom": com.utilisateur.nom,
+            "utilisateur_id": com.utilisateur_id,
+            "utilisateur_pseudo": com.utilisateur.pseudo,
             "texte": com.texte,
-            "date_comment": str(com.date_comment),
-            "chant": com.chant.id,
+            "date_comment": com.date_comment.isoformat(),
+            "chant": com.chant_id,
         })
 
-    # -------------------------------------------------------
-    # DELETE : supprimer un commentaire
-    # -------------------------------------------------------
+    # ============ DELETE - supprimer un commentaire ===================
     if request.method == "DELETE":
-        body = json.loads(request.body.decode("utf-8"))
-        com_id = body.get("id")
-        user_id = body.get("utilisateur")
+        comment_id = body.get("id")
+        user_id = body.get("userId")
 
-        com = commentaire.objects.get(id=com_id)
-        user = utilisateur.objects.get(id=user_id)
+        if not comment_id or not user_id:
+            return JsonResponse({"error": "Champs manquants"}, status=400)
 
-        # ----- Vérification permission -----
-        if (com.utilisateur.id != user.id) and (not getattr(user, "is_admin", False)):
+        try:
+            com = commentaire.objects.get(id=comment_id)
+        except commentaire.DoesNotExist:
+            return JsonResponse({"error": "Commentaire introuvable"}, status=404)
+
+        try:
+            actor = utilisateur.objects.get(id=user_id)
+        except utilisateur.DoesNotExist:
+            return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+        # Permissions (admin = rôle)
+        if actor.id != com.utilisateur_id and not _user_is_admin(actor):
             return JsonResponse({"error": "Permission refusée"}, status=403)
 
         com.delete()
-        return JsonResponse({"status": "deleted"})
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
 #----------------------------------------------------------------------------------------
 #                           CHANSONNIER 

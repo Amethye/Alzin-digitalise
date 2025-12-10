@@ -21,6 +21,7 @@ ALLOWED_HOSTS = [
     "100.72.62.18",
     "alzin.fede.fpms.ac.be",
     "www.alzin.fede.fpms.ac.be",
+    "testserver",
 ]
 
 

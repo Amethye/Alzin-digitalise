@@ -1,4 +1,9 @@
-const base = (import.meta.env.PUBLIC_API_URL ?? "").replace(/\/$/, "");
+const rawBase =
+  import.meta.env.PUBLIC_API_URL ??
+  import.meta.env.PUBLIC_API_BASE_URL ??
+  "";
+
+const base = rawBase.replace(/\/$/, "");
 
 export const API_BASE_URL = base;
 
