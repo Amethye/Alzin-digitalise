@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { apiUrl } from "../../lib/api";
 import DeleteButton from "../DeleteButton";
+import { sortCategoriesWithAutreLast } from "../../lib/categories";
 
 type Chant = {
   id: number;
@@ -81,7 +82,13 @@ export default function AdminChants() {
 
     fetch(apiUrl(API_CATEGORIES))
       .then((r) => r.json())
-      .then((data) => setCategories(data.map((c: any) => c.nom_categorie)));
+      .then((data) =>
+        setCategories(
+          sortCategoriesWithAutreLast(
+            data.map((c: any) => c.nom_categorie)
+          )
+        )
+      );
   };
 
   useEffect(() => {

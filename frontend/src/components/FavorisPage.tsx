@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import FavoriButton from "@components/FavoriButton";
+import { sortCategoriesWithAutreLast } from "../lib/categories";
 
 type Chant = {
   id: number;
@@ -92,17 +93,19 @@ export default function FavorisPage() {
   });
 
   // Liste des catégories
-  const allCategories = [
-    "Toutes",
-    ...new Set(chants.flatMap((c) =>
-      c.categories.length ? c.categories : ["Autre"]
-    )),
-  ].sort((a, b) => a.localeCompare(b, "fr"));
+  const categoriesForFilter = sortCategoriesWithAutreLast(
+    Array.from(
+      new Set(
+        chants.flatMap((c) =>
+          c.categories.length ? c.categories : ["Autre"]
+        )
+      )
+    )
+  );
+  const allCategories = ["Toutes", ...categoriesForFilter];
 
   // Pagination
-  const categoriesList = Object.keys(categoriesMap).sort((a, b) =>
-    a.localeCompare(b, "fr")
-  );
+  const categoriesList = sortCategoriesWithAutreLast(Object.keys(categoriesMap));
 
   const totalPages = Math.ceil(categoriesList.length / PER_PAGE);
   const visibleCategories = categoriesList.slice(

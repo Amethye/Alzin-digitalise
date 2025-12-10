@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import FavoriButton from "@components/FavoriButton";
 import { apiUrl } from "../lib/api";
+import { sortCategoriesWithAutreLast } from "../lib/categories";
 
 type Chant = {
   id: number;
@@ -60,14 +61,14 @@ export default function ChantsListe() {
   });
 
   // Liste catégories disponibles
-  const allCategories = [
-    "Toutes",
-    ...Array.from(
+  const categoriesForFilter = sortCategoriesWithAutreLast(
+    Array.from(
       new Set(
         chants.flatMap((c) => (c.categories.length ? c.categories : ["Autre"]))
       )
-    ).sort((a, b) => a.localeCompare(b, "fr")),
-  ];
+    )
+  );
+  const allCategories = ["Toutes", ...categoriesForFilter];
 
   return (
     <div className="px-10 py-10 flex flex-col gap-10 w-full">
@@ -95,8 +96,7 @@ export default function ChantsListe() {
       </div>
 
       {/* Groupement */}
-      {Object.keys(categoriesMap)
-        .sort((a, b) => a.localeCompare(b, "fr"))
+      {sortCategoriesWithAutreLast(Object.keys(categoriesMap))
         .map((cat) => {
           const list = categoriesMap[cat].sort((a, b) =>
             a.nom_chant.localeCompare(b.nom_chant, "fr")
