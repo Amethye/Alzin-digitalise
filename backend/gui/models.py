@@ -189,7 +189,6 @@ class commentaire(models.Model):
 
     class Meta:
         db_table = 'commentaire'
-        # PRIMARY KEY (Email_adress, nom_chant, date_comment)
         unique_together = (('utilisateur', 'chant', 'date_comment'),)
 
     def __str__(self):

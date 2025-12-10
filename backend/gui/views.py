@@ -886,48 +886,121 @@ def favoris_api(request):
 #-----------------------------------------------------------
 #                         COMMENTAIRE
 #-----------------------------------------------------------
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+from datetime import date
+
+from .models import commentaire, utilisateur, chant
+
+
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET", "POST", "PUT", "DELETE"])
 def commentaires_api(request):
+
+    # -------------------------------------------------------
+    # GET : liste des commentaires d’un chant
+    # -------------------------------------------------------
     if request.method == "GET":
         chant_id = request.GET.get("chant_id")
-        qs = commentaire.objects.select_related("utilisateur", "chant")
-        if chant_id:
-            qs = qs.filter(chant_id=chant_id)
+        if not chant_id:
+            return JsonResponse({"error": "chant_id manquant"}, status=400)
+
+        coms = commentaire.objects.filter(chant_id=chant_id).select_related("utilisateur")
 
         data = [
             {
                 "id": c.id,
-                "utilisateur_id": c.utilisateur_id,
-                "chant_id": c.chant_id,
-                "date_comment": c.date_comment.isoformat(),
+                "utilisateur": c.utilisateur.id,
+                "utilisateur_nom": c.utilisateur.nom,
                 "texte": c.texte,
-                "utilisateur": str(c.utilisateur),
+                "date_comment": str(c.date_comment),
+                "chant": c.chant.id,
             }
-            for c in qs
+            for c in coms
         ]
         return JsonResponse(data, safe=False)
 
+    # -------------------------------------------------------
     # POST : ajouter un commentaire
-    body = json.loads(request.body.decode("utf-8"))
+    # -------------------------------------------------------
+    if request.method == "POST":
+        body = json.loads(request.body.decode("utf-8"))
+        user_id = body.get("utilisateur")
+        chant_id = body.get("chant")
+        texte = body.get("texte")
 
-    com = commentaire.objects.create(
-        utilisateur_id=body["utilisateur_id"],
-        chant_id=body["chant_id"],
-        date_comment=body["date_comment"],
-        texte=body["texte"],
-    )
+        if not (user_id and chant_id and texte):
+            return JsonResponse({"error": "champs manquants"}, status=400)
 
-    return JsonResponse(
-        {
+        user = utilisateur.objects.get(id=user_id)
+        ch = chant.objects.get(id=chant_id)
+
+        new_comment = commentaire.objects.create(
+            utilisateur=user,
+            chant=ch,
+            texte=texte,
+            date_comment=date.today()
+        )
+
+        return JsonResponse({
+            "id": new_comment.id,
+            "utilisateur": user.id,
+            "utilisateur_nom": user.nom,
+            "texte": new_comment.texte,
+            "date_comment": str(new_comment.date_comment),
+            "chant": ch.id
+        })
+
+    # -------------------------------------------------------
+    # PUT : modifier un commentaire
+    # -------------------------------------------------------
+    if request.method == "PUT":
+        body = json.loads(request.body.decode("utf-8"))
+        com_id = body.get("id")
+        new_text = body.get("texte")
+        user_id = body.get("utilisateur")
+
+        if not (com_id and new_text and user_id):
+            return JsonResponse({"error": "champs manquants"}, status=400)
+
+        com = commentaire.objects.get(id=com_id)
+        user = utilisateur.objects.get(id=user_id)
+
+        # ----- Vérification permission -----
+        if (com.utilisateur.id != user.id) and (not getattr(user, "is_admin", False)):
+            return JsonResponse({"error": "Permission refusée"}, status=403)
+
+        com.texte = new_text
+        com.save()
+
+        return JsonResponse({
             "id": com.id,
-            "utilisateur_id": com.utilisateur_id,
-            "chant_id": com.chant_id,
-            "date_comment": com.date_comment.isoformat(),
+            "utilisateur": com.utilisateur.id,
+            "utilisateur_nom": com.utilisateur.nom,
             "texte": com.texte,
-        },
-        status=201,
-    )
+            "date_comment": str(com.date_comment),
+            "chant": com.chant.id,
+        })
+
+    # -------------------------------------------------------
+    # DELETE : supprimer un commentaire
+    # -------------------------------------------------------
+    if request.method == "DELETE":
+        body = json.loads(request.body.decode("utf-8"))
+        com_id = body.get("id")
+        user_id = body.get("utilisateur")
+
+        com = commentaire.objects.get(id=com_id)
+        user = utilisateur.objects.get(id=user_id)
+
+        # ----- Vérification permission -----
+        if (com.utilisateur.id != user.id) and (not getattr(user, "is_admin", False)):
+            return JsonResponse({"error": "Permission refusée"}, status=403)
+
+        com.delete()
+        return JsonResponse({"status": "deleted"})
 
 #----------------------------------------------------------------------------------------
 #                           CHANSONNIER 

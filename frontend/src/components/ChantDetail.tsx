@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import FavoriButton from "@components/FavoriButton";
 import RatingStars from "@components/RatingStars";
+import Comments from "@components/Comment"; // <-- AJOUT ICI
 
 type Chant = {
   id: number;
@@ -34,7 +35,6 @@ export default function ChantPage({ id }: { id: number }) {
     if (uid) setUSER_ID(Number(uid));
   }, []);
 
-  // Charger le chant
   useEffect(() => {
     const load = async () => {
       const res = await fetch(`${API_CHANTS}${id}/`);
@@ -73,7 +73,7 @@ export default function ChantPage({ id }: { id: number }) {
           <p className="text-gray-500 italic">Aucune catégorie</p>
         )}
       </div>
-      
+
       {/* Paroles */}
       <div>
         <h2 className="text-2xl font-semibold text-mauve mb-3">Paroles</h2>
@@ -81,7 +81,7 @@ export default function ChantPage({ id }: { id: number }) {
           {chant.paroles || "Aucune parole disponible."}
         </pre>
       </div>
-      
+
       {/* Audio */}
       <div>
         <h2 className="text-2xl font-semibold text-mauve mb-3">Audio</h2>
@@ -89,13 +89,10 @@ export default function ChantPage({ id }: { id: number }) {
         {chant.pistes_audio.length > 0 ? (
           chant.pistes_audio.map((p) => (
             <div key={p.id} className="mb-6">
-              
-              {/* AUDIO */}
               <audio controls className="w-full mb-2">
                 <source src={p.fichier_mp3} type="audio/mpeg" />
               </audio>
 
-              {/* Affichage moyenne et notes */}
               <div className="flex items-center gap-3 text-gray-700 text-sm mb-1">
                 <span className="font-semibold text-mauve">Note :</span>
 
@@ -123,13 +120,13 @@ export default function ChantPage({ id }: { id: number }) {
           <p className="text-gray-500 italic">Aucun audio disponible.</p>
         )}
       </div>
-      
+
       {/* Auteur / ville */}
       <div className="text-gray-700 text-lg space-y-1">
         <p><strong>Auteur :</strong> {chant.auteur || "—"}</p>
         <p><strong>Ville d'origine :</strong> {chant.ville_origine || "—"}</p>
       </div>
-      
+
       {/* Description */}
       <div>
         <p className="text-sm font-semibold text-mauve mb-1">Description</p>
@@ -169,15 +166,21 @@ export default function ChantPage({ id }: { id: number }) {
           <p className="text-gray-500 italic">Aucune partition</p>
         )}
       </div>
+      {/* ZONE COMMENTAIRES */}
+      <Comments 
+        chantId={chant.id}
+        userId={USER_ID}
+        isAdmin={localStorage.getItem("is_admin") === "true"}
+      />
 
-      
-
+      {/* RETOUR */}
       <button
         onClick={() => history.back()}
         className="mt-6 px-4 py-2 border border-mauve text-mauve rounded-lg hover:bg-mauve hover:text-white transition"
       >
         ← Retour
       </button>
+
     </div>
   );
 }

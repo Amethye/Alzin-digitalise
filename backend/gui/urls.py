@@ -19,6 +19,8 @@ urlpatterns = [
     path("appartenir/", views.appartenir_api, name="api_appartenir"),
     
     path("categories/", views.categories_api, name="api_categorie"),
+
+    path("commentaires/", views.commentaires_api, name="api_commentaires"),
     
 
     path("details-commande/", views.details_commande_api, name="api_details_commande"),
@@ -41,7 +43,7 @@ urlpatterns = [
 
     path("favoris/", views.favoris_api, name="api_favoris"),
 
-    path("commentaires/", views.commentaires_api, name="api_commentaires"),
+    
     
     path("chansonniers/", views.mes_chansonniers_api, name="api_chansonniers"),
     path("fournisseurs/", views.fournisseurs_api, name="api_fournisseurs"),
