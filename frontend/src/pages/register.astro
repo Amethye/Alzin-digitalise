@@ -86,20 +86,28 @@ const next = Astro.url.searchParams.get("next") || "/";
 </Layout>
 
 <script>
-  const form = document.getElementById("registerForm");
-  const $err = document.getElementById("err");
-  const $success = document.getElementById("success");
+  type RegisterResponse = {
+    success?: boolean;
+    error?: string;
+  };
+
+  const form = document.getElementById("registerForm")!;
+  const $err = document.getElementById("err")!;
+  const $success = document.getElementById("success")!;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     $err.textContent = "";
     $success.textContent = "";
 
-    // Collecte des valeurs
     const fields = ["nom", "prenom", "email", "pseudo", "ville", "password", "password2"];
-    const data = Object.fromEntries(fields.map(id => [id, document.getElementById(id).value.trim()]));
+    const data = Object.fromEntries(
+      fields.map(id => [
+        id,
+        (document.getElementById(id)! as HTMLInputElement).value.trim()
+      ])
+    );
 
-    // Vérifs
     if (Object.values(data).some(v => !v)) {
       $err.textContent = "Tous les champs sont obligatoires.";
       return;
@@ -110,7 +118,6 @@ const next = Astro.url.searchParams.get("next") || "/";
       return;
     }
 
-    // Envoi API
     const res = await fetch("/api/utilisateurs/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -125,8 +132,11 @@ const next = Astro.url.searchParams.get("next") || "/";
       }),
     });
 
-    let json = {};
-    try { json = await res.json(); } catch {}
+    let json: RegisterResponse = {};
+
+    try { 
+      json = await res.json(); 
+    } catch {}
 
     if (!res.ok || !json.success) {
       $err.textContent = json.error || ("Erreur " + res.status);
@@ -135,7 +145,6 @@ const next = Astro.url.searchParams.get("next") || "/";
 
     $success.textContent = "Inscription réussie !";
 
-    // Redirection
     setTimeout(() => {
       location.href = new URLSearchParams(window.location.search).get("next") || "/";
     }, 900);
