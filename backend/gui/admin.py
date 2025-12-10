@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
-from .models import (utilisateur, categorie, chant, chansonnier_perso, template_chansonnier, fournisseur,
+from .models import (utilisateur, categorie, chant, chansonnier_perso, template_chansonnier, fournisseur, appartenir,
                      commande, details_commande, contenir_chant_perso, contenir_chant_template, commentaire,
                      fournir, favoris, noter, piste_audio, evenement, maitre_chant, role)
 
@@ -24,4 +24,5 @@ admin.site.register(piste_audio)
 admin.site.register(evenement)
 admin.site.register(maitre_chant)
 admin.site.register(role)
+admin.site.register(appartenir)
 

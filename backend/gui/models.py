@@ -184,12 +184,12 @@ class commentaire(models.Model):
         chant,
         on_delete=models.CASCADE,
     )
-    date_comment = models.DateField()
+    date_comment = models.DateField(auto_now_add=True)
     texte = models.CharField(max_length=255)
 
     class Meta:
         db_table = 'commentaire'
-        unique_together = (('utilisateur', 'chant', 'date_comment'),)
+        unique_together = (('utilisateur', 'chant'),)
 
     def __str__(self):
         return f"Comment by {self.utilisateur} on {self.chant} at {self.date_comment}"

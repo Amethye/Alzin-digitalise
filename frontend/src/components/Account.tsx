@@ -8,6 +8,7 @@ interface UserInfo {
   email: string;
   pseudo: string;
   ville: string;
+  role: string;
 }
 
 type ApiUserResponse = UserInfo | { error: string };
@@ -45,6 +46,9 @@ export default function AccountPage() {
         }
 
         setUser(data);
+        const isAdmin = data.role?.toLowerCase() === "admin";
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("is_admin", String(isAdmin));
         setForm({
           nom: data.nom,
           prenom: data.prenom,

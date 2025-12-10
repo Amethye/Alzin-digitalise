@@ -113,6 +113,7 @@ export default function Nav() {
     localStorage.removeItem("email");
     localStorage.removeItem("utilisateur_id");
     localStorage.removeItem("role");
+    localStorage.removeItem("is_admin");
 
 
     setMe(null);

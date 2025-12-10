@@ -3,7 +3,14 @@ const rawBase =
   import.meta.env.PUBLIC_API_BASE_URL ??
   "";
 
-const base = rawBase.replace(/\/$/, "");
+let base = rawBase.replace(/\/$/, "");
+
+if (typeof window !== "undefined") {
+  const pageProtocol = window.location.protocol;
+  if (pageProtocol === "https:" && base.startsWith("http://")) {
+    base = "";
+  }
+}
 
 export const API_BASE_URL = base;
 

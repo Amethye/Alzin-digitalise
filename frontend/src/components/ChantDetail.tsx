@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import FavoriButton from "@components/FavoriButton";
 import RatingStars from "@components/RatingStars";
-import Comments from "@components/Comment"; // <-- AJOUT ICI
+import Comments from "@components/Comment";
 
 type Chant = {
   id: number;
@@ -25,14 +25,48 @@ type Chant = {
 
 const API_CHANTS = "/api/chants/";
 
+const resolveMediaUrl = (url?: string | null) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (typeof window !== "undefined") {
+    return new URL(url, window.location.origin).toString();
+  }
+  return url;
+};
+
 export default function ChantPage({ id }: { id: number }) {
   const [chant, setChant] = useState<Chant | null>(null);
   const [USER_ID, setUSER_ID] = useState<number | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const uid = localStorage.getItem("utilisateur_id");
     if (uid) setUSER_ID(Number(uid));
+  }, []);
+
+  useEffect(() => {
+    const storedAdminFlag = localStorage.getItem("is_admin");
+    if (storedAdminFlag !== null) {
+      setIsAdmin(storedAdminFlag === "true");
+      return;
+    }
+
+    const email = localStorage.getItem("email");
+    if (!email) return;
+
+    fetch("/api/me/", {
+      headers: { "X-User-Email": email },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data || data.error) return;
+        const admin = typeof data.role === "string" && data.role.toLowerCase() === "admin";
+        localStorage.setItem("role", data.role || "");
+        localStorage.setItem("is_admin", String(admin));
+        setIsAdmin(admin);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -87,35 +121,39 @@ export default function ChantPage({ id }: { id: number }) {
         <h2 className="text-2xl font-semibold text-mauve mb-3">Audio</h2>
 
         {chant.pistes_audio.length > 0 ? (
-          chant.pistes_audio.map((p) => (
-            <div key={p.id} className="mb-6">
-              <audio controls className="w-full mb-2">
-                <source src={p.fichier_mp3} type="audio/mpeg" />
-              </audio>
+          chant.pistes_audio.map((p) => {
+            const audioSrc = resolveMediaUrl(p.fichier_mp3);
+            if (!audioSrc) return null;
+            return (
+              <div key={p.id} className="mb-6">
+                <audio controls className="w-full mb-2">
+                  <source src={audioSrc} type="audio/mpeg" />
+                </audio>
 
-              <div className="flex items-center gap-3 text-gray-700 text-sm mb-1">
-                <span className="font-semibold text-mauve">Note :</span>
+                <div className="flex items-center gap-3 text-gray-700 text-sm mb-1">
+                  <span className="font-semibold text-mauve">Note :</span>
 
-                <span className="text-lg font-bold">
-                  {p.note_moyenne?.toFixed(1) || "0.0"}★
-                </span>
+                  <span className="text-lg font-bold">
+                    {p.note_moyenne?.toFixed(1) || "0.0"}★
+                  </span>
 
-                <span className="text-gray-500">
-                  ({p.nb_notes} vote{p.nb_notes > 1 ? "s" : ""})
-                </span>
-              </div>
-
-              {/* Notation utilisateur */}
-              {USER_ID && (
-                <div>
-                  <p className="text-sm text-mauve font-semibold mb-1">
-                    Noter cette piste :
-                  </p>
-                  <RatingStars pisteId={p.id} userId={USER_ID} />
+                  <span className="text-gray-500">
+                    ({p.nb_notes} vote{p.nb_notes > 1 ? "s" : ""})
+                  </span>
                 </div>
-              )}
-            </div>
-          ))
+
+                {/* Notation utilisateur */}
+                {USER_ID && (
+                  <div>
+                    <p className="text-sm text-mauve font-semibold mb-1">
+                      Noter cette piste :
+                    </p>
+                    <RatingStars pisteId={p.id} userId={USER_ID} />
+                  </div>
+                )}
+              </div>
+            );
+          })
         ) : (
           <p className="text-gray-500 italic">Aucun audio disponible.</p>
         )}
@@ -136,8 +174,11 @@ export default function ChantPage({ id }: { id: number }) {
       {/* Illustration */}
       <div>
         <p className="text-sm font-semibold text-mauve mb-1">Illustration</p>
-        {chant.illustration_chant_url ? (
-          <img src={chant.illustration_chant_url} className="w-full max-h-96 object-cover rounded-xl shadow" />
+        {resolveMediaUrl(chant.illustration_chant_url) ? (
+          <img
+            src={resolveMediaUrl(chant.illustration_chant_url)}
+            className="w-full max-h-96 object-cover rounded-xl shadow"
+          />
         ) : (
           <p className="text-gray-500 italic">Aucune illustration</p>
         )}
@@ -146,8 +187,13 @@ export default function ChantPage({ id }: { id: number }) {
       {/* PDF */}
       <div>
         <p className="text-sm font-semibold text-mauve mb-1">PDF des paroles</p>
-        {chant.paroles_pdf_url ? (
-          <a href={chant.paroles_pdf_url} target="_blank" className="inline-block bg-mauve text-white px-4 py-2 rounded-lg">
+        {resolveMediaUrl(chant.paroles_pdf_url) ? (
+          <a
+            href={resolveMediaUrl(chant.paroles_pdf_url)}
+            target="_blank"
+            rel="noopener"
+            className="inline-block bg-mauve text-white px-4 py-2 rounded-lg"
+          >
             Télécharger
           </a>
         ) : (
@@ -158,9 +204,14 @@ export default function ChantPage({ id }: { id: number }) {
       {/* Partition */}
       <div>
         <p className="text-sm font-semibold text-mauve mb-1">Partition</p>
-        {chant.partition_url ? (
-          <a href={chant.partition_url} target="_blank" className="inline-block bg-mauve/80 text-white px-4 py-2 rounded-lg">
-            Voir la partition
+        {resolveMediaUrl(chant.partition_url) ? (
+          <a
+            href={resolveMediaUrl(chant.partition_url)}
+            target="_blank"
+            rel="noopener"
+            className="inline-block bg-mauve text-white px-4 py-2 rounded-lg"
+          >
+            Télécharger
           </a>
         ) : (
           <p className="text-gray-500 italic">Aucune partition</p>
@@ -170,7 +221,7 @@ export default function ChantPage({ id }: { id: number }) {
       <Comments 
         chantId={chant.id}
         userId={USER_ID}
-        isAdmin={localStorage.getItem("is_admin") === "true"}
+        isAdmin={isAdmin}
       />
 
       {/* RETOUR */}

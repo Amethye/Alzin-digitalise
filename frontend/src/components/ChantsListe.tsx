@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import FavoriButton from "@components/FavoriButton";
+import { apiUrl } from "../lib/api";
 
 type Chant = {
   id: number;
@@ -11,112 +13,42 @@ type Chant = {
   pistes_audio: { id: number; fichier_mp3: string }[];
 };
 
-type Favori = {
-  id: number;
-  chant_id: number;
-  utilisateur_id: number;
-};
-
 const API_CHANTS = "/api/chants/";
-const API_FAVORIS = "/api/favoris/";
 
-// SVG cœur rempli
-const HeartFull = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#8B5CF6">
-    <path d="M12 21s-6.2-4.35-9.33-8.22C-1.28 8.39 1.02 3 5.6 3c2.2 0 4.14 1.22 5.4 3.09C12.26 4.22 14.2 3 16.4 3c4.58 0 6.88 5.39 2.93 9.78C18.2 16.65 12 21 12 21z" />
-  </svg>
-);
-
-// SVG cœur vide
-const HeartEmpty = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2">
-    <path d="M12 21s-6.2-4.35-9.33-8.22C-1.28 8.39 1.02 3 5.6 3c2.2 0 4.14 1.22 5.4 3.09C12.26 4.22 14.2 3 16.4 3c4.58 0 6.88 5.39 2.93 9.78C18.2 16.65 12 21 12 21z" />
-  </svg>
-);
-
-export default function ListeChants() {
+export default function ChantsListe() {
   const [chants, setChants] = useState<Chant[]>([]);
-  const [favoris, setFavoris] = useState<Favori[]>([]);
   const [USER_ID, setUSER_ID] = useState<number | null>(null);
-  const [loadedUser, setLoadedUser] = useState(false);
 
-  // Recherche + filtre + pagination
+  // Recherche + filtre
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("Toutes");
-  const PER_PAGE = 12;
-  const [page, setPage] = useState(1);
 
-  // Charger données
-  const loadData = async (userId: number | null) => {
-    const resChants = await fetch(API_CHANTS);
-    const data = await resChants.json();
-    setChants(data);
-
-    if (userId !== null) {
-      const resFav = await fetch(`${API_FAVORIS}?utilisateur_id=${userId}`);
-      setFavoris(await resFav.json());
-    }
-  };
-
+  // Charger chants
   useEffect(() => {
-    const raw = localStorage.getItem("utilisateur_id");
-    const parsed = raw && !isNaN(Number(raw)) ? Number(raw) : null;
+    fetch(apiUrl(API_CHANTS))
+      .then((r) => r.json())
+      .then(setChants);
 
-    setUSER_ID(parsed);
-    setLoadedUser(true);
-    loadData(parsed);
+    const raw = localStorage.getItem("utilisateur_id");
+    const id = raw && !isNaN(Number(raw)) ? Number(raw) : null;
+    setUSER_ID(id);
   }, []);
 
-  // Vérifier favoris
-  const isFavoris = (chantId: number) =>
-    favoris.some((f) => f.chant_id === chantId && f.utilisateur_id === USER_ID);
-
-  // Ajouter / retirer favoris
-  const addFavori = async (chantId: number) => {
-    if (USER_ID === null) return;
-    await fetch(API_FAVORIS, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        utilisateur_id: USER_ID,
-        chant_id: chantId,
-        date_favori: new Date().toISOString().split("T")[0],
-      }),
-    });
-    loadData(USER_ID);
-  };
-
-  const removeFavori = async (chantId: number) => {
-    const fav = favoris.find(
-      (f) => f.chant_id === chantId && f.utilisateur_id === USER_ID
-    );
-    if (!fav) return;
-
-    await fetch(`${API_FAVORIS}?id=${fav.id}`, { method: "DELETE" });
-    loadData(USER_ID);
-  };
-
-  const toggleFavori = (chantId: number) => {
-    if (USER_ID === null) return;
-    isFavoris(chantId) ? removeFavori(chantId) : addFavori(chantId);
-  };
-
-  //  RECHERCHE
+  // Recherche
   const searched = chants.filter((c) =>
     `${c.nom_chant} ${c.auteur} ${c.ville_origine}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
 
-
-  // FILTRE PAR CATÉGORIE
+  // Filtre catégorie
   const filtered = searched.filter((c) =>
     filterCat === "Toutes"
       ? true
       : (c.categories.length ? c.categories : ["Autre"]).includes(filterCat)
   );
 
-  //  GROUPER PAR CATÉGORIE
+  // Groupement par catégories
   const categoriesMap: Record<string, Chant[]> = {};
 
   filtered.forEach((chant) => {
@@ -127,8 +59,7 @@ export default function ListeChants() {
     });
   });
 
-
-  // CATÉGORIES DISPONIBLES
+  // Liste catégories disponibles
   const allCategories = [
     "Toutes",
     ...Array.from(
@@ -148,19 +79,13 @@ export default function ListeChants() {
           type="text"
           placeholder="Rechercher un chant..."
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
           className="border border-mauve/40 p-3 rounded-lg flex-1"
         />
 
         <select
           value={filterCat}
-          onChange={(e) => {
-            setFilterCat(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setFilterCat(e.target.value)}
           className="border border-mauve/40 p-3 rounded-lg w-full md:w-60"
         >
           {allCategories.map((cat) => (
@@ -169,7 +94,7 @@ export default function ListeChants() {
         </select>
       </div>
 
-      {/* AFFICHAGE GROUPÉ PAR CATÉGORIE */}
+      {/* Groupement */}
       {Object.keys(categoriesMap)
         .sort((a, b) => a.localeCompare(b, "fr"))
         .map((cat) => {
@@ -189,17 +114,15 @@ export default function ListeChants() {
                     className="border border-mauve/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-mauve/5 transition"
                   >
                     <div className="flex justify-between items-start">
-                      <h3 className="text-xl font-bold text-mauve">{ch.nom_chant}</h3>
+                      <h3 className="text-xl font-bold text-mauve">
+                        {ch.nom_chant}
+                      </h3>
 
-                      {loadedUser && USER_ID !== null && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavori(ch.id);
-                          }}
-                        >
-                          {isFavoris(ch.id) ? <HeartFull /> : <HeartEmpty />}
-                        </button>
+                      {/* FAVORIS → remplace tout le code précédent */}
+                      {USER_ID && (
+                        <span onClick={(e) => e.stopPropagation()}>
+                          <FavoriButton chantId={ch.id} USER_ID={USER_ID} size={34} />
+                        </span>
                       )}
                     </div>
 

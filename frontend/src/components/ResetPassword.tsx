@@ -13,6 +13,15 @@ export default function ResetPasswordForm() {
     if (storedEmail) setEmail(storedEmail);
   }, []);
 
+
+  useEffect(() => {
+    if (message === "Mot de passe modifié avec succès !") {
+      setTimeout(() => {
+        window.location.href = "/account";  
+      }, 1000); 
+    }
+  }, [message]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 

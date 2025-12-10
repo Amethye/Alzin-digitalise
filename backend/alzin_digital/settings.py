@@ -21,8 +21,12 @@ ALLOWED_HOSTS = [
     "100.72.62.18",
     "alzin.fede.fpms.ac.be",
     "www.alzin.fede.fpms.ac.be",
+    "alzin.fede.fmps.ac.be",
+    "www.alzin.fede.fmps.ac.be",
     "testserver",
 ]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 # -------------------------------------------------------------------
@@ -72,7 +76,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://100.72.62.18:4321",
     "https://localhost:4321",
     "https://127.0.0.1:4321",
-    "https://alzin.fede.fpms.ac.be"
+    "https://alzin.fede.fpms.ac.be",
+    "https://alzin.fede.fmps.ac.be"
 
 ]
 

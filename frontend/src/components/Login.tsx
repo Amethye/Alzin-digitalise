@@ -69,6 +69,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
         console.warn("⚠️ Aucun ID utilisateur renvoyé par l’API !");
       }
 
+      const roleValue = typeof data.role === "string" ? data.role : "";
+      const isAdmin = roleValue.toLowerCase() === "admin";
+      localStorage.setItem("role", roleValue);
+      localStorage.setItem("is_admin", String(isAdmin));
+
       // Redirection
       window.location.href = next || "/";
 

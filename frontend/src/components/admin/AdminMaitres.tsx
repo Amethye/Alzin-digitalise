@@ -35,7 +35,7 @@ export default function AdminMaitres() {
 
         const data: MaitresData = await response.json();
         setMaitresText(toTextarea(data.maitres ?? []));
-      } catch (err) {
+      } catch {
         setError("Impossible de charger les maîtres de chants.");
       } finally {
         setLoading(false);
@@ -45,6 +45,15 @@ export default function AdminMaitres() {
     loadData();
     return () => controller.abort();
   }, []);
+
+
+  useEffect(() => {
+    if (success) {
+      setTimeout(() => {
+        window.location.href = "/admindash";
+      }, 1000); 
+    }
+  }, [success]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -69,7 +78,7 @@ export default function AdminMaitres() {
       const data: MaitresData = await response.json();
       setMaitresText(toTextarea(data.maitres ?? maitres));
       setSuccess("Informations mises à jour.");
-    } catch (err) {
+    } catch {
       setError("Impossible d’enregistrer les modifications.");
     } finally {
       setSaving(false);
@@ -84,7 +93,7 @@ export default function AdminMaitres() {
       </h1>
 
       <p className="mb-4 text-sm text-gray-600">
-        Modifie la liste ci-dessous (une personne par ligne). Les modifications
+        Modifie la liste ci-dessous. Les modifications
         sont visibles immédiatement dans le footer du site.
       </p>
 

@@ -109,6 +109,7 @@ export default function FavorisPage() {
     (page - 1) * PER_PAGE,
     page * PER_PAGE
   );
+  const totalFavorisDisplayed = filtered.length;
 
   if (!USER_ID)
     return <p className="text-center text-gray-500 mt-10">Veuillez vous connecter.</p>;
@@ -118,7 +119,9 @@ export default function FavorisPage() {
 
   return (
     <div className="px-10 py-10 flex flex-col gap-10 w-full">
-      <h1 className="text-3xl font-bold text-mauve">Mes favoris</h1>
+      <h1 className="text-3xl font-bold text-mauve">
+        Mes favoris <span className="text-mauve/70">({totalFavorisDisplayed})</span>
+      </h1>
 
       {/* Barre de recherche + catégorie */}
       <div className="flex flex-col md:flex-row gap-4">

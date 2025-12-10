@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 
 type CommentType = {
   id: number;
-  utilisateur: number;
-  utilisateur_nom: string;
+  utilisateur_id: number;
+  utilisateur_pseudo: string;
   texte: string;
   date_comment: string;
   chant: number;
@@ -12,7 +12,7 @@ type CommentType = {
 type Props = {
   chantId: number;
   userId: number | null;
-  isAdmin?: boolean; // <-- optionnel si tu veux afficher différemment pour admin
+  isAdmin?: boolean;
 };
 
 export default function Comments({ chantId, userId, isAdmin = false }: Props) {
@@ -21,7 +21,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
 
-  // Load comments -----------------------------------------
+  // Charger les commentaires -----------------------------------------
   useEffect(() => {
     fetch(`/api/commentaires/?chant_id=${chantId}`)
       .then((res) => res.json())
@@ -29,10 +29,18 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
       .catch((err) => console.error(err));
   }, [chantId]);
 
-  // Add comment --------------------------------------------
+  const userAlreadyCommented = comments.some(
+    (c) => c.utilisateur_id === userId
+  );
+
+  // Ajouter un commentaire --------------------------------------------
   const handleAdd = () => {
     if (!userId) {
       alert("Vous devez être connecté pour commenter.");
+      return;
+    }
+    if (!newComment.trim()) {
+      alert("Le commentaire ne peut pas être vide.");
       return;
     }
 
@@ -40,25 +48,29 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        utilisateur: userId,
-        chant: chantId,
+        utilisateur_id: userId,
+        chant_id: chantId,
         texte: newComment,
       }),
     })
-      .then((res) => res.json())
-      .then((newCom) => {
-        setComments((prev) => [...prev, newCom]);
+      .then(async (res) => {
+        const payload = await res.json();
+        if (!res.ok || payload.error) {
+          alert(payload.error || "Impossible d’ajouter le commentaire.");
+          return;
+        }
+        setComments((prev) => [...prev, payload]);
         setNewComment("");
-      });
+      })
+      .catch(() => alert("Impossible d’ajouter le commentaire."));
   };
 
-  // Start editing ------------------------------------------
+  // Mode édition -------------------------------------------------------
   const startEdit = (comment: CommentType) => {
     setEditingId(comment.id);
     setEditText(comment.texte);
   };
 
-  // Save edition -------------------------------------------
   const saveEdit = (id: number) => {
     if (!userId) return;
 
@@ -68,17 +80,22 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
       body: JSON.stringify({
         id,
         texte: editText,
-        utilisateur: userId, // IMPORTANT POUR LA PERMISSION
+        userId,
       }),
     })
-      .then((res) => res.json())
-      .then((updated) => {
-        setComments((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      .then(async (res) => {
+        const payload = await res.json();
+        if (!res.ok || payload.error) {
+          alert(payload.error || "Impossible de modifier le commentaire.");
+          return;
+        }
+        setComments((prev) => prev.map((c) => (c.id === id ? payload : c)));
         setEditingId(null);
-      });
+      })
+      .catch(() => alert("Impossible de modifier le commentaire."));
   };
 
-  // Delete comment -----------------------------------------
+  // Supprimer -----------------------------------------------------------
   const deleteComment = (id: number) => {
     if (!userId) return;
 
@@ -87,66 +104,78 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id,
-        utilisateur: userId, // PERMISSION NECESSAIRE
+        userId,
       }),
-    }).then(() => {
-      setComments((prev) => prev.filter((c) => c.id !== id));
-    });
+    })
+      .then(async (res) => {
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok || payload?.error) {
+          alert(payload?.error || "Impossible de supprimer le commentaire.");
+          return;
+        }
+        setComments((prev) => prev.filter((c) => c.id !== id));
+      })
+      .catch(() => alert("Impossible de supprimer le commentaire."));
   };
 
   // ---------------------------------------------------------
   // RENDER
   // ---------------------------------------------------------
   return (
-    <div className="mt-6 bg-gray-50 p-4 rounded-lg shadow-sm">
-      <h2 className="text-xl font-semibold mb-3">
+    <div className="mt-10 bg-white rounded-2xl shadow p-6 border border-gray-200">
+      {/* --- TITRE + compteur de commentaires --- */}
+      <h2 className="text-2xl font-bold text-mauve mb-4">
         Commentaires ({comments.length})
       </h2>
 
-      {/* ADD A COMMENT */}
-      {userId && (
+      {/* Formulaire d’ajout → seulement si pas encore commenté */}
+      {userId && !userAlreadyCommented && (
         <div className="mb-4">
           <textarea
-            className="border p-2 w-full rounded"
+            className="border border-mauve p-3 w-full rounded-lg"
             placeholder="Écrire un commentaire..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
           />
           <button
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
+            className="mt-2 px-4 py-2 bg-mauve text-white rounded-lg shadow hover:bg-mauve/80"
             onClick={handleAdd}
           >
-            Ajouter
+            Ajouter un commentaire
           </button>
         </div>
       )}
 
-      {/* LIST OF COMMENTS */}
-      <div className="space-y-3">
+      {/* Liste des commentaires */}
+      <div className="space-y-4">
         {comments.map((comment) => {
           const canEditOrDelete =
-            userId === comment.utilisateur || isAdmin === true;
+            Boolean(userId) && (isAdmin || userId === comment.utilisateur_id);
 
           return (
-            <div key={comment.id} className="p-3 border rounded bg-white">
-              <div className="flex justify-between">
-                <p className="font-semibold">
-                  {comment.utilisateur_nom}
+            <div
+              key={comment.id}
+              className="p-4 rounded-xl bg-purple-50 border border-mauve/20 shadow-sm"
+            >
+              <div className="flex justify-between items-center">
+                <p className="font-semibold text-mauve">
+                  {comment.utilisateur_pseudo}
                   <span className="text-sm text-gray-500 ml-2">
                     {new Date(comment.date_comment).toLocaleDateString("fr-FR")}
                   </span>
                 </p>
 
+                {/* Boutons admin / utilisateur */}
                 {canEditOrDelete && (
-                  <div className="space-x-2">
+                  <div className="space-x-3">
                     <button
-                      className="text-blue-500"
+                      className="px-3 py-1 bg-mauve text-white rounded-lg shadow hover:bg-mauve/80 transition"
                       onClick={() => startEdit(comment)}
                     >
                       Modifier
                     </button>
                     <button
-                      className="text-red-500"
+                      className="px-3 py-1 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition"
                       onClick={() => deleteComment(comment.id)}
                     >
                       Supprimer
@@ -155,23 +184,23 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
                 )}
               </div>
 
-              {/* EDIT MODE */}
+              {/* Mode édition */}
               {editingId === comment.id ? (
                 <div className="mt-2">
                   <textarea
-                    className="border p-2 w-full rounded"
+                    className="border p-2 w-full rounded-lg"
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                   />
                   <button
-                    className="mt-2 px-4 py-1 bg-green-600 text-white rounded"
+                    className="mt-2 px-4 py-2 bg-mauve text-white rounded-lg shadow hover:bg-mauve/80 transition"
                     onClick={() => saveEdit(comment.id)}
                   >
                     Enregistrer
                   </button>
                 </div>
               ) : (
-                <p className="mt-1">{comment.texte}</p>
+                <p className="mt-2 text-gray-800">{comment.texte}</p>
               )}
             </div>
           );
