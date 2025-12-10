@@ -73,7 +73,7 @@ const fetchCats = async () => {
         />
         <button
           onClick={addCategory}
-          className="rounded-lg bg-mauve px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 shadow-sm"
+          className="btn btn-solid"
         >
           Ajouter
         </button>
@@ -98,8 +98,7 @@ const fetchCats = async () => {
                 {/* ✔ Bouton vert */}
                 <button
                   onClick={() => saveEdit(cat)}
-                  className="rounded-lg px-3 py-1 text-white 
-                            !bg-green-500 hover:!bg-green-600"
+                  className="btn btn-solid bg-green-500 hover:bg-green-600 border-green-500"
                 >
                   ✔
                 </button>
@@ -110,8 +109,7 @@ const fetchCats = async () => {
                     setEditingCat(null);
                     setEditValue("");
                   }}
-                  className="rounded-lg px-3 py-1 text-white 
-                            !bg-red-500 hover:!bg-red-600"
+                  className="btn btn-danger"
                 >
                   ✖
                 </button>
@@ -128,7 +126,7 @@ const fetchCats = async () => {
                         setEditingCat(cat);
                         setEditValue(cat);
                       }}
-                      className="rounded-lg bg-yellow-500 px-3 py-1 text-white hover:bg-yellow-600"
+                      className="btn btn-warning"
                     >
                       Modifier
                     </button>
@@ -142,7 +140,6 @@ const fetchCats = async () => {
                       )}`}
                       confirmMessage={`Supprimer la catégorie « ${cat} » ?`}
                       onSuccess={fetchCats}
-                      className="rounded-lg bg-red-500 px-3 py-1 text-white hover:bg-red-600"
                     />
                   )}
                 </div>

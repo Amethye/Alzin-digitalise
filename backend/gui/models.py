@@ -132,6 +132,134 @@ class piste_audio(models.Model):
 
     def __str__(self):
         return f"Audio {self.id} - {self.chant.nom_chant} ajouté par {self.utilisateur.pseudo if self.utilisateur else 'inconnu'}"
+
+
+class demande_chant(models.Model):
+    STATUTS = (
+        ("EN_ATTENTE", "En attente"),
+        ("ACCEPTEE", "Acceptée"),
+        ("REFUSEE", "Refusée"),
+    )
+
+    utilisateur = models.ForeignKey(
+        "utilisateur",
+        on_delete=models.CASCADE,
+        related_name="demandes_chants",
+    )
+
+    nom_chant = models.CharField(max_length=100)
+    auteur = models.CharField(max_length=100, blank=True, null=True)
+    ville_origine = models.CharField(max_length=100, blank=True, null=True)
+    paroles = models.TextField(blank=True)
+    description = models.TextField(blank=True, null=True)
+
+    illustration_chant = models.ImageField(upload_to="illustrations/", null=True, blank=True)
+    paroles_pdf = models.FileField(upload_to="paroles_pdf/", null=True, blank=True)
+    partition = models.FileField(upload_to="partitions/", null=True, blank=True)
+
+    categories = models.JSONField(default=list, blank=True)
+
+    statut = models.CharField(max_length=20, choices=STATUTS, default="EN_ATTENTE")
+    justification_refus = models.TextField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_decision = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "demande_chant"
+        ordering = ["-date_creation"]
+
+    def __str__(self):
+        return f"Demande #{self.id} - {self.nom_chant} ({self.get_statut_display()})"
+
+
+class demande_chant_audio(models.Model):
+    demande = models.ForeignKey(
+        demande_chant,
+        on_delete=models.CASCADE,
+        related_name="pistes_audio",
+    )
+    fichier_mp3 = models.FileField(upload_to="demandes_chants_audio/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "demande_chant_audio"
+
+    def __str__(self):
+        return f"Audio demande #{self.demande_id} - {self.fichier_mp3.name}"
+
+
+class demande_modification_chant(models.Model):
+    STATUTS = (
+        ("EN_ATTENTE", "En attente"),
+        ("ACCEPTEE", "Acceptée"),
+        ("REFUSEE", "Refusée"),
+    )
+
+    utilisateur = models.ForeignKey(
+        "utilisateur",
+        on_delete=models.CASCADE,
+        related_name="demandes_modifications_chant",
+    )
+    chant = models.ForeignKey(
+        chant,
+        on_delete=models.CASCADE,
+        related_name="demandes_modifications",
+    )
+
+    nom_chant = models.CharField(max_length=100)
+    auteur = models.CharField(max_length=100, blank=True, null=True)
+    ville_origine = models.CharField(max_length=100, blank=True, null=True)
+    paroles = models.TextField(blank=True)
+    description = models.TextField(blank=True, null=True)
+
+    illustration_chant = models.ImageField(upload_to="illustrations/", null=True, blank=True)
+    paroles_pdf = models.FileField(upload_to="paroles_pdf/", null=True, blank=True)
+    partition = models.FileField(upload_to="partitions/", null=True, blank=True)
+
+    categories = models.JSONField(default=list, blank=True)
+
+    statut = models.CharField(max_length=20, choices=STATUTS, default="EN_ATTENTE")
+    justification_refus = models.TextField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_decision = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "demande_modification_chant"
+        ordering = ["-date_creation"]
+
+    def __str__(self):
+        return f"Modification #{self.id} pour {self.chant.nom_chant} ({self.get_statut_display()})"
+
+
+class demande_piste_audio(models.Model):
+    STATUTS = (
+        ("EN_ATTENTE", "En attente"),
+        ("ACCEPTEE", "Acceptée"),
+        ("REFUSEE", "Refusée"),
+    )
+
+    utilisateur = models.ForeignKey(
+        "utilisateur",
+        on_delete=models.CASCADE,
+        related_name="demandes_pistes_audio",
+    )
+    chant = models.ForeignKey(
+        chant,
+        on_delete=models.CASCADE,
+        related_name="demandes_pistes",
+    )
+    fichier_mp3 = models.FileField(upload_to="demandes_pistes_audio/")
+    statut = models.CharField(max_length=20, choices=STATUTS, default="EN_ATTENTE")
+    justification_refus = models.TextField(blank=True, null=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_decision = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "demande_piste_audio"
+        ordering = ["-date_creation"]
+
+    def __str__(self):
+        return f"Piste (demande #{self.id}) pour {self.chant.nom_chant} - {self.get_statut_display()}"
         
 class noter(models.Model):
     utilisateur = models.ForeignKey(
@@ -369,7 +497,7 @@ class evenement(models.Model):
     date_evenement = models.DateField()
     lieu = models.CharField(max_length = 50)
     nom_evenement = models.CharField(max_length = 50)
-    annonce_fil_actu = models.CharField(max_length = 255)
+    annonce_fil_actu = models.TextField()
     histoire = models.TextField()
     
     class Meta:

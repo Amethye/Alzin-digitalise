@@ -116,7 +116,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
             onChange={(e) => setNewComment(e.target.value)}
           />
           <button
-            className="mt-2 px-4 py-2 bg-mauve text-white rounded-lg shadow hover:bg-mauve/80"
+            className="btn btn-solid mt-2"
             onClick={handleAdd}
           >
             Ajouter un commentaire
@@ -147,7 +147,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
                 {canEditOrDelete && (
                   <div className="space-x-3">
                     <button
-                      className="px-3 py-1 bg-mauve text-white rounded-lg shadow hover:bg-mauve/80 transition"
+                      className="btn"
                       onClick={() => startEdit(comment)}
                     >
                       Modifier
@@ -171,7 +171,6 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
                       onError={(message) =>
                         alert(message || "Impossible de supprimer le commentaire.")
                       }
-                      className="px-3 py-1 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition"
                     />
                   </div>
                 )}
@@ -186,7 +185,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
                     onChange={(e) => setEditText(e.target.value)}
                   />
                   <button
-                    className="mt-2 px-4 py-2 bg-mauve text-white rounded-lg shadow hover:bg-mauve/80 transition"
+                    className="btn btn-solid mt-2"
                     onClick={() => saveEdit(comment.id)}
                   >
                     Enregistrer

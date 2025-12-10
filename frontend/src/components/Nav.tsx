@@ -144,6 +144,7 @@ export default function Nav() {
     { label: "Mon compte", href: "/account" },
     { label: "Mes favoris", href: "/favoris" },
     { label: "Mes commandes", href: "/orders" },
+    { label: "Mes demandes", href: "/mes-demandes" },
     { label: "Support", href: "/support" },
   ];
 
@@ -182,7 +183,7 @@ export default function Nav() {
                       setShowDesktopMenu(false);
                     }}
                     aria-expanded={showMobileMenu}
-                    className="flex items-center gap-1 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-mauve focus:ring-offset-2"
+                    className="btn btn-ghost px-2 py-1 text-xs"
                   >
                     Connecté
                     <svg width="16" height="16" fill="currentColor" className="ml-1 text-mauve" viewBox="0 0 20 20">
@@ -204,7 +205,7 @@ export default function Nav() {
               onClick={toggleMobileMenu}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-navigation"
-              className="inline-flex items-center gap-2 rounded-md border border-mauve px-3 py-2 text-sm font-semibold text-mauve shadow-sm transition hover:bg-mauve hover:text-white lg:hidden"
+              className="btn lg:hidden"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="3" y1="6" x2="21" y2="6" />
@@ -226,7 +227,7 @@ export default function Nav() {
                   <a
                     href={item.href}
                     onClick={handleNavItemClick}
-                    className="rounded-lg border-2 border-mauve bg-mauve px-4 py-2 text-white transition font-semibold duration-150 hover:bg-purple-50 hover:text-mauve"
+                    className="btn btn-solid"
                   >
                     {item.label}
                   </a>
@@ -266,7 +267,7 @@ export default function Nav() {
                   setShowMobileMenu(false);
                 }}
                 aria-expanded={showDesktopMenu}
-                className="flex items-center gap-1 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-mauve focus:ring-offset-2"
+                className="btn btn-ghost px-2 py-1"
               >
                 Connecté : <strong>{me.identifiant}</strong> ({me.role})
                 <svg width="16" height="16" fill="currentColor" className="ml-1 text-mauve" viewBox="0 0 20 20">
@@ -305,7 +306,7 @@ export default function Nav() {
 
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    className="btn btn-danger w-full justify-start"
                   >
                     Se déconnecter
                   </button>
@@ -329,7 +330,7 @@ export default function Nav() {
           >
             <div className="flex items-center justify-between border-b px-4 py-4">
               <span className="text-base font-semibold text-mauve">Menu</span>
-              <button type="button" onClick={toggleMobileMenu} className="rounded-md p-2 text-mauve transition hover:bg-purple-50">
+              <button type="button" onClick={toggleMobileMenu} className="btn btn-ghost p-2">
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -348,7 +349,7 @@ export default function Nav() {
                         key={link.href}
                         href={link.href}
                         onClick={handleNavItemClick}
-                        className="block rounded-md border border-mauve px-3 py-2 text-center text-mauve transition hover:bg-purple-50"
+                        className="btn w-full justify-center"
                       >
                         {link.label}
                       </a>
@@ -356,7 +357,7 @@ export default function Nav() {
 
                     <button
                       onClick={handleLogout}
-                      className="block w-full rounded-md border border-red-500 px-3 py-2 text-center font-semibold text-red-600 transition hover:bg-red-50"
+                      className="btn btn-danger w-full justify-center font-semibold"
                     >
                       Se déconnecter
                     </button>
@@ -375,7 +376,7 @@ export default function Nav() {
                     <a
                       href={item.href}
                       onClick={handleNavItemClick}
-                      className="flex w-full items-center justify-center rounded-lg border-2 border-mauve bg-mauve px-4 py-2 text-white font-semibold transition duration-150 hover:bg-purple-50 hover:text-mauve"
+                      className="btn btn-solid w-full justify-center font-semibold"
                     >
                       {item.label}
                     </a>

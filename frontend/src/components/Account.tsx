@@ -137,7 +137,7 @@ export default function AccountPage() {
             <div className="flex flex-wrap gap-3 pt-2">
               <button
                 type="submit"
-                className="rounded-lg bg-mauve text-white px-4 py-2 shadow hover:bg-mauve/80 transition"
+                className="btn btn-solid"
               >
                 Sauvegarder
               </button>
@@ -145,7 +145,7 @@ export default function AccountPage() {
               <button
                 type="button"
                 onClick={() => setEditMode(false)}
-                className="rounded-lg border border-mauve px-4 py-2 hover:bg-mauve/10 transition"
+                className="btn"
               >
                 Annuler
               </button>
@@ -153,7 +153,7 @@ export default function AccountPage() {
               <button
                 type="button"
                 onClick={() => (window.location.href = "/reset-password")}
-                className="rounded-lg bg-mauve px-4 py-2 text-white shadow hover:bg-mauve/80 transition"
+                className="btn btn-solid"
               >
                 Modifier mon mot de passe
               </button>
@@ -171,14 +171,14 @@ export default function AccountPage() {
             <div className="flex gap-3 pt-3">
               <button
                 onClick={() => setEditMode(true)}
-                className="rounded-lg bg-mauve px-4 py-2 text-white shadow hover:bg-mauve/80 transition"
+                className="btn btn-solid"
               >
                 Modifier mes données
               </button>
 
               <button
                 onClick={() => (window.location.href = "/reset-password")}
-                className="rounded-lg bg-mauve px-4 py-2 text-white shadow hover:bg-mauve/80 transition"
+                className="btn btn-solid"
               >
                 Changer mon mot de passe
               </button>

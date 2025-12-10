@@ -12,6 +12,12 @@ urlpatterns = [
     path("admin/users/<int:user_id>/<str:action>/", views.admin_users_api, name="api_admin_user_role"),
     path("admin/support/", views.admin_support_api, name="api_admin_support"),
     path("admin/support/<int:ticket_id>/", views.admin_support_api, name="api_admin_support_detail"),
+    path("admin/demandes-chants/", views.admin_demandes_chants_api, name="api_admin_demandes_chants"),
+    path("admin/demandes-chants/<int:demande_id>/", views.admin_demandes_chants_api, name="api_admin_demandes_chants_detail"),
+    path("admin/demandes-audio/", views.admin_demandes_audio_api, name="api_admin_demandes_audio"),
+    path("admin/demandes-audio/<int:demande_id>/", views.admin_demandes_audio_api, name="api_admin_demandes_audio_detail"),
+    path("admin/demandes-modification/", views.admin_demandes_modification_api, name="api_admin_demandes_modification"),
+    path("admin/demandes-modification/<int:demande_id>/", views.admin_demandes_modification_api, name="api_admin_demandes_modification_detail"),
     path("maitres/", views.maitres_api, name="api_maitres"),
     
     path("chants/", views.chants_api, name="api_chants"),
@@ -20,6 +26,12 @@ urlpatterns = [
     path("appartenir/", views.appartenir_api, name="api_appartenir"),
     
     path("categories/", views.categories_api, name="api_categorie"),
+    path("demandes-chants/", views.demandes_chants_api, name="api_demandes_chants"),
+    path("demandes-chants/<int:demande_id>/", views.demandes_chants_api, name="api_demande_chant_detail"),
+    path("demandes-audio/", views.demandes_audio_api, name="api_demandes_audio"),
+    path("demandes-audio/<int:demande_id>/", views.demandes_audio_api, name="api_demande_audio_detail"),
+    path("demandes-modification/", views.demandes_modification_chant_api, name="api_demandes_modification_chant"),
+    path("demandes-modification/<int:demande_id>/", views.demandes_modification_chant_api, name="api_demande_modification_chant_detail"),
 
     path("commentaires/", views.commentaires_api, name="api_commentaires"),
     

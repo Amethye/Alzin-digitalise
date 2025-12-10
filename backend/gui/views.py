@@ -16,8 +16,9 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.hashers import check_password, make_password
 from django.forms.models import model_to_dict
 from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 from django.utils import timezone
-from django.db import models
+from django.db import models, IntegrityError
 import os
 
 def api_root(request):
@@ -54,7 +55,11 @@ from .models import (
     maitre_chant,
     role,
     demande_support,
-    piece_jointe_support
+    piece_jointe_support,
+    demande_chant,
+    demande_chant_audio,
+    demande_piste_audio,
+    demande_modification_chant,
 )
 
 
@@ -209,6 +214,207 @@ def me_api(request):
 
     # Méthode non autorisée
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+
+# -----------------------------------------------------------
+#                DEMANDES CHANTS - ADMIN
+# -----------------------------------------------------------
+@csrf_exempt
+@require_http_methods(["GET", "PATCH"])
+def admin_demandes_chants_api(request, demande_id=None):
+    admin_user, error = _require_authenticated_user(request)
+    if error:
+        return error
+
+    if admin_user.role.nom_role != "admin":
+        return JsonResponse({"error": "Accès réservé aux admins"}, status=403)
+
+    if request.method == "GET" and demande_id is None:
+        statut = request.GET.get("statut")
+        qs = (
+            demande_chant.objects.select_related("utilisateur")
+            .prefetch_related("pistes_audio")
+            .order_by("-date_creation")
+        )
+        if statut in {"EN_ATTENTE", "ACCEPTEE", "REFUSEE"}:
+            qs = qs.filter(statut=statut)
+        data = [serialize_demande_chant(request, d) for d in qs]
+        return JsonResponse(data, safe=False)
+
+    try:
+        demande = demande_chant.objects.select_related("utilisateur").prefetch_related("pistes_audio").get(
+            id=demande_id
+        )
+    except demande_chant.DoesNotExist:
+        return JsonResponse({"error": "Demande introuvable"}, status=404)
+
+    if request.method == "GET":
+        return JsonResponse(serialize_demande_chant(request, demande))
+
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        body = {}
+
+    action = (body.get("action") or "").upper()
+
+    if action == "ACCEPTER":
+        if demande.statut != "EN_ATTENTE":
+            return JsonResponse({"error": "Demande déjà traitée"}, status=400)
+        if chant.objects.filter(nom_chant__iexact=demande.nom_chant).exists():
+            return JsonResponse({"error": "Un chant avec ce nom existe déjà."}, status=409)
+
+        new_chant = _create_chant_from_demande(demande)
+        demande.statut = "ACCEPTEE"
+        demande.justification_refus = None
+        demande.date_decision = timezone.now()
+        demande.save(update_fields=["statut", "justification_refus", "date_decision"])
+
+        return JsonResponse(
+            {
+                "demande": serialize_demande_chant(request, demande),
+                "chant": serialize_chant(request, new_chant),
+            }
+        )
+
+    if action == "REFUSER":
+        justification = (body.get("justification") or "").strip()
+        if not justification:
+            return JsonResponse({"error": "Justification requise pour un refus."}, status=400)
+        if demande.statut != "EN_ATTENTE":
+            return JsonResponse({"error": "Demande déjà traitée"}, status=400)
+
+        demande.statut = "REFUSEE"
+        demande.justification_refus = justification
+        demande.date_decision = timezone.now()
+        demande.save(update_fields=["statut", "justification_refus", "date_decision"])
+        return JsonResponse({"demande": serialize_demande_chant(request, demande)})
+
+    return JsonResponse({"error": "Action invalide"}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["GET", "PATCH"])
+def admin_demandes_audio_api(request, demande_id=None):
+    admin_user, error = _require_authenticated_user(request)
+    if error:
+        return error
+
+    if admin_user.role.nom_role != "admin":
+        return JsonResponse({"error": "Accès réservé aux admins"}, status=403)
+
+    if request.method == "GET" and demande_id is None:
+        statut = request.GET.get("statut")
+        qs = demande_piste_audio.objects.select_related("utilisateur", "chant").order_by("-date_creation")
+        if statut in {"EN_ATTENTE", "ACCEPTEE", "REFUSEE"}:
+            qs = qs.filter(statut=statut)
+        data = [serialize_demande_audio(request, d) for d in qs]
+        return JsonResponse(data, safe=False)
+
+    try:
+        demande = demande_piste_audio.objects.select_related("utilisateur", "chant").get(id=demande_id)
+    except demande_piste_audio.DoesNotExist:
+        return JsonResponse({"error": "Demande introuvable"}, status=404)
+
+    if request.method == "GET":
+        return JsonResponse(serialize_demande_audio(request, demande))
+
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        body = {}
+
+    action = (body.get("action") or "").upper()
+
+    if action == "ACCEPTER":
+        if demande.statut != "EN_ATTENTE":
+            return JsonResponse({"error": "Demande déjà traitée"}, status=400)
+        piste = _create_piste_audio_from_demande_audio(demande)
+        demande.statut = "ACCEPTEE"
+        demande.justification_refus = None
+        demande.date_decision = timezone.now()
+        demande.save(update_fields=["statut", "justification_refus", "date_decision"])
+        return JsonResponse(
+            {
+                "demande": serialize_demande_audio(request, demande),
+                "piste_audio": {
+                    "id": piste.id if piste else None,
+                    "chant_id": demande.chant_id,
+                },
+            }
+        )
+
+    if action == "REFUSER":
+        justification = (body.get("justification") or "").strip()
+        if not justification:
+            return JsonResponse({"error": "Justification requise pour un refus."}, status=400)
+        if demande.statut != "EN_ATTENTE":
+            return JsonResponse({"error": "Demande déjà traitée"}, status=400)
+        demande.statut = "REFUSEE"
+        demande.justification_refus = justification
+        demande.date_decision = timezone.now()
+        demande.save(update_fields=["statut", "justification_refus", "date_decision"])
+        return JsonResponse({"demande": serialize_demande_audio(request, demande)})
+
+    return JsonResponse({"error": "Action invalide"}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["GET", "PATCH"])
+def admin_demandes_modification_api(request, demande_id=None):
+    admin_user, error = _require_authenticated_user(request)
+    if error:
+        return error
+
+    if admin_user.role.nom_role != "admin":
+        return JsonResponse({"error": "Accès réservé aux admins"}, status=403)
+
+    if request.method == "GET" and demande_id is None:
+        statut = request.GET.get("statut")
+        qs = demande_modification_chant.objects.select_related("utilisateur", "chant").order_by("-date_creation")
+        if statut in {"EN_ATTENTE", "ACCEPTEE", "REFUSEE"}:
+            qs = qs.filter(statut=statut)
+        data = [serialize_demande_modification(request, d) for d in qs]
+        return JsonResponse(data, safe=False)
+
+    try:
+        demande = demande_modification_chant.objects.select_related("utilisateur", "chant").get(id=demande_id)
+    except demande_modification_chant.DoesNotExist:
+        return JsonResponse({"error": "Demande introuvable"}, status=404)
+
+    if request.method == "GET":
+        return JsonResponse(serialize_demande_modification(request, demande))
+
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        body = {}
+
+    action = (body.get("action") or "").upper()
+
+    if action == "ACCEPTER":
+        if demande.statut != "EN_ATTENTE":
+            return JsonResponse({"error": "Demande déjà traitée"}, status=400)
+        apply_modification_to_chant(demande)
+        demande.statut = "ACCEPTEE"
+        demande.justification_refus = None
+        demande.date_decision = timezone.now()
+        demande.save(update_fields=["statut", "justification_refus", "date_decision"])
+        return JsonResponse({"demande": serialize_demande_modification(request, demande)})
+
+    if action == "REFUSER":
+        justification = (body.get("justification") or "").strip()
+        if not justification:
+            return JsonResponse({"error": "Justification requise pour un refus."}, status=400)
+        if demande.statut != "EN_ATTENTE":
+            return JsonResponse({"error": "Demande déjà traitée"}, status=400)
+        demande.statut = "REFUSEE"
+        demande.justification_refus = justification
+        demande.date_decision = timezone.now()
+        demande.save(update_fields=["statut", "justification_refus", "date_decision"])
+        return JsonResponse({"demande": serialize_demande_modification(request, demande)})
+
+    return JsonResponse({"error": "Action invalide"}, status=400)
 
 #------------------------------------------------------------------------
                                 #RESET PASSWORD
@@ -413,6 +619,209 @@ def serialize_chant(request, c):
     return data
 
 
+def _require_authenticated_user(request):
+    email = request.headers.get("X-User-Email", "").lower()
+    if not email:
+        return None, JsonResponse({"error": "Email manquant"}, status=400)
+
+    try:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
+        return None, JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    return user, None
+
+
+def serialize_demande_chant(request, demande):
+    """Serialize a chant request to expose to front (admin/user)."""
+    return {
+        "id": demande.id,
+        "nom_chant": demande.nom_chant,
+        "auteur": demande.auteur or "",
+        "ville_origine": demande.ville_origine or "",
+        "paroles": demande.paroles or "",
+        "description": demande.description or "",
+        "categories": demande.categories or [],
+        "statut": demande.statut,
+        "justification_refus": demande.justification_refus,
+        "date_creation": demande.date_creation.isoformat(),
+        "date_decision": demande.date_decision.isoformat() if demande.date_decision else None,
+        "utilisateur": {
+            "id": demande.utilisateur_id,
+            "pseudo": demande.utilisateur.pseudo,
+            "email": demande.utilisateur.email,
+        },
+        "illustration_chant_url": _absolute_media_url(
+            request,
+            demande.illustration_chant.url if demande.illustration_chant else None,
+        ),
+        "paroles_pdf_url": _absolute_media_url(
+            request,
+            demande.paroles_pdf.url if demande.paroles_pdf else None,
+        ),
+        "partition_url": _absolute_media_url(
+            request,
+            demande.partition.url if demande.partition else None,
+        ),
+        "pistes_audio": [
+            {
+                "id": audio.id,
+                "fichier_mp3": _absolute_media_url(request, audio.fichier_mp3.url),
+            }
+            for audio in demande.pistes_audio.all()
+        ],
+    }
+
+
+def serialize_demande_audio(request, demande):
+    """Serialize an audio-track request."""
+    return {
+        "id": demande.id,
+        "statut": demande.statut,
+        "justification_refus": demande.justification_refus,
+        "date_creation": demande.date_creation.isoformat(),
+        "date_decision": demande.date_decision.isoformat() if demande.date_decision else None,
+        "chant": {
+            "id": demande.chant_id,
+            "nom_chant": demande.chant.nom_chant,
+        },
+        "utilisateur": {
+            "id": demande.utilisateur_id,
+            "pseudo": demande.utilisateur.pseudo,
+            "email": demande.utilisateur.email,
+        },
+        "fichier_mp3_url": _absolute_media_url(
+            request, demande.fichier_mp3.url if demande.fichier_mp3 else None
+        ),
+    }
+
+
+def serialize_demande_modification(request, demande):
+    data = serialize_demande_chant(request, demande)
+    data["chant_id"] = demande.chant_id
+    data["chant_nom"] = demande.chant.nom_chant
+    return data
+
+
+def _clone_field_file(field_file):
+    if not field_file:
+        return None, None
+    try:
+        file_name = os.path.basename(field_file.name)
+    except Exception:
+        file_name = None
+    field_file.open("rb")
+    content = field_file.read()
+    field_file.close()
+    if not content or not file_name:
+        return None, None
+    return ContentFile(content), file_name
+
+
+def _create_chant_from_demande(demande):
+    illustration_content, illustration_name = _clone_field_file(demande.illustration_chant)
+    pdf_content, pdf_name = _clone_field_file(demande.paroles_pdf)
+    partition_content, partition_name = _clone_field_file(demande.partition)
+
+    new_chant = chant(
+        nom_chant=demande.nom_chant,
+        auteur=demande.auteur,
+        ville_origine=demande.ville_origine,
+        paroles=demande.paroles,
+        description=demande.description,
+        utilisateur=demande.utilisateur,
+    )
+
+    if illustration_content:
+        new_chant.illustration_chant.save(illustration_name, illustration_content, save=False)
+    if pdf_content:
+        new_chant.paroles_pdf.save(pdf_name, pdf_content, save=False)
+    if partition_content:
+        new_chant.partition.save(partition_name, partition_content, save=False)
+
+    new_chant.save()
+
+    categories_list = demande.categories or []
+    if not categories_list:
+        categories_list = ["Autre"]
+
+    for cat_name in categories_list:
+        try:
+            cat_obj = categorie.objects.get(nom_categorie=cat_name)
+        except categorie.DoesNotExist:
+            continue
+        appartenir.objects.create(
+            categorie=cat_obj,
+            chant=new_chant,
+            utilisateur=demande.utilisateur,
+        )
+
+    for audio in demande.pistes_audio.all():
+        audio_content, audio_name = _clone_field_file(audio.fichier_mp3)
+        if not audio_content:
+            continue
+        piste = piste_audio(
+            chant=new_chant,
+            utilisateur=demande.utilisateur,
+        )
+        piste.fichier_mp3.save(audio_name, audio_content, save=False)
+        piste.save()
+
+    return new_chant
+
+
+def _create_piste_audio_from_demande_audio(demande):
+    audio_content, audio_name = _clone_field_file(demande.fichier_mp3)
+    if not audio_content or not audio_name:
+        return None
+    piste = piste_audio(
+        chant=demande.chant,
+        utilisateur=demande.utilisateur,
+    )
+    piste.fichier_mp3.save(audio_name, audio_content, save=False)
+    piste.save()
+    return piste
+
+
+def _apply_modification_to_chant(demande):
+    chant_obj = demande.chant
+    chant_obj.nom_chant = demande.nom_chant
+    chant_obj.auteur = demande.auteur
+    chant_obj.ville_origine = demande.ville_origine
+    chant_obj.paroles = demande.paroles
+    chant_obj.description = demande.description
+
+    illustration_content, illustration_name = _clone_field_file(demande.illustration_chant)
+    pdf_content, pdf_name = _clone_field_file(demande.paroles_pdf)
+    partition_content, partition_name = _clone_field_file(demande.partition)
+
+    if illustration_content:
+        chant_obj.illustration_chant.save(illustration_name, illustration_content, save=False)
+    if pdf_content:
+        chant_obj.paroles_pdf.save(pdf_name, pdf_content, save=False)
+    if partition_content:
+        chant_obj.partition.save(partition_name, partition_content, save=False)
+
+    chant_obj.save()
+
+    categories = demande.categories or []
+    if not categories:
+        categories = ["Autre"]
+    appartenir.objects.filter(chant=chant_obj).delete()
+    for cat_name in categories:
+        try:
+            cat_obj = categorie.objects.get(nom_categorie=cat_name)
+        except categorie.DoesNotExist:
+            continue
+        appartenir.objects.create(
+            categorie=cat_obj,
+            chant=chant_obj,
+            utilisateur=demande.utilisateur,
+        )
+
+    return chant_obj
+
+
 def delete_file_field(instance, field_name):
     """Supprime physiquement un fichier et réinitialise le champ."""
     field = getattr(instance, field_name, None)
@@ -420,6 +829,194 @@ def delete_file_field(instance, field_name):
         os.remove(field.path)
     setattr(instance, field_name, None)
     instance.save()
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def demandes_chants_api(request, demande_id=None):
+    user, error = _require_authenticated_user(request)
+    if error:
+        return error
+
+    if demande_id:
+        try:
+            demande = demande_chant.objects.select_related("utilisateur").prefetch_related("pistes_audio").get(
+                id=demande_id, utilisateur=user
+            )
+        except demande_chant.DoesNotExist:
+            return JsonResponse({"error": "Demande introuvable"}, status=404)
+
+        if request.method == "GET":
+            return JsonResponse(serialize_demande_chant(request, demande))
+
+        return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+    if request.method == "GET":
+        qs = demande_chant.objects.filter(utilisateur=user).prefetch_related("pistes_audio").order_by("-date_creation")
+        data = [serialize_demande_chant(request, d) for d in qs]
+        return JsonResponse(data, safe=False)
+
+    try:
+        form_data, form_files = _extract_body_data(request)
+    except MultiPartParserError:
+        return JsonResponse({"error": "Formulaire invalide"}, status=400)
+
+    nom_chant = (form_data.get("nom_chant") or "").strip()
+    if not nom_chant:
+        return JsonResponse({"error": "nom_chant requis"}, status=400)
+
+    if chant.objects.filter(nom_chant__iexact=nom_chant).exists():
+        return JsonResponse({"error": "Un chant avec ce nom existe déjà."}, status=409)
+    if demande_chant.objects.filter(nom_chant__iexact=nom_chant, statut="EN_ATTENTE").exists():
+        return JsonResponse({"error": "Une demande avec ce nom est déjà en attente."}, status=409)
+
+    categories = form_data.getlist("categories")
+    categories = [c for c in categories if c]
+
+    demande = demande_chant.objects.create(
+        utilisateur=user,
+        nom_chant=nom_chant,
+        auteur=form_data.get("auteur") or "",
+        ville_origine=form_data.get("ville_origine") or "",
+        paroles=form_data.get("paroles") or "",
+        description=form_data.get("description") or "",
+        categories=categories,
+    )
+
+    if form_files.get("illustration_chant"):
+        demande.illustration_chant = form_files["illustration_chant"]
+    if form_files.get("paroles_pdf"):
+        demande.paroles_pdf = form_files["paroles_pdf"]
+    if form_files.get("partition"):
+        demande.partition = form_files["partition"]
+
+    demande.save()
+
+    for audio_file in form_files.getlist("new_audio"):
+        if audio_file:
+            demande_chant_audio.objects.create(demande=demande, fichier_mp3=audio_file)
+
+    return JsonResponse(serialize_demande_chant(request, demande), status=201)
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def demandes_audio_api(request, demande_id=None):
+    user, error = _require_authenticated_user(request)
+    if error:
+        return error
+
+    if demande_id:
+        try:
+            demande = demande_piste_audio.objects.select_related("utilisateur", "chant").get(
+                id=demande_id, utilisateur=user
+            )
+        except demande_piste_audio.DoesNotExist:
+            return JsonResponse({"error": "Demande introuvable"}, status=404)
+
+        if request.method == "GET":
+            return JsonResponse(serialize_demande_audio(request, demande))
+        return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+    if request.method == "GET":
+        qs = demande_piste_audio.objects.filter(utilisateur=user).select_related("chant").order_by("-date_creation")
+        data = [serialize_demande_audio(request, d) for d in qs]
+        return JsonResponse(data, safe=False)
+
+    try:
+        form_data, form_files = _extract_body_data(request)
+    except MultiPartParserError:
+        return JsonResponse({"error": "Formulaire invalide"}, status=400)
+
+    chant_id = form_data.get("chant_id")
+    if not chant_id:
+        return JsonResponse({"error": "chant_id requis"}, status=400)
+
+    try:
+        chant_obj = chant.objects.get(id=chant_id)
+    except chant.DoesNotExist:
+        return JsonResponse({"error": "Chant introuvable"}, status=404)
+
+    fichier_mp3 = form_files.get("fichier_mp3")
+    if not fichier_mp3:
+        return JsonResponse({"error": "fichier_mp3 requis"}, status=400)
+
+    demande = demande_piste_audio.objects.create(
+        utilisateur=user,
+        chant=chant_obj,
+        fichier_mp3=fichier_mp3,
+    )
+
+    return JsonResponse(serialize_demande_audio(request, demande), status=201)
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def demandes_modification_chant_api(request, demande_id=None):
+    user, error = _require_authenticated_user(request)
+    if error:
+        return error
+
+    if demande_id:
+        try:
+            demande = demande_modification_chant.objects.select_related("chant", "utilisateur").get(
+                id=demande_id, utilisateur=user
+            )
+        except demande_modification_chant.DoesNotExist:
+            return JsonResponse({"error": "Demande introuvable"}, status=404)
+
+        if request.method == "GET":
+            return JsonResponse(serialize_demande_modification(request, demande))
+        return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
+    if request.method == "GET":
+        qs = demande_modification_chant.objects.filter(utilisateur=user).select_related("chant").order_by(
+            "-date_creation"
+        )
+        data = [serialize_demande_modification(request, d) for d in qs]
+        return JsonResponse(data, safe=False)
+
+    try:
+        form_data, form_files = _extract_body_data(request)
+    except MultiPartParserError:
+        return JsonResponse({"error": "Formulaire invalide"}, status=400)
+
+    chant_id = form_data.get("chant_id")
+    if not chant_id:
+        return JsonResponse({"error": "chant_id requis"}, status=400)
+    try:
+        chant_obj = chant.objects.get(id=chant_id)
+    except chant.DoesNotExist:
+        return JsonResponse({"error": "Chant introuvable"}, status=404)
+
+    nom_chant = (form_data.get("nom_chant") or "").strip()
+    if not nom_chant:
+        return JsonResponse({"error": "nom_chant requis"}, status=400)
+
+    categories = form_data.getlist("categories")
+    categories = [c for c in categories if c]
+
+    demande = demande_modification_chant.objects.create(
+        utilisateur=user,
+        chant=chant_obj,
+        nom_chant=nom_chant,
+        auteur=form_data.get("auteur") or "",
+        ville_origine=form_data.get("ville_origine") or "",
+        paroles=form_data.get("paroles") or "",
+        description=form_data.get("description") or "",
+        categories=categories,
+    )
+
+    if form_files.get("illustration_chant"):
+        demande.illustration_chant = form_files["illustration_chant"]
+    if form_files.get("paroles_pdf"):
+        demande.paroles_pdf = form_files["paroles_pdf"]
+    if form_files.get("partition"):
+        demande.partition = form_files["partition"]
+
+    demande.save()
+
+    return JsonResponse(serialize_demande_modification(request, demande), status=201)
 
 
 @csrf_exempt
@@ -1378,7 +1975,6 @@ def commandes_api(request):
         },
         status=201,
     )
-
 
 #details_commande
 @csrf_exempt

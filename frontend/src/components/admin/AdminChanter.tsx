@@ -184,7 +184,7 @@ export default function AdminChanter() {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="rounded-xl bg-mauve px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-600"
+            className="btn btn-solid"
           >
             Ajouter
           </button>

@@ -1,0 +1,10 @@
+---
+import Layout from "@layouts/Layout.astro";
+import MyChantRequests from "@components/MyChantRequests";
+---
+
+<Layout title="Mes demandes">
+  <main class="min-h-screen bg-white">
+    <MyChantRequests client:load />
+  </main>
+</Layout>

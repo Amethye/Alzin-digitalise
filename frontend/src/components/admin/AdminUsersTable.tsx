@@ -170,13 +170,13 @@ export default function AdminUsersTable() {
                 <td className="px-4 py-3 flex gap-2">
                   {editingUserId === u.id ? (
                     <>
-                      <button className="btn-green" onClick={() => saveUser(u.id)}>💾</button>
-                      <button className="btn-gray" onClick={() => setEditingUserId(null)}>✖</button>
+                      <button className="btn btn-solid" onClick={() => saveUser(u.id)}>💾</button>
+                      <button className="btn btn-secondary" onClick={() => setEditingUserId(null)}>✖</button>
                     </>
                   ) : (
                     <>
                       <button
-                        className="btn-yellow"
+                        className="btn btn-warning"
                         onClick={() => {
                           setEditingUserId(u.id);
                           setEditValues({
@@ -198,7 +198,6 @@ export default function AdminUsersTable() {
                         requestInit={{ credentials: "include" }}
                         onSuccess={fetchUsers}
                         onError={(message) => alert(message || "Erreur lors de la suppression")}
-                        className="btn-red"
                       />
                     </>
                   )}

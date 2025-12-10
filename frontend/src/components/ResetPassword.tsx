@@ -109,7 +109,7 @@ export default function ResetPasswordForm() {
       <button
         type="submit"
         disabled={loading}
-        className="bg-mauve text-white px-4 py-2 rounded-lg shadow hover:bg-mauve/80 transition"
+        className="btn btn-solid"
       >
         {loading ? "En cours..." : "Modifier le mot de passe"}
       </button>

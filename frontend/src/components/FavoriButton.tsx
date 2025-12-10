@@ -1,4 +1,12 @@
 import React, { useEffect, useState } from "react";
+import {
+  addFavoriForUser,
+  hasFavorisForUser,
+  removeFavoriForUser,
+  setFavorisForUser,
+  subscribeToFavoris,
+  type Favori,
+} from "../lib/favorisStore";
 
 const API_FAVORIS = "/api/favoris/";
 
@@ -23,14 +31,20 @@ export default function FavoriButton({
   USER_ID: number | null;
   size?: number;
 }) {
-  const [favoris, setFavoris] = useState<any[]>([]);
+  const [favoris, setFavoris] = useState<Favori[]>([]);
   const isFavori = favoris.some((f) => f.chant_id === chantId);
 
   useEffect(() => {
     if (!USER_ID) return;
-    fetch(`${API_FAVORIS}?utilisateur_id=${USER_ID}`)
-      .then((r) => r.json())
-      .then(setFavoris);
+    const unsubscribe = subscribeToFavoris(USER_ID, setFavoris);
+
+    if (!hasFavorisForUser(USER_ID)) {
+      fetch(`${API_FAVORIS}?utilisateur_id=${USER_ID}`)
+        .then((r) => r.json())
+        .then((data) => setFavorisForUser(USER_ID, data));
+    }
+
+    return () => unsubscribe();
   }, [USER_ID]);
 
   const add = async () => {
@@ -44,8 +58,8 @@ export default function FavoriButton({
         date_favori: new Date().toISOString().split("T")[0],
       }),
     });
-    const newFav = await res.json();
-    setFavoris((old) => [...old, newFav]);
+    const newFav: Favori = await res.json();
+    addFavoriForUser(USER_ID, newFav);
   };
 
   const remove = async () => {
@@ -53,12 +67,14 @@ export default function FavoriButton({
     if (!fav) return;
 
     await fetch(`${API_FAVORIS}?id=${fav.id}`, { method: "DELETE" });
-    setFavoris((old) => old.filter((f) => f.id !== fav.id));
-    
+    removeFavoriForUser(fav.utilisateur_id, chantId);
   };
 
   return (
-    <button onClick={isFavori ? remove : add}>
+    <button
+      onClick={isFavori ? remove : add}
+      className="btn btn-ghost p-1"
+    >
       {isFavori ? <HeartFull size={size} /> : <HeartEmpty size={size} />}
     </button>
   );

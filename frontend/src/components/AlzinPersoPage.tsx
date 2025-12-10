@@ -463,10 +463,8 @@ export default function AlzinPersoPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedCategoryFilter(null)}
-                  className={`rounded-md px-2 py-1 text-left text-xs sm:text-sm ${
-                    selectedCategoryFilter === null
-                      ? "bg-mauve text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                  className={`btn w-full justify-start text-left text-xs sm:text-sm ${
+                    selectedCategoryFilter === null ? "btn-solid" : "btn-ghost text-gray-700"
                   }`}
                 >
                   Tous les chants
@@ -476,10 +474,10 @@ export default function AlzinPersoPage() {
                     <button
                       type="button"
                       onClick={() => setSelectedCategoryFilter(cat.nom_categorie)}
-                      className={`flex-1 rounded-md px-2 py-1 text-left text-xs sm:text-sm ${
+                      className={`btn flex-1 justify-start text-left text-xs sm:text-sm ${
                         selectedCategoryFilter === cat.nom_categorie
-                          ? "bg-mauve text-white"
-                          : "text-gray-700 hover:bg-gray-100"
+                          ? "btn-solid"
+                          : "btn-ghost text-gray-700"
                       }`}
                     >
                       {cat.nom_categorie}
@@ -487,7 +485,7 @@ export default function AlzinPersoPage() {
                     <button
                       type="button"
                       onClick={() => handleAddCategoryChants(cat.nom_categorie)}
-                      className="rounded-md px-2 py-1 text-xs text-mauve hover:bg-mauve/10"
+                      className="btn btn-ghost px-2 py-1 text-lg"
                       title="Ajouter tous les chants de cette catégorie"
                     >
                       +
@@ -499,7 +497,7 @@ export default function AlzinPersoPage() {
               <button
                 type="button"
                 onClick={handleClearSelection}
-                className="mt-3 w-full rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 sm:text-sm"
+                className="btn btn-secondary mt-3 w-full text-xs sm:text-sm"
               >
                 Vider la sélection
               </button>
@@ -566,14 +564,14 @@ export default function AlzinPersoPage() {
           <button
             type="button"
             onClick={handleCancel}
-            className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:text-base"
+            className="btn btn-secondary sm:text-base"
           >
             Annuler
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-mauve px-4 py-1.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+            className="btn btn-solid disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
           >
             {saving
               ? isEditMode

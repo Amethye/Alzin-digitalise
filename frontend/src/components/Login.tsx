@@ -121,7 +121,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
         <button
           type="submit"
           disabled={isLoading}
-          className="rounded-lg border-2 border-mauve bg-mauve px-4 py-2 text-white transition hover:bg-mauve-50 hover:text-mauve disabled:opacity-60 disabled:cursor-not-allowed"
+          className="btn btn-solid disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isLoading ? "Connexion..." : "Se connecter"}
         </button>

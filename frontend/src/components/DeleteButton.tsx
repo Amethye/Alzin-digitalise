@@ -51,16 +51,11 @@ export default function DeleteButton({
     }
   };
 
-  const baseClasses =
-    "px-3 py-1 rounded text-sm font-semibold transition disabled:opacity-70 disabled:cursor-not-allowed";
-  const colorClasses =
-    className?.trim().length > 0 ? className : "bg-red-600 text-white";
-
   return (
     <button
       onClick={handleClick}
       disabled={loading || disabled}
-      className={`${baseClasses} ${colorClasses}`}
+      className={`btn btn-danger text-sm ${className}`}
     >
       {loading ? "..." : label}
     </button>

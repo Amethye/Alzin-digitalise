@@ -93,7 +93,7 @@ export default function RatingStars({ pisteId, userId, onStatsChange }: RatingPr
       {rating !== null && (
         <button
           onClick={handleRemove}
-          className="w-6 h-6 flex items-center justify-center rounded-full border border-mauve/40 text-mauve text-sm font-bold hover:bg-mauve/10 transition"
+          className="btn btn-ghost h-6 w-6 p-0 text-base"
           title="Supprimer ma note"
           aria-label="Supprimer ma note"
         >

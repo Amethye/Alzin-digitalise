@@ -396,7 +396,7 @@ export default function AdminChants() {
 
               <div className="flex gap-2">
                 {/* BOUTON CHANGER */}
-                <label className="bg-mauve text-white px-3 py-1 rounded-lg cursor-pointer text-sm">
+                <label className="btn btn-solid cursor-pointer text-sm">
                   {previewIllustration ? "Changer" : "Ajouter"}
                   <input
                     type="file"
@@ -417,11 +417,10 @@ export default function AdminChants() {
                         clearIllustration();
                         loadData();
                       }}
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
                     />
                   ) : (
                     <button
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                      className="btn btn-danger text-sm"
                       onClick={clearIllustration}
                     >
                       Supprimer
@@ -445,7 +444,7 @@ export default function AdminChants() {
 
               <div className="flex gap-2">
                 {/* CHANGER */}
-                <label className="bg-mauve text-white px-3 py-1 rounded-lg cursor-pointer text-sm">
+                <label className="btn btn-solid cursor-pointer text-sm">
                   {previewPDF ? "Changer" : "Ajouter"}
                   <input
                     type="file"
@@ -466,11 +465,10 @@ export default function AdminChants() {
                         clearPDF();
                         loadData();
                       }}
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
                     />
                   ) : (
                     <button
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                      className="btn btn-danger text-sm"
                       onClick={clearPDF}
                     >
                       Supprimer
@@ -489,7 +487,7 @@ export default function AdminChants() {
 
               <div className="flex gap-2">
                 {/* CHANGER */}
-                <label className="bg-mauve text-white px-3 py-1 rounded-lg cursor-pointer text-sm">
+                <label className="btn btn-solid cursor-pointer text-sm">
                   {previewPartition ? "Changer" : "Ajouter"}
                   <input
                     type="file"
@@ -510,11 +508,10 @@ export default function AdminChants() {
                         clearPartition();
                         loadData();
                       }}
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
                     />
                   ) : (
                     <button
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                      className="btn btn-danger text-sm"
                       onClick={clearPartition}
                     >
                       Supprimer
@@ -530,7 +527,7 @@ export default function AdminChants() {
           <div>
             <div className="flex justify-between items-center">
               <span className="font-semibold text-lg">Pistes audio (MP3)</span>
-              <label className="bg-mauve text-white px-3 py-1 rounded-lg cursor-pointer text-sm">
+              <label className="btn btn-solid cursor-pointer text-sm">
                 Ajouter
                 <input key = {previewAudio.length} type="file" name="new_audio" multiple accept=".mp3"
                   className="hidden" onChange={handleChange} />
@@ -544,7 +541,7 @@ export default function AdminChants() {
                   <p className="text-sm">🎧 {f}</p>
                   <button
                     onClick={() => removeNewAudio(i)}
-                    className="bg-red-500 text-white px-2 py-1 rounded text-sm"
+                    className="btn btn-danger text-sm px-3 py-1"
                   >
                     Retirer
                   </button>
@@ -585,7 +582,7 @@ export default function AdminChants() {
         <div className="mt-10 flex justify-center">
           <button
             onClick={saveChant}
-            className="bg-mauve text-white px-6 py-3 rounded-xl text-lg font-semibold shadow hover:bg-mauve/80 transition w-full max-w-sm"
+            className="btn btn-solid w-full max-w-sm text-lg"
           >
             {editingId ? "Mettre à jour le chant" : "Créer le chant"}
           </button>
@@ -655,7 +652,7 @@ export default function AdminChants() {
                       <div className="flex gap-2 shrink-0">
                         <button
                           onClick={() => startEdit(c)}
-                          className="bg-yellow-500 text-white px-2 py-1 rounded text-sm"
+                          className="btn btn-warning text-sm px-3 py-1"
                         >
                           Modifier
                         </button>

@@ -114,10 +114,7 @@ export default function Register({ next = "/" }: SignupFormProps) {
           className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"
         />
 
-        <button
-          type="submit"
-          className="rounded-lg border-2 border-mauve bg-mauve px-4 py-2 mt-4 text-white transition hover:bg-mauve-50 hover:text-mauve"
-        >
+        <button type="submit" className="btn btn-solid mt-4 w-full">
           S'inscrire
         </button>
 

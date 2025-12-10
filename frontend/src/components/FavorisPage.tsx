@@ -1,6 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import FavoriButton from "@components/FavoriButton";
 import { sortCategoriesWithAutreLast } from "../lib/categories";
+import {
+  hasFavorisForUser,
+  setFavorisForUser,
+  subscribeToFavoris,
+  type Favori,
+} from "../lib/favorisStore";
 
 type Chant = {
   id: number;
@@ -11,20 +17,15 @@ type Chant = {
   pistes_audio: { id: number; fichier_mp3: string }[];
 };
 
-type Favori = {
-  id: number;
-  utilisateur_id: number;
-  chant_id: number;
-};
-
 const API_CHANTS = "/api/chants/";
 const API_FAVORIS = "/api/favoris/";
 
 export default function FavorisPage() {
   const [USER_ID, setUSER_ID] = useState<number | null>(null);
   const [favoris, setFavoris] = useState<Favori[]>([]);
-  const [chants, setChants] = useState<Chant[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [allChants, setAllChants] = useState<Chant[]>([]);
+  const [favorisLoaded, setFavorisLoaded] = useState(false);
+  const [chantsLoaded, setChantsLoaded] = useState(false);
 
   // Recherche + filtre catégorie + pagination
   const [search, setSearch] = useState("");
@@ -33,45 +34,73 @@ export default function FavorisPage() {
   const PER_PAGE = 9;
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    const handler = () => window.location.reload();
-    window.addEventListener("favoriUpdated", handler);
-    return () => window.removeEventListener("favoriUpdated", handler);
-  }, []);
-
   // Charger utilisateur
   useEffect(() => {
     const id = localStorage.getItem("utilisateur_id");
     if (id) setUSER_ID(Number(id));
   }, []);
 
-  // Charger favoris + chants
+  // Charger la liste complète des chants (une seule fois)
   useEffect(() => {
-    if (!USER_ID) return;
-
-    const load = async () => {
-      setLoading(true);
-
-      const resFav = await fetch(`${API_FAVORIS}?utilisateur_id=${USER_ID}`);
-      const favData = await resFav.json();
-      setFavoris(favData);
-
-      const resChants = await fetch(API_CHANTS);
-      const allChants = await resChants.json();
-
-      const favChants = allChants.filter((c: Chant) =>
-        favData.some((f: Favori) => f.chant_id === c.id)
-      );
-
-      setChants(favChants);
-      setLoading(false);
+    const loadChants = async () => {
+      setChantsLoaded(false);
+      try {
+        const res = await fetch(API_CHANTS);
+        const data = await res.json();
+        setAllChants(data);
+      } finally {
+        setChantsLoaded(true);
+      }
     };
 
-    load();
+    loadChants();
+  }, []);
+
+  // Abonnement aux favoris
+  useEffect(() => {
+    if (!USER_ID) {
+      setFavoris([]);
+      setFavorisLoaded(false);
+      return;
+    }
+
+    let cancelled = false;
+    const unsubscribe = subscribeToFavoris(USER_ID, (favList) => {
+      if (!cancelled) setFavoris(favList);
+    });
+
+    if (hasFavorisForUser(USER_ID)) {
+      setFavorisLoaded(true);
+    } else {
+      const loadFavoris = async () => {
+        setFavorisLoaded(false);
+        try {
+          const resFav = await fetch(`${API_FAVORIS}?utilisateur_id=${USER_ID}`);
+          const favData = await resFav.json();
+          setFavorisForUser(USER_ID, favData);
+        } catch (err) {
+          console.error("Erreur lors du chargement des favoris", err);
+        } finally {
+          if (!cancelled) setFavorisLoaded(true);
+        }
+      };
+
+      loadFavoris();
+    }
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [USER_ID]);
 
+  const favoriteChants = useMemo(() => {
+    const ids = new Set(favoris.map((f) => f.chant_id));
+    return allChants.filter((chant) => ids.has(chant.id));
+  }, [favoris, allChants]);
+
   // Recherche
-  const searched = chants.filter((c) =>
+  const searched = favoriteChants.filter((c) =>
     `${c.nom_chant} ${c.auteur}`.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -96,7 +125,7 @@ export default function FavorisPage() {
   const categoriesForFilter = sortCategoriesWithAutreLast(
     Array.from(
       new Set(
-        chants.flatMap((c) =>
+        favoriteChants.flatMap((c) =>
           c.categories.length ? c.categories : ["Autre"]
         )
       )
@@ -116,6 +145,8 @@ export default function FavorisPage() {
 
   if (!USER_ID)
     return <p className="text-center text-gray-500 mt-10">Veuillez vous connecter.</p>;
+
+  const loading = !favorisLoaded || !chantsLoaded;
 
   if (loading)
     return <p className="text-center mt-10">Chargement…</p>;
@@ -191,10 +222,8 @@ export default function FavorisPage() {
             <button
               key={i}
               onClick={() => setPage(i + 1)}
-              className={`px-4 py-2 rounded-lg border ${
-                page === i + 1
-                  ? "bg-mauve text-white"
-                  : "border-mauve/40 hover:bg-mauve/10"
+              className={`btn ${
+                page === i + 1 ? "btn-solid" : "btn-ghost"
               }`}>
               {i + 1}
             </button>

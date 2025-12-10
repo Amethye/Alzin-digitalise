@@ -136,11 +136,7 @@ export default function AdminMaitres() {
 
           <button
             type="submit"
-            className="
-              rounded-lg bg-mauve px-5 py-2 text-sm font-semibold text-white 
-              shadow transition hover:bg-purple-600
-              disabled:cursor-not-allowed disabled:bg-purple-300
-            "
+            className="btn btn-solid disabled:cursor-not-allowed disabled:opacity-60"
             disabled={saving}
           >
             {saving ? "Enregistrement…" : "Enregistrer"}

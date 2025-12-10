@@ -278,14 +278,14 @@ export default function SupportPage() {
         <div className="flex justify-end gap-3 pt-2">
           <a
             href="/orders"
-            className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:text-base"
+            className="btn btn-secondary sm:text-base"
           >
             Annuler
           </a>
           <button
             type="submit"
             disabled={sending}
-            className="rounded-lg bg-mauve px-4 py-1.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+            className="btn btn-solid disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
           >
             {sending ? "Envoi en cours..." : "Envoyer ma demande"}
           </button>

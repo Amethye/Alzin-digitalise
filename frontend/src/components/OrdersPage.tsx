@@ -334,7 +334,7 @@ export default function OrdersPage() {
               <button
                 type="button"
                 onClick={() => handleEditCommande(c.id)}
-                className="rounded-lg border border-mauve px-3 py-1 text-xs font-semibold text-mauve hover:bg-mauve/10 sm:text-sm"
+                className="btn btn-secondary text-xs sm:text-sm"
               >
                 Modifier
               </button>
@@ -355,7 +355,7 @@ export default function OrdersPage() {
                   setCommandes((prev) => prev.filter((cmd) => cmd.id !== c.id))
                 }
                 onError={(message) => setError(message)}
-                className="rounded-lg border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 bg-transparent hover:bg-red-50 sm:text-sm"
+                className="text-xs sm:text-sm"
               />
             </div>
           </li>
@@ -397,7 +397,7 @@ const renderAlzinsList = () => {
             {/* Bouton Modifier (même style que commandes) */}
             <a
               href={`/alzin-perso?id=${a.id}`}
-              className="rounded-lg border border-mauve px-3 py-1 text-xs font-semibold text-mauve hover:bg-mauve/10 sm:text-sm"
+              className="btn btn-secondary text-xs sm:text-sm"
             >
               Modifier
             </a>
@@ -425,7 +425,7 @@ const renderAlzinsList = () => {
                     "Erreur lors de la suppression de l'alzin personnalisé."
                 )
               }
-              className="rounded-lg border border-red-500 px-3 py-1 text-xs font-semibold text-red-600 bg-transparent hover:bg-red-50 sm:text-sm"
+              className="text-xs sm:text-sm"
             />
           </div>
         </li>
@@ -455,13 +455,13 @@ const renderAlzinsList = () => {
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <a
             href="/register"
-            className="inline-flex items-center justify-center rounded-lg bg-mauve px-5 py-2.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-purple-800 sm:text-base"
+            className="btn btn-solid sm:text-base"
           >
             Devenir membre
           </a>
           <a
             href="/login"
-            className="inline-flex items-center justify-center rounded-lg border border-mauve px-5 py-2.5 text-sm font-semibold text-mauve duration-150 hover:bg-mauve hover:text-white sm:text-base"
+            className="btn sm:text-base"
           >
             Se connecter
           </a>
@@ -504,10 +504,10 @@ const renderAlzinsList = () => {
             <button
               type="button"
               onClick={() => setActiveTab("en_cours")}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium sm:text-base ${
+              className={`btn w-full justify-between text-sm font-medium sm:text-base ${
                 activeTab === "en_cours"
-                  ? "bg-mauve text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "btn-solid"
+                  : "btn-ghost text-gray-700"
               }`}
             >
               <span>Mes commandes en cours</span>
@@ -519,10 +519,10 @@ const renderAlzinsList = () => {
             <button
               type="button"
               onClick={() => setActiveTab("passees")}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium sm:text-base ${
+              className={`btn w-full justify-between text-sm font-medium sm:text-base ${
                 activeTab === "passees"
-                  ? "bg-mauve text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "btn-solid"
+                  : "btn-ghost text-gray-700"
               }`}
             >
               <span>Mes commandes passées</span>
@@ -534,10 +534,10 @@ const renderAlzinsList = () => {
             <button
               type="button"
               onClick={() => setActiveTab("alzins")}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium sm:text-base ${
+              className={`btn w-full justify-between text-sm font-medium sm:text-base ${
                 activeTab === "alzins"
-                  ? "bg-mauve text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "btn-solid"
+                  : "btn-ghost text-gray-700"
               }`}
             >
               <span>Mes alzins personnalisés</span>
@@ -550,7 +550,7 @@ const renderAlzinsList = () => {
             type="button"
             onClick={handleOpenOrderForm}
             disabled={creating}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-mauve px-3 py-2 text-sm font-semibold text-mauve duration-150 hover:bg-mauve hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+            className="btn btn-solid mt-4 w-full justify-center gap-2 sm:text-base disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span className="text-lg leading-none">+</span>
             <span>
@@ -565,7 +565,7 @@ const renderAlzinsList = () => {
           {/* Bouton + nouvel alzin perso */}
           <a
             href="/alzin-perso"
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-mauve px-3 py-2 text-sm font-semibold text-mauve duration-150 hover:bg-mauve/10 sm:text-base"
+            className="btn btn-ghost mt-2 w-full justify-center gap-2 border-dashed sm:text-base"
           >
             <span className="text-lg leading-none">+</span>
             <span>Nouvel alzin perso</span>
@@ -685,14 +685,14 @@ const renderAlzinsList = () => {
                 <button
                   type="button"
                   onClick={handleCancelOrderForm}
-                  className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 sm:text-base"
+                  className="btn btn-secondary sm:text-base"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="rounded-lg bg-mauve px-4 py-1.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+                  className="btn btn-solid disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
                 >
                   {creating
                     ? editingCommandeId
