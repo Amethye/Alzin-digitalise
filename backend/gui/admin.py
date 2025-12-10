@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib import admin
 from .models import (utilisateur, categorie, chant, chansonnier_perso, template_chansonnier, fournisseur, appartenir,
                      commande, details_commande, contenir_chant_perso, contenir_chant_template, commentaire,
-                     fournir, favoris, noter, piste_audio, evenement, maitre_chant, role)
+                     fournir, favoris, noter, piste_audio, evenement, maitre_chant, role, demande_support, piece_jointe_support)
 
 admin.site.register(utilisateur)
 admin.site.register(categorie)
@@ -25,4 +25,6 @@ admin.site.register(evenement)
 admin.site.register(maitre_chant)
 admin.site.register(role)
 admin.site.register(appartenir)
+admin.site.register(demande_support)
+admin.site.register(piece_jointe_support)
 

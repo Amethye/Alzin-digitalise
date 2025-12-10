@@ -434,3 +434,45 @@ def delete_audio_file(sender, instance, **kwargs):
     if instance.fichier_mp3:
         if os.path.isfile(instance.fichier_mp3.path):
             os.remove(instance.fichier_mp3.path)
+
+
+# ================================================================================
+#                       DEMANDE DE SUPPORT & PIECE JOINTE
+# ================================================================================
+
+class demande_support(models.Model):
+    STATUT_CHOICES = [
+        ("NOUVEAU", "Nouveau"),
+        ("EN_COURS", "En cours"),
+        ("RESOLU", "Résolu"),
+    ]
+
+    utilisateur = models.ForeignKey(
+        "utilisateur",
+        on_delete=models.CASCADE,
+        related_name="demandes_support",
+    )
+    objet = models.CharField(max_length=255)
+    description = models.TextField()
+    date_creation = models.DateTimeField(auto_now_add=True)
+    statut = models.CharField(
+        max_length=20,
+        choices=STATUT_CHOICES,
+        default="NOUVEAU",
+    )
+
+    def __str__(self):
+        return f"[{self.utilisateur.pseudo}] {self.objet}"
+
+
+class piece_jointe_support(models.Model):
+    demande = models.ForeignKey(
+        demande_support,
+        on_delete=models.CASCADE,
+        related_name="pieces_jointes",
+    )
+    fichier = models.FileField(upload_to="support/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"PJ #{self.id} pour demande #{self.demande_id}"

@@ -144,6 +144,7 @@ export default function Nav() {
     { label: "Mon compte", href: "/account" },
     { label: "Mes favoris", href: "/favoris" },
     { label: "Mes commandes", href: "/orders" },
+    { label: "Support", href: "/support" },
   ];
 
   const toggleMobileMenu = () => {

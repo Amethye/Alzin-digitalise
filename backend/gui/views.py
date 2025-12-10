@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from datetime import date
+from django.views.decorators.http import require_http_methods
+
 from json import JSONDecodeError
 
 # Create your views here.
@@ -79,6 +81,8 @@ from .models import (
     noter,
     maitre_chant,
     role,
+    demande_support,
+    piece_jointe_support
 )
 #------------------------------------------------------------------------
                             #UTILISATEURS
@@ -1750,3 +1754,211 @@ def maitres_api(request):
         maitre_chant.objects.create(nom=nom)
 
     return JsonResponse({"maitres": maitres}, status=200)
+
+    
+
+    #--------------------------------------------------------
+    #                           SUPPORT
+    #--------------------------------------------------------
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def support_api(request):
+    """
+    GET  : (optionnel) liste des demandes de support de l'utilisateur courant
+    POST : création d'une nouvelle demande de support + pièces jointes.
+           Reçoit un formulaire multipart/form-data.
+    """
+    email = request.headers.get("X-User-Email", "").lower()
+    if not email:
+        return JsonResponse({"error": "Email manquant"}, status=400)
+
+    try:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
+        return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    # ---------- GET : liste des demandes de cet utilisateur ----------
+    if request.method == "GET":
+        qs = demande_support.objects.filter(utilisateur=user).order_by("-date_creation")
+        data = []
+        for d in qs:
+            data.append({
+                "id": d.id,
+                "objet": d.objet,
+                "description": d.description,
+                "date_creation": d.date_creation.isoformat(),
+                "statut": d.statut,
+            })
+        return JsonResponse(data, safe=False)
+
+    # ---------- POST : création d'une demande ----------
+    # On attend un formulaire multipart (FormData côté front)
+    objet = request.POST.get("objet", "").strip()
+    description = request.POST.get("description", "").strip()
+
+    if not objet or not description:
+        return JsonResponse(
+            {"error": "objet et description sont requis"},
+            status=400,
+        )
+
+    # Création de la demande
+    demande = demande_support.objects.create(
+        utilisateur=user,
+        objet=objet,
+        description=description,
+    )
+
+    # Gestion des éventuelles pièces jointes (champ "fichiers" côté front)
+    fichiers = request.FILES.getlist("fichiers")
+    for f in fichiers:
+        piece_jointe_support.objects.create(
+            demande=demande,
+            fichier=f,
+        )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "id": demande.id,
+            "objet": demande.objet,
+            "date_creation": demande.date_creation.isoformat(),
+        },
+        status=201,
+    )
+
+# -----------------------------------------------------------
+#                     SUPPORT - ADMIN
+# -----------------------------------------------------------
+@csrf_exempt
+@require_http_methods(["GET", "PATCH"])
+def admin_support_api(request, ticket_id=None):
+    """
+    Admin : liste, détail, mise à jour des demandes de support.
+    Utilise le modèle `demande_support` et `piece_jointe_support`.
+    """
+
+    # Vérification admin
+    email = request.headers.get("X-User-Email", "").lower()
+    if not email:
+        return JsonResponse({"error": "Email manquant"}, status=400)
+
+    try:
+        user = utilisateur.objects.get(email=email)
+    except utilisateur.DoesNotExist:
+        return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+    if user.role.nom_role != "admin":
+        return JsonResponse({"error": "Accès réservé aux admins"}, status=403)
+
+    # IMPORTS corrects
+    from .models import demande_support, piece_jointe_support
+
+    # ============================================================
+    # GET LISTE
+    # ============================================================
+    if request.method == "GET" and ticket_id is None:
+        status_filter = request.GET.get("status")
+
+        qs = demande_support.objects.select_related("utilisateur").order_by("-date_creation")
+
+        # Conversion front → back
+        mapping_front_to_back = {
+            "new": "NOUVEAU",
+            "in_progress": "EN_COURS",
+            "closed": "RESOLU",
+        }
+
+        if status_filter in mapping_front_to_back:
+            qs = qs.filter(statut=mapping_front_to_back[status_filter])
+
+        data = []
+        for d in qs:
+            data.append({
+                "id": d.id,
+                "objet": d.objet,
+                "description": d.description,
+                # BACK → FRONT
+                "status": {
+                    "NOUVEAU": "new",
+                    "EN_COURS": "in_progress",
+                    "RESOLU": "closed",
+                }[d.statut],
+                "created_at": d.date_creation.isoformat(),
+                "utilisateur": {
+                    "id": d.utilisateur_id,
+                    "pseudo": d.utilisateur.pseudo,
+                    "email": d.utilisateur.email,
+                },
+                "has_attachments": d.pieces_jointes.exists(),
+            })
+
+        return JsonResponse(data, safe=False)
+
+    # ============================================================
+    # CHARGER UN TICKET
+    # ============================================================
+    try:
+        ticket = demande_support.objects.get(id=ticket_id)
+    except demande_support.DoesNotExist:
+        return JsonResponse({"error": "Ticket introuvable"}, status=404)
+
+    # ============================================================
+    # GET DETAIL
+    # ============================================================
+    if request.method == "GET":
+        attachments = []
+        for att in ticket.pieces_jointes.all():
+            try:
+                url = request.build_absolute_uri(att.fichier.url)
+            except Exception:
+                url = None
+
+            attachments.append({
+                "id": att.id,
+                "filename": att.fichier.name,
+                "url": url,
+            })
+
+        return JsonResponse({
+            "id": ticket.id,
+            "objet": ticket.objet,
+            "description": ticket.description,
+            "status": {
+                "NOUVEAU": "new",
+                "EN_COURS": "in_progress",
+                "RESOLU": "closed",
+            }[ticket.statut],
+            "created_at": ticket.date_creation.isoformat(),
+            "utilisateur": {
+                "id": ticket.utilisateur_id,
+                "pseudo": ticket.utilisateur.pseudo,
+                "email": ticket.utilisateur.email,
+            },
+            "attachments": attachments,
+            "internal_notes": "",  # champ non existant mais attendu par ton front
+        })
+
+    # ============================================================
+    # PATCH : mise à jour statut
+    # ============================================================
+    if request.method == "PATCH":
+        body = json.loads(request.body.decode("utf-8"))
+
+        # FRONT → BACK
+        mapping_front_to_back = {
+            "new": "NOUVEAU",
+            "in_progress": "EN_COURS",
+            "closed": "RESOLU",
+        }
+
+        new_status = body.get("status")
+        if new_status in mapping_front_to_back:
+            ticket.statut = mapping_front_to_back[new_status]
+
+        ticket.save()
+
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)

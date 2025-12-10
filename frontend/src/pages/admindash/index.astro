@@ -7,24 +7,30 @@ const links = [
   { name: "Catégories", path: "/admindash/categories", color: "bg-purple-100"},
   { name: "Commandes", path: "/admindash/commandes", color: "bg-purple-100"},
   { name: "Maîtres de chants", path: "/admindash/maitres", color: "bg-purple-100"},
+  { name: "Demandes de support", path: "/admindash/support", color: "bg-purple-100" },
 ];
 ---
 
 <Layout title="Admin Dashboard">
   <main class="flex flex-1 flex-col items-center gap-6 px-4 py-6 sm:px-6">
-      <section class="w-full max-w-5xl">
-        <h1 class="mb-6 text-2xl font-bold text-mauve sm:text-3xl">Admin Dashboard</h1>
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {links.map(link => (
-            <a 
-              href={link.path} 
-              class={`flex flex-col items-center justify-center rounded-xl p-5 text-center shadow-md transition-all duration-200 hover:shadow-xl ${link.color}`}
-            >
-              <span class="mb-3 text-3xl sm:text-4xl"></span>
-              <span class="text-base font-semibold text-mauve sm:text-lg">{link.name}</span>
-            </a>
-          ))}
-        </div>
-      </section>
+    <section class="w-full max-w-5xl">
+      <h1 class="mb-6 text-2xl font-bold text-mauve sm:text-3xl">
+        Admin Dashboard
+      </h1>
+
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {links.map((link) => (
+          <a
+            href={link.path}
+            class={`flex flex-col items-center justify-center rounded-xl px-4 py-6 shadow-md transition-all duration-200 hover:shadow-xl ${link.color}`}
+          >
+            <span class="mb-3 text-3xl sm:text-4xl"></span>
+            <span class="text-base font-semibold text-mauve sm:text-lg">
+              {link.name}
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
   </main>
 </Layout>
