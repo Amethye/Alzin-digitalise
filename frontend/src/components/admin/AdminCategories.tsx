@@ -8,6 +8,8 @@ const AdminCategories = () => {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
+  const [USER_ID, setUSER_ID] = useState<number |null>(null);
+
   const API_PATH = "/api/categories/";
 
 const fetchCats = async () => {
@@ -28,7 +30,10 @@ const fetchCats = async () => {
     await fetch(apiUrl(API_PATH), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nom_categorie: newCat }),
+      body: JSON.stringify({
+         nom_categorie: newCat, 
+         utilisateur_id: USER_ID,
+        }),
     });
 
     setNewCat("");
@@ -54,6 +59,7 @@ const deleteCategory = async (name: string) => {
       body: JSON.stringify({
         old_name: oldName,
         new_name: editValue,
+        utilisateur_id: USER_ID,
       }),
     });
 

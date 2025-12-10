@@ -632,33 +632,59 @@ def categories_api(request):
 #------------------------------------------------------------------------
 @csrf_exempt
 def appartenir_api(request):
-    
-    # POST = ajouter catégorie à un chant
-    if request.method == "POST":
-        body = json.loads(request.body.decode())
-        chant_id = body.get("chant_id")
-        cat_name = body.get("categorie")
-        utilisateur_id = body.get("utilisateur")
 
+    # === AJOUTER UNE CATEGORIE À UN CHANT ===
+    if request.method == "POST":
+        try:
+            body = json.loads(request.body.decode())
+        except:
+            return JsonResponse({"error": "JSON invalide"}, status=400)
+
+        chant_id = body.get("chant_id")
+        cat_name = body.get("nom_categorie")  # ⚠ corrige selon TON frontend
+        utilisateur_id = body.get("utilisateur_id")  # ✔ identique au frontend
+
+        if not chant_id or not cat_name:
+            return JsonResponse({"error": "Champs manquants"}, status=400)
+
+        # --- Vérifier le chant ---
         try:
             ch = chant.objects.get(id=chant_id)
         except chant.DoesNotExist:
             return JsonResponse({"error": "Chant introuvable"}, status=404)
 
+        # --- Vérifier l’utilisateur ---
+        utilisateur = None
+        if utilisateur_id:
+            try:
+                utilisateur = utilisateur.objects.get(id=utilisateur_id)
+            except utilisateur.DoesNotExist:
+                return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+
+        # --- Récupérer / créer la catégorie ---
         cat, _ = categorie.objects.get_or_create(nom_categorie=cat_name)
 
+        # --- Créer la relation appartenir ---
         rel, created = appartenir.objects.get_or_create(
             chant=ch,
             categorie=cat,
-            utilisateur_id=utilisateur_id
+            utilisateur=utilisateur   # ✔ ENREGISTRE CORRECTEMENT L'USER
         )
 
-        return JsonResponse({"success": True, "created": created})
+        return JsonResponse({
+            "success": True,
+            "created": created,
+            "categorie": cat_name,
+            "utilisateur_id": utilisateur_id
+        })
 
-    # DELETE = enlever une catégorie d’un chant
+    # === SUPPRIMER UNE CATEGORIE D’UN CHANT ===
     if request.method == "DELETE":
         chant_id = request.GET.get("chant_id")
-        cat_name = request.GET.get("categorie")
+        cat_name = request.GET.get("nom_categorie")
+
+        if not chant_id or not cat_name:
+            return JsonResponse({"error": "Champs manquants"}, status=400)
 
         try:
             rel = appartenir.objects.get(
@@ -670,6 +696,8 @@ def appartenir_api(request):
 
         rel.delete()
         return JsonResponse({"success": True})
+
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
 #------------------------------------------------------------------------
 #                           PISTE AUDIO
