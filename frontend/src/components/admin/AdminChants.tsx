@@ -71,10 +71,6 @@ export default function AdminChants() {
   const [filterCat, setFilterCat] = useState("Toutes");
   const [order, setOrder] = useState("AZ");
 
-  // PAGINATION
-  const [page, setPage] = useState(1);
-  const PER_PAGE = 10;
-
   const loadData = () => {
     fetch(apiUrl(API_CHANTS))
       .then((r) => r.json())
@@ -310,15 +306,16 @@ export default function AdminChants() {
         : b.nom_chant.localeCompare(a.nom_chant, "fr")
     );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const visibleChants = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const categoriesMap: Record<string, Chant[]> = {};
+  filtered.forEach((chant) => {
+    const cats = chant.categories.length ? chant.categories : ["Autre"];
+    cats.forEach((cat) => {
+      if (!categoriesMap[cat]) categoriesMap[cat] = [];
+      categoriesMap[cat].push(chant);
+    });
+  });
 
-  useEffect(() => setPage(1), [search, filterCat, order]);
-  useEffect(() => {
-    if (page > totalPages && filtered.length > 0) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages, filtered.length]);
+  const sortedCategoryKeys = sortCategoriesWithAutreLast(Object.keys(categoriesMap));
 
   // ---------------------------------------------------------------------
   // RENDER
@@ -629,31 +626,14 @@ export default function AdminChants() {
         ) : (
           <>
             {/* GROUPEMENT PAR CATÉGORIE */}
-            {sortCategoriesWithAutreLast(
-              Array.from(
-                new Set(
-                  visibleChants.flatMap((chantItem) =>
-                    chantItem.categories.length ? chantItem.categories : ["Autre"]
-                  )
-                )
-              )
-            ).map((cat) => {
-              const chantsDeCat = visibleChants
-                .filter((c) =>
-                  c.categories
-                    .map((x) => x.toLowerCase())
-                    .includes(cat.toLowerCase())
-                )
-                .sort((a, b) => a.nom_chant.localeCompare(b.nom_chant, "fr"));
+            {sortedCategoryKeys.map((category) => (
+              <div key={category} className="mb-8">
+                <h3 className="text-lg font-semibold text-bordeau mb-3">{category}</h3>
 
-              if (chantsDeCat.length === 0) return null;
-
-              return (
-                <div key={cat} className="mb-8">
-                  <h3 className="text-lg font-semibold text-bordeau mb-3">{cat}</h3>
-
-                  <div className="flex flex-col gap-3">
-                    {chantsDeCat.map((c) => (
+                <div className="flex flex-col gap-3">
+                  {[...categoriesMap[category]]
+                    .sort((a, b) => a.nom_chant.localeCompare(b.nom_chant, "fr"))
+                    .map((c) => (
                       <div
                         key={c.id}
                         className="border rounded-lg p-3 shadow-sm hover:shadow-md transition"
@@ -683,24 +663,9 @@ export default function AdminChants() {
                         </div>
                       </div>
                     ))}
-                  </div>
                 </div>
-              );
-            })}
-
-            {filtered.length > PER_PAGE && (
-              <div className="flex justify-center gap-3 mt-6">
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPage(i + 1)}
-                    className={`btn ${page === i + 1 ? "btn-solid" : "btn-ghost"}`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
               </div>
-            )}
+            ))}
           </>
         )}
       </section>

@@ -28,12 +28,9 @@ export default function FavorisPage() {
   const [favorisLoaded, setFavorisLoaded] = useState(false);
   const [chantsLoaded, setChantsLoaded] = useState(false);
 
-  // Recherche + filtre catégorie + pagination
+  // Recherche + filtre catégorie
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("Toutes");
-
-  const PER_PAGE = 9;
-  const [page, setPage] = useState(1);
 
   // Charger utilisateur
   useEffect(() => {
@@ -122,25 +119,17 @@ export default function FavorisPage() {
       ? true
       : (c.categories.length ? c.categories : ["Autre"]).includes(filterCat)
   );
-  
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const paginatedChants = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-
-  // Regrouper par catégories
   const categoriesMap: Record<string, Chant[]> = {};
-  paginatedChants.forEach((chant) => {
+  filtered.forEach((chant) => {
     const catList = chant.categories.length ? chant.categories : ["Autre"];
     catList.forEach((cat) => {
       if (!categoriesMap[cat]) categoriesMap[cat] = [];
       categoriesMap[cat].push(chant);
     });
   });
+
+  const sortedCategoryKeys = sortCategoriesWithAutreLast(Object.keys(categoriesMap));
 
   // Liste des catégories
   const categoriesForFilter = sortCategoriesWithAutreLast(
@@ -154,7 +143,6 @@ export default function FavorisPage() {
   );
   const allCategories = ["Toutes", ...categoriesForFilter];
 
-  const categoriesList = sortCategoriesWithAutreLast(Object.keys(categoriesMap));
   const totalFavorisDisplayed = filtered.length;
 
   if (!USER_ID)
@@ -205,17 +193,14 @@ export default function FavorisPage() {
         </p>
       ) : (
         <>
-          {categoriesList.map((cat) => {
-            const sortedChants = [...categoriesMap[cat]].sort((a, b) =>
-              a.nom_chant.localeCompare(b.nom_chant, "fr")
-            );
+          {sortedCategoryKeys.map((category) => (
+            <div key={category}>
+              <h2 className="text-2xl font-bold text-bordeau mt-6 mb-3">{category}</h2>
 
-            return (
-              <div key={cat}>
-                <h2 className="text-2xl font-bold text-bordeau mt-6 mb-3">{cat}</h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {sortedChants.map((ch) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...categoriesMap[category]]
+                  .sort((a, b) => a.nom_chant.localeCompare(b.nom_chant, "fr"))
+                  .map((ch) => (
                     <div
                       key={ch.id}
                       onClick={() => (window.location.href = `/chants/${ch.id}`)}
@@ -230,26 +215,10 @@ export default function FavorisPage() {
                       </div>
                     </div>
                   ))}
-                </div>
               </div>
-            );
-          })}
-        </>
-      )}
-
-      {/* Pagination */}
-      {filtered.length > PER_PAGE && (
-        <div className="flex justify-center gap-3 mt-6">
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setPage(i + 1)}
-              className={`btn ${page === i + 1 ? "btn-solid" : "btn-ghost"}`}
-            >
-              {i + 1}
-            </button>
+            </div>
           ))}
-        </div>
+        </>
       )}
     </div>
   );

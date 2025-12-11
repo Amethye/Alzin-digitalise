@@ -51,6 +51,32 @@ type ModificationRequest = {
   partition_url?: string | null;
 };
 
+type ComparisonRow = {
+  label: string;
+  original: string;
+  proposed: string;
+  multiline?: boolean;
+};
+
+type AttachmentComparison = {
+  label: string;
+  originalUrl?: string | null;
+  proposedUrl?: string | null;
+};
+
+type ChantDetail = {
+  id: number;
+  nom_chant: string;
+  auteur: string;
+  ville_origine: string;
+  description: string;
+  paroles: string;
+  categories: string[];
+  illustration_chant_url?: string | null;
+  paroles_pdf_url?: string | null;
+  partition_url?: string | null;
+};
+
 const API_ADMIN_MOD_REQUESTS = "/api/admin/demandes-modification/";
 
 export default function AdminChantRequests() {
@@ -88,6 +114,9 @@ export default function AdminChantRequests() {
   const [modActionJustification, setModActionJustification] = useState("");
   const [modActionLoading, setModActionLoading] = useState(false);
   const [modActionFeedback, setModActionFeedback] = useState<string | null>(null);
+  const [modOriginalChant, setModOriginalChant] = useState<ChantDetail | null>(null);
+  const [modOriginalLoading, setModOriginalLoading] = useState(false);
+  const [modOriginalError, setModOriginalError] = useState<string | null>(null);
 
   const statusLabel: Record<ChantRequest["statut"], string> = {
     EN_ATTENTE: "En attente",
@@ -199,6 +228,9 @@ export default function AdminChantRequests() {
       setModRequests(data);
       setSelectedMod(null);
       setSelectedModId(null);
+      setModOriginalChant(null);
+      setModOriginalError(null);
+      setModOriginalLoading(false);
     } catch (e: any) {
       setModError(e?.message ?? "Erreur inattendue.");
     } finally {
@@ -218,11 +250,32 @@ export default function AdminChantRequests() {
       setSelectedMod(data);
       setSelectedModId(id);
       setModActionJustification("");
+      setModOriginalChant(null);
+      if (data?.chant_id) {
+        loadModOriginalChant(data.chant_id);
+      }
     } catch (e: any) {
       setModDetailError(e?.message ?? "Erreur inattendue.");
       setSelectedMod(null);
+      setModOriginalChant(null);
     } finally {
       setModLoadingDetail(false);
+    }
+  };
+
+  const loadModOriginalChant = async (chantId: number) => {
+    try {
+      setModOriginalLoading(true);
+      setModOriginalError(null);
+      const res = await fetch(apiUrl(`/api/chants/${chantId}/`));
+      if (!res.ok) throw new Error("Impossible de charger le chant original.");
+      const data = await res.json();
+      setModOriginalChant(data);
+    } catch (e: any) {
+      setModOriginalError(e?.message ?? "Erreur inattendue.");
+      setModOriginalChant(null);
+    } finally {
+      setModOriginalLoading(false);
     }
   };
 
@@ -364,6 +417,9 @@ export default function AdminChantRequests() {
 
   const handleSelectMod = (id: number) => {
     if (!adminEmail) return;
+    setModOriginalChant(null);
+    setModOriginalError(null);
+    setModOriginalLoading(false);
     const preview = modRequests.find((req) => req.id === id) ?? null;
     setSelectedMod(preview);
     setSelectedModId(id);
@@ -420,6 +476,71 @@ export default function AdminChantRequests() {
       </div>
     );
   }
+
+  const formatFieldValue = (value?: string, fallback = "—") =>
+    value && value.trim() ? value : fallback;
+
+  const formatCategoriesLabel = (list?: string[]) =>
+    list && list.length ? list.join(", ") : "Aucune catégorie";
+
+  const modComparisonRows: ComparisonRow[] =
+    selectedMod && modOriginalChant
+      ? [
+          {
+            label: "Nom du chant",
+            original: formatFieldValue(modOriginalChant.nom_chant),
+            proposed: formatFieldValue(selectedMod.nom_chant),
+          },
+          {
+            label: "Auteur",
+            original: formatFieldValue(modOriginalChant.auteur, "Non renseigné"),
+            proposed: formatFieldValue(selectedMod.auteur, "Non renseigné"),
+          },
+          {
+            label: "Ville d'origine",
+            original: formatFieldValue(modOriginalChant.ville_origine, "Non renseignée"),
+            proposed: formatFieldValue(selectedMod.ville_origine, "Non renseignée"),
+          },
+          {
+            label: "Catégories",
+            original: formatCategoriesLabel(modOriginalChant.categories),
+            proposed: formatCategoriesLabel(selectedMod.categories),
+          },
+          {
+            label: "Paroles",
+            original: formatFieldValue(modOriginalChant.paroles, "Aucun texte"),
+            proposed: formatFieldValue(selectedMod.paroles, "Aucun texte"),
+            multiline: true,
+          },
+          {
+            label: "Description",
+            original: formatFieldValue(modOriginalChant.description, "Aucune description"),
+            proposed: formatFieldValue(selectedMod.description, "Aucune description"),
+            multiline: true,
+          },
+        ]
+      : [];
+
+  const modAttachmentComparisons: AttachmentComparison[] =
+    selectedMod && modOriginalChant
+      ? [
+          {
+            label: "Illustration",
+            originalUrl: modOriginalChant.illustration_chant_url,
+            proposedUrl: selectedMod.illustration_chant_url,
+          },
+          {
+            label: "Paroles (PDF)",
+            originalUrl: modOriginalChant.paroles_pdf_url,
+            proposedUrl: selectedMod.paroles_pdf_url,
+          },
+          {
+            label: "Partition",
+            originalUrl: modOriginalChant.partition_url,
+            proposedUrl: selectedMod.partition_url,
+          },
+        ]
+      : [];
 
   return (
     <section className="w-full max-w-6xl mx-auto flex flex-col gap-12">
@@ -508,6 +629,28 @@ export default function AdminChantRequests() {
                     ))}
                   </div>
                 )}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-gray-500">Auteur</p>
+                    <p className="text-sm text-gray-700">
+                      {selected.auteur || "Non renseigné"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-gray-500">Ville d'origine</p>
+                    <p className="text-sm text-gray-700">
+                      {selected.ville_origine || "Non renseignée"}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Paroles</p>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap break-words">
+                    {selected.paroles?.trim() ? selected.paroles : "Aucun texte fourni."}
+                  </p>
+                </div>
 
                 {selected.description && (
                   <div>
@@ -828,15 +971,37 @@ export default function AdminChantRequests() {
                   </div>
                 )}
 
-                {selectedMod.description && (
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <p className="text-sm font-semibold text-gray-700">Description</p>
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{selectedMod.description}</p>
+                    <p className="text-xs uppercase tracking-wide text-gray-500">Auteur</p>
+                    <p className="text-sm text-gray-700">
+                      {selectedMod.auteur || "Non renseigné"}
+                    </p>
                   </div>
-                )}
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-gray-500">Ville d'origine</p>
+                    <p className="text-sm text-gray-700">
+                      {selectedMod.ville_origine || "Non renseignée"}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Paroles</p>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap break-words">
+                    {selectedMod.paroles?.trim() ? selectedMod.paroles : "Aucun texte fourni."}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Description</p>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                    {selectedMod.description?.trim() ? selectedMod.description : "Aucune description fournie."}
+                  </p>
+                </div>
 
                 <div className="grid gap-2 text-sm">
-                  {selectedMod.illustration_chant_url && (
+                  {selectedMod.illustration_chant_url ? (
                     <a
                       href={selectedMod.illustration_chant_url}
                       target="_blank"
@@ -845,8 +1010,10 @@ export default function AdminChantRequests() {
                     >
                       Voir l'illustration
                     </a>
+                  ) : (
+                    <p className="text-sm text-gray-500">Aucune illustration fournie.</p>
                   )}
-                  {selectedMod.paroles_pdf_url && (
+                  {selectedMod.paroles_pdf_url ? (
                     <a
                       href={selectedMod.paroles_pdf_url}
                       target="_blank"
@@ -855,8 +1022,10 @@ export default function AdminChantRequests() {
                     >
                       Télécharger les paroles (PDF)
                     </a>
+                  ) : (
+                    <p className="text-sm text-gray-500">Pas de fichier PDF fourni.</p>
                   )}
-                  {selectedMod.partition_url && (
+                  {selectedMod.partition_url ? (
                     <a
                       href={selectedMod.partition_url}
                       target="_blank"
@@ -865,6 +1034,102 @@ export default function AdminChantRequests() {
                     >
                       Télécharger la partition
                     </a>
+                  ) : (
+                    <p className="text-sm text-gray-500">Pas de partition fournie.</p>
+                  )}
+                </div>
+
+                <div className="border-t border-bordeau/20 pt-4 flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-semibold text-gray-700">Comparaison avec le chant existant</p>
+                    <p className="text-xs text-gray-500">
+                      Les champs modifiés sont encadrés.
+                    </p>
+                  </div>
+                  {modOriginalLoading && (
+                    <p className="text-sm text-gray-500">Chargement du chant original…</p>
+                  )}
+                  {modOriginalError && <p className="text-sm text-red-600">{modOriginalError}</p>}
+                  {modOriginalChant && (
+                    <div className="space-y-3">
+                      {modComparisonRows.map((row) => {
+                        const changed = row.original !== row.proposed;
+                        return (
+                          <div
+                            key={row.label}
+                            className={`grid gap-2 md:grid-cols-2 rounded-xl border p-3 ${
+                              changed
+                                ? "border-bordeau/30 bg-bordeau/10"
+                                : "border-gray-200 bg-gray-50"
+                            }`}
+                          >
+                            <div>
+                              <p className="text-xs uppercase text-gray-500">Actuel</p>
+                              <p className={`text-sm ${row.multiline ? "whitespace-pre-wrap" : ""}`}>
+                                {row.original}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase text-gray-500">Proposé</p>
+                              <p className={`text-sm ${row.multiline ? "whitespace-pre-wrap" : ""}`}>
+                                {row.proposed}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="space-y-3">
+                        {modAttachmentComparisons.map((attach) => {
+                          const changed = attach.originalUrl !== attach.proposedUrl;
+                          return (
+                            <div
+                              key={attach.label}
+                              className={`grid gap-2 md:grid-cols-2 rounded-xl border p-3 ${
+                                changed
+                                  ? "border-bordeau/30 bg-bordeau/5"
+                                  : "border-gray-200 bg-gray-50"
+                              }`}
+                            >
+                              <div>
+                                <p className="text-xs uppercase text-gray-500">Actuel · {attach.label}</p>
+                                {attach.originalUrl ? (
+                                  <a
+                                    href={attach.originalUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-blue-600 underline"
+                                  >
+                                    Ouvrir le fichier
+                                  </a>
+                                ) : (
+                                  <p className="text-sm text-gray-500">Aucun fichier</p>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-xs uppercase text-gray-500">Proposé · {attach.label}</p>
+                                {attach.proposedUrl ? (
+                                  <a
+                                    href={attach.proposedUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-blue-600 underline"
+                                  >
+                                    Ouvrir le fichier
+                                  </a>
+                                ) : (
+                                  <p className="text-sm text-gray-500">Aucun fichier</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {!modOriginalChant && !modOriginalLoading && !modOriginalError && (
+                    <p className="text-sm text-gray-500">
+                      Impossible d'afficher les informations originales pour comparer.
+                    </p>
                   )}
                 </div>
 

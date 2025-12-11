@@ -49,8 +49,6 @@ export default function ChantsListe() {
   // Recherche + filtre
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("Toutes");
-  const PER_PAGE = 20;
-  const [page, setPage] = useState(1);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
 
   // Demande d'ajout
@@ -111,19 +109,8 @@ export default function ChantsListe() {
       : (c.categories.length ? c.categories : ["Autre"]).includes(filterCat)
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const paginatedChants = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-
-  // Groupement par catégories
   const categoriesMap: Record<string, Chant[]> = {};
-
-  paginatedChants.forEach((chant) => {
+  filtered.forEach((chant) => {
     const cats = chant.categories.length ? chant.categories : ["Autre"];
     cats.forEach((cat) => {
       if (filterCat !== "Toutes" && cat !== filterCat) return;
@@ -131,6 +118,8 @@ export default function ChantsListe() {
       categoriesMap[cat].push(chant);
     });
   });
+
+  const sortedCategoryKeys = sortCategoriesWithAutreLast(Object.keys(categoriesMap));
 
   // Liste catégories disponibles
   const categoriesForFilter = sortCategoriesWithAutreLast(
@@ -287,7 +276,6 @@ export default function ChantsListe() {
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
-            setPage(1);
           }}
           className="border border-bordeau/40 p-3 rounded-lg flex-1"
         />
@@ -296,7 +284,6 @@ export default function ChantsListe() {
           value={filterCat}
           onChange={(e) => {
             setFilterCat(e.target.value);
-            setPage(1);
           }}
           className="border border-bordeau/40 p-3 rounded-lg w-full md:w-60"
         >
@@ -639,63 +626,45 @@ export default function ChantsListe() {
         </p>
       ) : (
         <>
-          {sortCategoriesWithAutreLast(Object.keys(categoriesMap)).map((cat) => {
-            const list = categoriesMap[cat].sort((a, b) =>
-              a.nom_chant.localeCompare(b.nom_chant, "fr")
-            );
+          {sortedCategoryKeys.map((category) => (
+            <div key={category}>
+              <h2 className="text-2xl font-bold text-bordeau mt-6 mb-3">{category}</h2>
 
-            return (
-              <div key={cat}>
-                <h2 className="text-2xl font-bold text-bordeau mt-6 mb-3">{cat}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...categoriesMap[category]].sort((a, b) =>
+                  a.nom_chant.localeCompare(b.nom_chant, "fr")
+                ).map((ch) => (
+                  <div
+                    key={ch.id}
+                    onClick={() => (window.location.href = `/chants/${ch.id}`)}
+                    className="border border-bordeau/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-bordeau/5 transition"
+                  >
+                    <div className="flex justify-between items-start">
+                      <h3 className="text-xl font-bold text-bordeau">
+                        {ch.nom_chant}
+                      </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {list.map((ch) => (
-                    <div
-                      key={ch.id}
-                      onClick={() => (window.location.href = `/chants/${ch.id}`)}
-                      className="border border-bordeau/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-bordeau/5 transition"
-                    >
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-xl font-bold text-bordeau">
-                          {ch.nom_chant}
-                        </h3>
-
-                        {/* FAVORIS */}
-                        <span onClick={(e) => e.stopPropagation()}>
-                          {USER_ID ? (
-                            <FavoriButton chantId={ch.id} USER_ID={USER_ID} size={34} />
-                          ) : (
-                            <div
-                              className="opacity-40 cursor-not-allowed border border-bordeau/30 rounded-full p-2"
-                              title="Connecte-toi pour ajouter aux favoris"
-                            >
-                              <svg width="28" height="28" viewBox="0 0 24 24" fill="#8B5CF6">
-                                <path d="M12 21s-6.2-4.3-9.3-7.4C-1 11-.5 6.5 2.3 4.2 5.1 1.9 9 3 12 6c3-3 6.9-4.1 9.7-1.8 2.8 2.3 3.3 6.8.6 9.4C18.2 16.7 12 21 12 21z"/>
-                              </svg>
-                            </div>
-                          )}
-                        </span>
-                      </div>
+                      {/* FAVORIS */}
+                      <span onClick={(e) => e.stopPropagation()}>
+                        {USER_ID ? (
+                          <FavoriButton chantId={ch.id} USER_ID={USER_ID} size={34} />
+                        ) : (
+                          <div
+                            className="opacity-40 cursor-not-allowed border border-bordeau/30 rounded-full p-2"
+                            title="Connecte-toi pour ajouter aux favoris"
+                          >
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="#8B5CF6">
+                              <path d="M12 21s-6.2-4.3-9.3-7.4C-1 11-.5 6.5 2.3 4.2 5.1 1.9 9 3 12 6c3-3 6.9-4.1 9.7-1.8 2.8 2.3 3.3 6.8.6 9.4C18.2 16.7 12 21 12 21z"/>
+                            </svg>
+                          </div>
+                        )}
+                      </span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-
-          {filtered.length > PER_PAGE && (
-            <div className="flex justify-center gap-3 mt-6">
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPage(i + 1)}
-                  className={`btn ${page === i + 1 ? "btn-solid" : "btn-ghost"}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
             </div>
-          )}
+          ))}
         </>
       )}
     </div>
