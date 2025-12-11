@@ -22,6 +22,11 @@ export default function Register({ next = "/" }: SignupFormProps) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // --- VALIDATIONS LOCALES ---
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -29,16 +34,60 @@ export default function Register({ next = "/" }: SignupFormProps) {
 
     const { nom, prenom, email, pseudo, ville, password, password2 } = form;
 
+    // Vérification champs obligatoires
     if (!nom || !prenom || !email || !pseudo || !ville || !password || !password2) {
       setError("Tous les champs sont obligatoires.");
       return;
     }
 
+    // Vérification email format
+    if (!isValidEmail(email)) {
+      setError("Format d'adresse email invalide.");
+      return;
+    }
+
+    // Vérification MDP identiques
     if (password !== password2) {
       setError("Les mots de passe ne correspondent pas.");
       return;
     }
 
+    // --- VÉRIFICATION CÔTÉ BACKEND (pseudo + nom+prenom) ---
+    try {
+      const check = await fetch(
+        `/api/utilisateurs/check?email=${encodeURIComponent(email)}&pseudo=${encodeURIComponent(
+          pseudo
+        )}&nom=${encodeURIComponent(nom)}&prenom=${encodeURIComponent(prenom)}`
+      );
+
+      const checkData = await check.json();
+
+      if (!check.ok) {
+        setError(checkData.error || "Erreur lors de la vérification.");
+        return;
+      }
+
+      if (checkData.existsNomPrenom) {
+        setError("Un utilisateur avec le même nom et prénom existe déjà.");
+        return;
+      }
+
+      if (checkData.existsPseudo) {
+        setError("Ce pseudo est déjà utilisé.");
+        return;
+      }
+
+      if (checkData.existsEmail) {
+        setError("Un compte avec cette adresse email existe déjà.");
+        return;
+      }
+
+    } catch {
+      setError("Erreur serveur pendant la vérification.");
+      return;
+    }
+
+    // --- INSCRIPTION ---
     try {
       const res = await fetch("/api/utilisateurs/", {
         method: "POST",
@@ -73,6 +122,7 @@ export default function Register({ next = "/" }: SignupFormProps) {
       });
 
       setTimeout(() => (window.location.href = next), 1000);
+
     } catch {
       setError("Erreur serveur, réessaie plus tard.");
     }

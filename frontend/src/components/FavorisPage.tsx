@@ -12,9 +12,10 @@ type Chant = {
   id: number;
   nom_chant: string;
   auteur: string;
-  illustration_chant_url?: string;
+  ville_origine: string;
+  paroles: string;
+  description: string;
   categories: string[];
-  pistes_audio: { id: number; fichier_mp3: string }[];
 };
 
 const API_CHANTS = "/api/chants/";
@@ -100,9 +101,20 @@ export default function FavorisPage() {
   }, [favoris, allChants]);
 
   // Recherche
-  const searched = favoriteChants.filter((c) =>
-    `${c.nom_chant} ${c.auteur}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const searched = favoriteChants.filter((c) => {
+    const haystack = [
+      c.nom_chant,
+      c.auteur,
+      c.ville_origine,
+      c.paroles,
+      c.description,
+      ...(c.categories || []),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return haystack.includes(search.toLowerCase());
+  });
 
   // Filtre catégorie
   const filtered = searched.filter((c) =>

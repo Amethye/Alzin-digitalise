@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import FavoriButton from "@components/FavoriButton";
 import RatingStars from "@components/RatingStars";
 import Comments from "@components/Comment";
@@ -34,6 +34,29 @@ const API_AUDIO_REQUESTS = "/api/demandes-audio/";
 const API_MODIFICATION_REQUESTS = "/api/demandes-modification/";
 const API_CATEGORIES = "/api/categories/";
 
+const editFileFields = [
+  {
+    name: "illustration_chant",
+    label: "Illustration",
+    accept: "image/*",
+    emoji: "📷",
+  },
+  {
+    name: "paroles_pdf",
+    label: "Paroles PDF",
+    accept: "application/pdf",
+    emoji: "📄",
+  },
+  {
+    name: "partition",
+    label: "Partition",
+    accept: ".pdf,.png,.jpg",
+    emoji: "🎵",
+  },
+] as const;
+
+type EditFileFieldName = (typeof editFileFields)[number]["name"];
+
 const resolveMediaUrl = (url?: string | null) => {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -41,6 +64,15 @@ const resolveMediaUrl = (url?: string | null) => {
     return new URL(url, window.location.origin).toString();
   }
   return url;
+};
+
+const resolveAudioMime = (url: string | null | undefined) => {
+  if (!url) return "audio/mpeg";
+  const lower = url.split("?")[0].toLowerCase();
+  if (lower.endsWith(".m4a") || lower.endsWith(".mp4")) return "audio/mp4";
+  if (lower.endsWith(".ogg")) return "audio/ogg";
+  if (lower.endsWith(".wav")) return "audio/wav";
+  return "audio/mpeg";
 };
 
 export default function ChantPage({ id }: { id: number }) {
@@ -55,6 +87,17 @@ export default function ChantPage({ id }: { id: number }) {
     { type: "success" | "error"; message: string } | null
   >(null);
   const [audioSubmitting, setAudioSubmitting] = useState(false);
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
+  const audioInputId = `audio-request-file-${id}`;
+  const resetAudioRequestInput = (keepFeedback = false) => {
+    setAudioRequestFile(null);
+    if (!keepFeedback) {
+      setAudioRequestFeedback(null);
+    }
+    if (audioInputRef.current) {
+      audioInputRef.current.value = "";
+    }
+  };
   const [categories, setCategories] = useState<string[]>([]);
   const [showEditRequestForm, setShowEditRequestForm] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -72,6 +115,23 @@ export default function ChantPage({ id }: { id: number }) {
   const [editFeedback, setEditFeedback] = useState<
     { type: "success" | "error"; message: string } | null
   >(null);
+
+  const resetEditFormState = useCallback(() => {
+    if (!chant) return;
+    setEditForm({
+      nom_chant: chant.nom_chant || "",
+      auteur: chant.auteur || "",
+      ville_origine: chant.ville_origine || "",
+      paroles: chant.paroles || "",
+      description: chant.description || "",
+      illustration_chant: null,
+      paroles_pdf: null,
+      partition: null,
+    });
+    setEditSelectedCats(
+      chant.categories && chant.categories.length ? chant.categories : ["Autre"]
+    );
+  }, [chant]);
 
   useEffect(() => {
     const uid = localStorage.getItem("utilisateur_id");
@@ -124,20 +184,8 @@ export default function ChantPage({ id }: { id: number }) {
   }, []);
 
   useEffect(() => {
-    if (chant) {
-      setEditForm({
-        nom_chant: chant.nom_chant || "",
-        auteur: chant.auteur || "",
-        ville_origine: chant.ville_origine || "",
-        paroles: chant.paroles || "",
-        description: chant.description || "",
-        illustration_chant: null,
-        paroles_pdf: null,
-        partition: null,
-      });
-      setEditSelectedCats(chant.categories && chant.categories.length ? chant.categories : ["Autre"]);
-    }
-  }, [chant]);
+    resetEditFormState();
+  }, [resetEditFormState]);
 
   const handlePisteStats = useCallback((pisteId: number, stats: { average: number; total: number }) => {
     setChant((prev) => {
@@ -166,6 +214,22 @@ export default function ChantPage({ id }: { id: number }) {
     }
 
     setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const triggerFilePicker = (field: EditFileFieldName) => {
+    if (typeof document === "undefined") return;
+    const input = document.getElementById(`edit-file-${field}`) as HTMLInputElement | null;
+    input?.click();
+  };
+
+  const clearFileField = (field: EditFileFieldName) => {
+    setEditForm((prev) => ({ ...prev, [field]: null }));
+  };
+
+  const handleToggleEditRequestForm = () => {
+    if (!USER_ID) return;
+    setShowEditRequestForm((prev) => !prev);
+    setEditFeedback(null);
   };
 
   const submitAudioRequest = async () => {
@@ -200,7 +264,7 @@ export default function ChantPage({ id }: { id: number }) {
         type: "success",
         message: "Ta demande d'ajout de piste a bien été envoyée.",
       });
-      setAudioRequestFile(null);
+      resetAudioRequestInput(true);
       setShowAudioRequestForm(false);
     } catch (e: any) {
       setAudioRequestFeedback({
@@ -284,30 +348,262 @@ export default function ChantPage({ id }: { id: number }) {
         )}
       </div>
 
-      {USER_ID && (
-        <div className="flex flex-col gap-2">
+      {/* Catégories */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Catégories</p>
+        <div className="flex flex-wrap gap-2">
+          {displayCategories.map((cat) => (
+            <span key={cat} className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm">
+              {cat}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Paroles */}
+      <div>
+        <h2 className="text-2xl font-semibold text-mauve mb-3">Paroles</h2>
+        <pre className="whitespace-pre-wrap bg-purple-50 p-4 rounded-xl border border-mauve/20 font-sans tracking-wide leading-relaxed">
+          {chant.paroles || "Aucune parole disponible."}
+        </pre>
+      </div>
+
+      {/* Audio */}
+      <div>
+        <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-2xl font-semibold text-mauve">Audio</h2>
+          {USER_ID ? (
           <button
             onClick={() => {
-              setShowEditRequestForm((prev) => !prev);
-              setEditFeedback(null);
+              setShowAudioRequestForm((prev) => {
+                if (prev) resetAudioRequestInput();
+                return !prev;
+              });
+              setAudioRequestFeedback(null);
             }}
-            className={`btn self-start ${
-              showEditRequestForm ? "btn-danger" : ""
-            }`}
+            className={`btn ${showAudioRequestForm ? "btn-danger" : ""}`}
           >
-            {showEditRequestForm ? "Annuler ma demande" : "Demander une modification"}
+            {showAudioRequestForm ? "Annuler" : "Ajouter une piste audio"}
           </button>
-          {editFeedback && (
-            <p
-              className={`text-sm ${
-                editFeedback.type === "success" ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              {editFeedback.message}
-            </p>
+          ) : (
+            <p className="text-xs text-gray-500">Connecte-toi pour proposer une piste audio.</p>
           )}
         </div>
-      )}
+
+        {chant.pistes_audio.length > 0 ? (
+          chant.pistes_audio.map((p) => {
+            const audioSrc = resolveMediaUrl(p.fichier_mp3);
+            if (!audioSrc) return null;
+            return (
+              <div key={p.id} className="mb-6">
+        <audio controls className="w-full mb-2">
+          <source src={audioSrc} type={resolveAudioMime(audioSrc)} />
+        </audio>
+
+                <div className="flex items-center gap-3 text-gray-700 text-sm mb-1">
+                  <span className="font-semibold text-mauve text-lg">Note :</span>
+
+                  <span className="text-lg font-bold">
+                    {p.note_moyenne?.toFixed(1) || "0.0"}★
+                  </span>
+
+                  <span className="text-gray-500">
+                    ({p.nb_notes} vote{p.nb_notes > 1 ? "s" : ""})
+                  </span>
+                </div>
+
+                {/* Notation utilisateur */}
+                {!USER_ID && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Connecte-toi pour noter la piste audio
+                  </p>
+                )}
+
+                {USER_ID && (
+                  <div>
+                    <p className="text-sm text-mauve font-semibold mb-1">
+                      Noter cette piste :
+                    </p>
+                    <RatingStars
+                      pisteId={p.id}
+                      userId={USER_ID}
+                      onStatsChange={(stats) => handlePisteStats(p.id, stats)}
+                      initialAverage={p.note_moyenne}
+                      initialCount={p.nb_notes}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <p className="text-gray-500 italic">Aucun audio disponible.</p>
+        )}
+
+        {showAudioRequestForm && USER_ID && (
+          <div className="mt-4 rounded-2xl border border-mauve/30 bg-white p-4 shadow-sm space-y-3">
+            <p className="text-sm text-gray-600">
+              Ajoute un fichier MP3 pour proposer une nouvelle piste. L'équipe valide chaque demande.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                id={audioInputId}
+                ref={audioInputRef}
+                type="file"
+                accept=".mp3,.m4a"
+                onChange={handleAudioFileChange}
+                className="hidden"
+              />
+              {!audioRequestFile ? (
+                <label
+                  htmlFor={audioInputId}
+                  className="btn btn-ghost text-sm"
+                >
+                  Ajouter un fichier
+                </label>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-gray-700">🎧 {audioRequestFile.name}</span>
+                  <label
+                    htmlFor={audioInputId}
+                    className="btn btn-outline text-xs px-2 py-1"
+                  >
+                    Changer
+                  </label>
+                  <button
+                    type="button"
+                    className="btn btn-danger text-xs px-2 py-1"
+                    onClick={() => resetAudioRequestInput()}
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              )}
+            </div>
+            {audioRequestFeedback && (
+              <p
+                className={`text-sm ${
+                  audioRequestFeedback.type === "success" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {audioRequestFeedback.message}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={submitAudioRequest}
+                disabled={audioSubmitting}
+                className="btn btn-solid disabled:opacity-50"
+              >
+                {audioSubmitting ? "Envoi..." : "Envoyer ma demande"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Ville */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Auteur</p>
+        <p className="text-gray-700">{chant.auteur || "Aucun auteur identifié"}</p>
+      </div>
+
+      {/* Ville */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Ville d'origine</p>
+        <p className="text-gray-700">{chant.ville_origine || "Aucune ville d'origine identifiée"}</p>
+      </div>
+
+
+      {/* Description */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Description</p>
+        <p className="text-gray-700">{chant.description || "Aucune description"}</p>
+      </div>
+
+      {/* Illustration */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Illustration</p>
+        {resolveMediaUrl(chant.illustration_chant_url) ? (
+        <img
+          src={resolveMediaUrl(chant.illustration_chant_url)}
+          className="w-full max-h-72 object-cover rounded-xl shadow"
+        />
+        ) : (
+          <p className="text-gray-500 italic">Aucune illustration</p>
+        )}
+      </div>
+
+      {/* PDF */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">PDF des paroles</p>
+        {resolveMediaUrl(chant.paroles_pdf_url) ? (
+          <a
+            href={resolveMediaUrl(chant.paroles_pdf_url)}
+            target="_blank"
+            rel="noopener"
+            className="btn btn-solid"
+          >
+            Télécharger
+          </a>
+        ) : (
+          <p className="text-gray-500 italic">Aucun fichier PDF</p>
+        )}
+      </div>
+
+      {/* Partition */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Partition</p>
+        {resolveMediaUrl(chant.partition_url) ? (
+          <a
+            href={resolveMediaUrl(chant.partition_url)}
+            target="_blank"
+            rel="noopener"
+            className="btn btn-solid"
+          >
+            Télécharger
+          </a>
+        ) : (
+          <p className="text-gray-500 italic">Aucune partition</p>
+        )}
+      </div>
+      
+      {/* Ajouté par */}
+      <div>
+        <p className="text-sm font-semibold text-mauve mb-1">Chant ajouté par</p>
+        <p className="text-gray-700">{chant.utilisateur_pseudo || "Un membre"}</p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={handleToggleEditRequestForm}
+          disabled={!USER_ID}
+          className={`btn self-start ${
+            USER_ID
+              ? showEditRequestForm
+                ? "btn-danger"
+                : "btn-solid"
+              : "btn-ghost text-gray-500 cursor-not-allowed"
+          }`}
+        >
+          {showEditRequestForm ? "Annuler ma demande" : "Demander une modification"}
+        </button>
+        {!USER_ID && (
+          <p className="text-xs text-gray-500">
+            Connecte-toi pour demander la modification d’un chant
+          </p>
+        )}
+        {editFeedback && (
+          <p
+            className={`text-sm ${
+              editFeedback.type === "success" ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {editFeedback.message}
+          </p>
+        )}
+      </div>
 
       {showEditRequestForm && USER_ID && (
         <section className="rounded-2xl border border-mauve/30 bg-white p-6 shadow flex flex-col gap-6">
@@ -385,33 +681,70 @@ export default function ChantPage({ id }: { id: number }) {
             )}
           </div>
 
-          <div className="grid gap-4 text-sm">
-            <div>
-              <p className="font-semibold">Illustration</p>
-              <input type="file" name="illustration_chant" accept="image/*" onChange={handleEditChange} />
-              {editForm.illustration_chant && (
-                <p className="mt-1 text-gray-600">📷 {editForm.illustration_chant.name}</p>
-              )}
-            </div>
-            <div>
-              <p className="font-semibold">Paroles PDF</p>
-              <input type="file" name="paroles_pdf" accept="application/pdf" onChange={handleEditChange} />
-              {editForm.paroles_pdf && <p className="mt-1 text-gray-600">📄 {editForm.paroles_pdf.name}</p>}
-            </div>
-            <div>
-              <p className="font-semibold">Partition</p>
-              <input type="file" name="partition" accept=".pdf,.png,.jpg" onChange={handleEditChange} />
-              {editForm.partition && <p className="mt-1 text-gray-600">🎵 {editForm.partition.name}</p>}
-            </div>
+          <div className="grid gap-6 text-sm">
+            {editFileFields.map((field) => (
+              <div key={field.name}>
+                <p className="font-semibold">{field.label}</p>
+                <div className="flex flex-wrap items-center gap-3 mt-1">
+                  <input
+                    id={`edit-file-${field.name}`}
+                    type="file"
+                    name={field.name}
+                    accept={field.accept}
+                    onChange={handleEditChange}
+                    className="hidden"
+                  />
+                  {!editForm[field.name] ? (
+                    <button
+                      type="button"
+                      onClick={() => triggerFilePicker(field.name)}
+                      className="btn btn-ghost text-sm"
+                    >
+                      Ajouter un fichier
+                    </button>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm text-gray-600">
+                        {field.emoji} {editForm[field.name]?.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => triggerFilePicker(field.name)}
+                        className="btn btn-outline text-xs py-1 px-2"
+                      >
+                        Changer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => clearFileField(field.name)}
+                        className="btn btn-danger text-xs py-1 px-2"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="flex flex-wrap gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                resetEditFormState();
+              }}
+              className="btn btn-outline"
+            >
+              Réinitialiser
+            </button>
             <button
               onClick={() => {
                 setShowEditRequestForm(false);
                 setEditFeedback(null);
               }}
               className="btn btn-secondary"
+              type="button"
             >
               Annuler
             </button>
@@ -419,6 +752,7 @@ export default function ChantPage({ id }: { id: number }) {
               onClick={submitEditRequest}
               disabled={editSubmitting}
               className="btn btn-solid disabled:opacity-60"
+              type="button"
             >
               {editSubmitting ? "Envoi..." : "Envoyer ma demande"}
             </button>
@@ -426,196 +760,6 @@ export default function ChantPage({ id }: { id: number }) {
         </section>
       )}
 
-      {/* Catégories */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Catégories</p>
-        <div className="flex flex-wrap gap-2">
-          {displayCategories.map((cat) => (
-            <span key={cat} className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm">
-              {cat}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Paroles */}
-      <div>
-        <h2 className="text-2xl font-semibold text-mauve mb-3">Paroles</h2>
-        <pre className="whitespace-pre-wrap bg-purple-50 p-4 rounded-xl border border-mauve/20 font-sans tracking-wide leading-relaxed">
-          {chant.paroles || "Aucune parole disponible."}
-        </pre>
-      </div>
-
-      {/* Audio */}
-      <div>
-        <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-2xl font-semibold text-mauve">Audio</h2>
-          {USER_ID ? (
-            <button
-              onClick={() => {
-                setShowAudioRequestForm((prev) => !prev);
-                setAudioRequestFeedback(null);
-              }}
-              className={`btn ${showAudioRequestForm ? "btn-danger" : ""}`}
-            >
-              {showAudioRequestForm ? "Annuler" : "Ajouter une piste audio"}
-            </button>
-          ) : (
-            <p className="text-xs text-gray-500">Connecte-toi pour proposer une piste audio.</p>
-          )}
-        </div>
-
-        {chant.pistes_audio.length > 0 ? (
-          chant.pistes_audio.map((p) => {
-            const audioSrc = resolveMediaUrl(p.fichier_mp3);
-            if (!audioSrc) return null;
-            return (
-              <div key={p.id} className="mb-6">
-                <audio controls className="w-full mb-2">
-                  <source src={audioSrc} type="audio/mpeg" />
-                </audio>
-
-                <div className="flex items-center gap-3 text-gray-700 text-sm mb-1">
-                  <span className="font-semibold text-mauve">Note :</span>
-
-                  <span className="text-lg font-bold">
-                    {p.note_moyenne?.toFixed(1) || "0.0"}★
-                  </span>
-
-                  <span className="text-gray-500">
-                    ({p.nb_notes} vote{p.nb_notes > 1 ? "s" : ""})
-                  </span>
-                </div>
-
-                {/* Notation utilisateur */}
-                {USER_ID && (
-                  <div>
-                    <p className="text-sm text-mauve font-semibold mb-1">
-                      Noter cette piste :
-                    </p>
-                    <RatingStars
-                      pisteId={p.id}
-                      userId={USER_ID}
-                      onStatsChange={(stats) => handlePisteStats(p.id, stats)}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })
-        ) : (
-          <p className="text-gray-500 italic">Aucun audio disponible.</p>
-        )}
-
-        {showAudioRequestForm && USER_ID && (
-          <div className="mt-4 rounded-2xl border border-mauve/30 bg-white p-4 shadow-sm space-y-3">
-            <p className="text-sm text-gray-600">
-              Ajoute un fichier MP3 pour proposer une nouvelle piste. L'équipe valide chaque demande.
-            </p>
-            <input
-              type="file"
-              accept=".mp3"
-              onChange={handleAudioFileChange}
-              className="text-sm"
-            />
-            {audioRequestFile && (
-              <p className="text-sm text-gray-700">🎧 {audioRequestFile.name}</p>
-            )}
-            {audioRequestFeedback && (
-              <p
-                className={`text-sm ${
-                  audioRequestFeedback.type === "success" ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {audioRequestFeedback.message}
-              </p>
-            )}
-            <div className="flex gap-3">
-              <button
-                onClick={submitAudioRequest}
-                disabled={audioSubmitting}
-                className="btn btn-solid disabled:opacity-50"
-              >
-                {audioSubmitting ? "Envoi..." : "Envoyer ma demande"}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Ville */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Auteur</p>
-        <p className="text-gray-700">{chant.auteur || "Aucune ville d'origine identifiée"}</p>
-      </div>
-
-      {/* Ville */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Ville d'origine</p>
-        <p className="text-gray-700">{chant.ville_origine || "Aucune ville d'origine identifiée"}</p>
-      </div>
-
-
-      {/* Description */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Description</p>
-        <p className="text-gray-700">{chant.description || "Aucune description"}</p>
-      </div>
-
-      {/* Illustration */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Illustration</p>
-        {resolveMediaUrl(chant.illustration_chant_url) ? (
-          <img
-            src={resolveMediaUrl(chant.illustration_chant_url)}
-            className="w-full max-h-96 object-cover rounded-xl shadow"
-          />
-        ) : (
-          <p className="text-gray-500 italic">Aucune illustration</p>
-        )}
-      </div>
-
-      {/* PDF */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">PDF des paroles</p>
-        {resolveMediaUrl(chant.paroles_pdf_url) ? (
-          <a
-            href={resolveMediaUrl(chant.paroles_pdf_url)}
-            target="_blank"
-            rel="noopener"
-            className="btn btn-solid"
-          >
-            Télécharger
-          </a>
-        ) : (
-          <p className="text-gray-500 italic">Aucun fichier PDF</p>
-        )}
-      </div>
-
-      {/* Partition */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Partition</p>
-        {resolveMediaUrl(chant.partition_url) ? (
-          <a
-            href={resolveMediaUrl(chant.partition_url)}
-            target="_blank"
-            rel="noopener"
-            className="btn btn-solid"
-          >
-            Télécharger
-          </a>
-        ) : (
-          <p className="text-gray-500 italic">Aucune partition</p>
-        )}
-      </div>
-      
-      {/* Ajouté par */}
-      <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Chant ajouté par</p>
-           <p className="text-gray-700">{chant.utilisateur_pseudo || "Un membre"}
-        </p>
-      </div>
-      
       {/* ZONE COMMENTAIRES */}
       <Comments 
         chantId={chant.id}

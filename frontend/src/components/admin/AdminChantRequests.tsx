@@ -262,6 +262,10 @@ export default function AdminChantRequests() {
 
   const handleSelect = (id: number) => {
     if (!adminEmail) return;
+    const preview = requests.find((req) => req.id === id) ?? null;
+    setSelected(preview);
+    setSelectedId(id);
+    setActionFeedback(null);
     loadDetail(id, adminEmail);
   };
 
@@ -309,6 +313,10 @@ export default function AdminChantRequests() {
 
   const handleSelectAudio = (id: number) => {
     if (!adminEmail) return;
+    const preview = audioRequests.find((req) => req.id === id) ?? null;
+    setSelectedAudio(preview);
+    setSelectedAudioId(id);
+    setAudioActionFeedback(null);
     loadAudioDetail(id, adminEmail);
   };
 
@@ -356,6 +364,10 @@ export default function AdminChantRequests() {
 
   const handleSelectMod = (id: number) => {
     if (!adminEmail) return;
+    const preview = modRequests.find((req) => req.id === id) ?? null;
+    setSelectedMod(preview);
+    setSelectedModId(id);
+    setModActionFeedback(null);
     loadModDetail(id, adminEmail);
   };
 

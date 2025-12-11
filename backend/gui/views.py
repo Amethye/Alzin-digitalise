@@ -44,6 +44,9 @@ def api_root(request):
         ],
     })
 
+DELETED_USER_LABEL = "Utilisateur supprimé"
+DELETED_USER_EMAIL = "deleted@alzin.local"
+
 from .models import (
     utilisateur,
     chant,
@@ -124,22 +127,41 @@ def utilisateurs_api(request):
         if field not in body or not body[field]:
             return JsonResponse({"error": f"Missing field: {field}"}, status=400)
 
-    # vérifie email unique
-    if utilisateur.objects.filter(email=body["email"]).exists():
-        return JsonResponse({"error": "Email déjà utilisé"}, status=409)
+    email = body["email"].strip().lower()
+    nom = body["nom"].strip()
+    prenom = body["prenom"].strip()
+    pseudo = body["pseudo"].strip()
 
-    # vérifie pseudo unique
-    if utilisateur.objects.filter(pseudo=body["pseudo"]).exists():
-        return JsonResponse({"error": "Pseudo déjà utilisé"}, status=409)
-    
-    role_user = role.objects.get(nom_role="user")
+    # Vérification format email
+    import re
+    email_regex = r"^[^\s@]+@[^\s@]+\.[^\s@]+$"
+    if not re.match(email_regex, email):
+        return JsonResponse({"error": "Format de l'adresse email invalide."}, status=400)
 
-    # création utilisateur avec mot de passe hashé
+    # Vérification email unique
+    if utilisateur.objects.filter(email__iexact=email).exists():
+        return JsonResponse({"error": "Email déjà utilisé."}, status=409)
+
+    # Vérification pseudo unique
+    if utilisateur.objects.filter(pseudo__iexact=pseudo).exists():
+        return JsonResponse({"error": "Pseudo déjà utilisé."}, status=409)
+
+    # Vérification nom + prénom unique ensemble
+    if utilisateur.objects.filter(nom__iexact=nom, prenom__iexact=prenom).exists():
+        return JsonResponse({"error": "Un utilisateur avec le même nom et prénom existe déjà."}, status=409)
+
+    # Attribution rôle user
+    try:
+        role_user = role.objects.get(nom_role="user")
+    except role.DoesNotExist:
+        return JsonResponse({"error": "Le rôle 'user' n'existe pas dans la base."}, status=500)
+
+    # Création utilisateur avec mot de passe hashé
     u = utilisateur.objects.create(
-        email=body["email"],
-        nom=body["nom"],
-        prenom=body["prenom"],
-        pseudo=body["pseudo"],
+        email=email,
+        nom=nom,
+        prenom=prenom,
+        pseudo=pseudo,
         ville=body["ville"],
         password=make_password(body["password"]),
         role=role_user,
@@ -567,6 +589,26 @@ def admin_users_api(request, user_id=None, action=None):
 
     #DELETE /api/admin/users/<id>/
     if request.method == "DELETE":
+        chant_count = chant.objects.filter(utilisateur=user).count()
+        piste_count = piste_audio.objects.filter(utilisateur=user).count()
+        blocking_rels = []
+        if chant_count:
+            blocking_rels.append("un chant")
+        if piste_count:
+            blocking_rels.append("une piste audio")
+
+        if blocking_rels:
+            relation_text = " et ".join(blocking_rels)
+            return JsonResponse(
+                {
+                    "error": (
+                        f"Impossible de supprimer cet utilisateur : il est lié à "
+                        f"{relation_text}."
+                    )
+                },
+                status=400,
+            )
+
         try:
             with transaction.atomic():
                 _cleanup_user_relations(user)
@@ -1262,9 +1304,6 @@ def categories_api(request):
             cat = categorie.objects.get(nom_categorie=name)
         except categorie.DoesNotExist:
             return JsonResponse({"error": "Catégorie introuvable"}, status=404)
-
-        if appartenir.objects.filter(categorie=cat).exists():
-            return JsonResponse({"error": "Catégorie utilisée"}, status=400)
 
         cat.delete()
         return JsonResponse({"success": True})

@@ -10,6 +10,7 @@ type DeleteButtonProps = {
   onError?: (message: string) => void;
   className?: string;
   disabled?: boolean;
+  onOptimistic?: () => void;
 };
 
 /**
@@ -23,6 +24,7 @@ export default function DeleteButton({
   requestInit,
   onSuccess,
   onError,
+  onOptimistic,
   className = "",
   disabled = false,
 }: DeleteButtonProps) {
@@ -31,6 +33,8 @@ export default function DeleteButton({
   const handleClick = async () => {
     if (loading || disabled) return;
     if (confirmMessage && !confirm(confirmMessage)) return;
+
+    onOptimistic?.();
 
     setLoading(true);
     try {

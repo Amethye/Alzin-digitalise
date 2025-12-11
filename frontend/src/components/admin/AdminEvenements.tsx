@@ -220,7 +220,7 @@ export default function AdminEvenements() {
                 label="Retirer"
                 confirmMessage="Retirer ce chant de l'évènement ?"
                 onSuccess={() => loadEventChants(currentEditingId)}
-                className="text-sm px-3 py-1"
+                className="text-sm text-red-600 font-semibold bg-transparent px-0 py-0"
               />
             </li>
           ))}
@@ -245,7 +245,7 @@ export default function AdminEvenements() {
             <button
               type="button"
               onClick={() => removePendingChant(chantId)}
-              className="btn btn-danger text-sm px-3 py-1"
+              className="text-sm text-red-600 font-semibold"
             >
               Retirer
             </button>
@@ -329,7 +329,7 @@ export default function AdminEvenements() {
             <button
               type="button"
               onClick={addChantToEvent}
-              className="btn btn-solid"
+              className="rounded bg-mauve text-white px-4 py-2"
             >
               Ajouter
             </button>
@@ -341,7 +341,7 @@ export default function AdminEvenements() {
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             onClick={() => saveEvenement(editingId ?? undefined)}
-            className="btn btn-solid text-lg"
+            className="rounded-xl bg-mauve px-6 py-3 text-lg font-semibold text-white shadow hover:bg-purple-600 transition"
           >
             {editingId ? "Mettre à jour" : "Ajouter"}
           </button>
@@ -350,7 +350,7 @@ export default function AdminEvenements() {
             <button
               type="button"
               onClick={cancelEdit}
-              className="btn btn-secondary"
+              className="rounded-xl border border-gray-400 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
             >
               Annuler
             </button>
@@ -392,7 +392,7 @@ export default function AdminEvenements() {
                 <div className="mt-4 flex gap-2">
                   <button
                     onClick={() => startEdit(e)}
-                    className="btn btn-warning text-sm px-4 py-1"
+                    className="rounded bg-yellow-500 px-4 py-1 text-sm font-semibold text-white shadow hover:bg-yellow-600"
                   >
                     Modifier
                   </button>
@@ -404,7 +404,7 @@ export default function AdminEvenements() {
                       if (editingId === e.id) cancelEdit();
                     }}
                     onError={(message) => alert(message || "Erreur lors de la suppression.")}
-                    className="text-sm px-4 py-1"
+                    className="rounded bg-red-600 px-4 py-1 text-sm font-semibold text-white shadow hover:bg-red-700"
                   />
                 </div>
               </div>

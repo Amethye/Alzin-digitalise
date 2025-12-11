@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import DeleteButton from "./DeleteButton";
+import { apiUrl } from "../lib/api";
 
 type CommentType = {
-  id: number;
+  id: number | string;
   utilisateur_id: number;
   utilisateur_pseudo: string;
   texte: string;
@@ -24,7 +25,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
 
   // Charger les commentaires -----------------------------------------
   useEffect(() => {
-    fetch(`/api/commentaires/?chant_id=${chantId}`)
+    fetch(apiUrl(`/api/commentaires/?chant_id=${chantId}`))
       .then((res) => res.json())
       .then((data) => setComments(data))
       .catch((err) => console.error(err));
@@ -35,7 +36,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
   );
 
   // Ajouter un commentaire --------------------------------------------
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!userId) {
       alert("Vous devez être connecté pour commenter.");
       return;
@@ -45,25 +46,42 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
       return;
     }
 
-    fetch("/api/commentaires/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        utilisateur_id: userId,
-        chant_id: chantId,
-        texte: newComment,
-      }),
-    })
-      .then(async (res) => {
-        const payload = await res.json();
-        if (!res.ok || payload.error) {
-          alert(payload.error || "Impossible d’ajouter le commentaire.");
-          return;
-        }
-        setComments((prev) => [...prev, payload]);
-        setNewComment("");
-      })
-      .catch(() => alert("Impossible d’ajouter le commentaire."));
+    const trimmedComment = newComment.trim();
+    const placeholderId = `temp-${Date.now()}`;
+    const pseudo = localStorage.getItem("pseudo") || "Moi";
+    const placeholder: CommentType = {
+      id: placeholderId,
+      utilisateur_id: userId,
+      utilisateur_pseudo: pseudo,
+      texte: trimmedComment,
+      date_comment: new Date().toISOString(),
+      chant: chantId,
+    };
+
+    setComments((prev) => [...prev, placeholder]);
+    setNewComment("");
+
+    try {
+      const res = await fetch(apiUrl("/api/commentaires/"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          utilisateur_id: userId,
+          chant_id: chantId,
+          texte: trimmedComment,
+        }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.error) {
+        throw new Error(payload.error || "Impossible d’ajouter le commentaire.");
+      }
+      setComments((prev) =>
+        prev.map((c) => (c.id === placeholderId ? payload : c))
+      );
+    } catch (err: any) {
+      setComments((prev) => prev.filter((c) => c.id !== placeholderId));
+      alert(err?.message || "Impossible d’ajouter le commentaire.");
+    }
   };
 
   // Mode édition -------------------------------------------------------
@@ -75,7 +93,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
   const saveEdit = (id: number) => {
     if (!userId) return;
 
-    fetch("/api/commentaires/", {
+    fetch(apiUrl("/api/commentaires/"), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -126,7 +144,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
 
       {/* Liste des commentaires */}
       <div className="space-y-4">
-        {comments.map((comment) => {
+        {comments.map((comment, index) => {
           const canEditOrDelete =
             Boolean(userId) && (isAdmin || userId === comment.utilisateur_id);
 
@@ -153,7 +171,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
                       Modifier
                     </button>
                     <DeleteButton
-                      endpoint="/api/commentaires/"
+                      endpoint={apiUrl("/api/commentaires/")}
                       confirmMessage="Supprimer ce commentaire ?"
                       disabled={!userId}
                       requestInit={{
@@ -163,14 +181,19 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
                           userId,
                         }),
                       }}
-                      onSuccess={() =>
+                      onOptimistic={() =>
                         setComments((prev) =>
                           prev.filter((c) => c.id !== comment.id)
                         )
                       }
-                      onError={(message) =>
-                        alert(message || "Impossible de supprimer le commentaire.")
-                      }
+                      onError={(message) => {
+                        setComments((prev) => {
+                          const next = [...prev];
+                          next.splice(index, 0, comment);
+                          return next;
+                        });
+                        alert(message || "Impossible de supprimer le commentaire.");
+                      }}
                     />
                   </div>
                 )}

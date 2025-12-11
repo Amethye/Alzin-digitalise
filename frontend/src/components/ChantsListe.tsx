@@ -11,7 +11,6 @@ type Chant = {
   paroles: string;
   description: string;
   categories: string[];
-  pistes_audio: { id: number; fichier_mp3: string }[];
 };
 
 const API_CHANTS = "/api/chants/";
@@ -88,11 +87,20 @@ export default function ChantsListe() {
   }, []);
 
   // Recherche
-  const searched = chants.filter((c) =>
-    `${c.nom_chant} ${c.auteur} ${c.ville_origine}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const searched = chants.filter((c) => {
+    const haystack = [
+      c.nom_chant,
+      c.auteur,
+      c.ville_origine,
+      c.paroles,
+      c.description,
+      ...(c.categories || []),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return haystack.includes(search.toLowerCase());
+  });
 
   // Filtre catégorie
   const filtered = searched.filter((c) =>
@@ -107,6 +115,7 @@ export default function ChantsListe() {
   filtered.forEach((chant) => {
     const cats = chant.categories.length ? chant.categories : ["Autre"];
     cats.forEach((cat) => {
+      if (filterCat !== "Toutes" && cat !== filterCat) return;
       if (!categoriesMap[cat]) categoriesMap[cat] = [];
       categoriesMap[cat].push(chant);
     });
@@ -206,7 +215,7 @@ export default function ChantsListe() {
     }
 
     if (!requestForm.nom_chant.trim()) {
-      setRequestFeedback({ type: "error", message: "Indique au minimum le nom du chant." });
+      setRequestFeedback({ type: "error", message: "Indique au minimum le nom du chant et les paroles du chant." });
       return;
     }
 
@@ -282,7 +291,7 @@ export default function ChantsListe() {
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">
+          <p className={`text-sm ${USER_ID ? "text-mauve font-semibold" : "text-gray-600"}`}>
             Propose un nouveau chant à la communauté
           </p>
           <button
@@ -301,9 +310,14 @@ export default function ChantsListe() {
           </button>
         </div>
         {!USER_ID && (
-          <p className="text-xs text-gray-500">
-            Connecte-toi pour demander l'ajout d'un chant.
-          </p>
+          <div>
+            <p className="text-xs text-gray-500">
+              Connecte-toi pour demander l'ajout d'un chant.
+            </p>
+            <p className="text-xs text-gray-500">
+              Connecte-toi pour mettre des chants en favoris.
+            </p>
+          </div>
         )}
         {requestFeedback && (
           <p
@@ -407,25 +421,38 @@ export default function ChantsListe() {
             <div>
               <div className="flex items-center justify-between">
                 <span className="font-semibold">Illustration</span>
-                <div className="flex gap-2">
-                  <label className="btn btn-solid cursor-pointer text-sm">
-                    {requestPreviewIllustration ? "Changer" : "Ajouter"}
-                    <input
-                      key={`illustration-${fileResetKey}`}
-                      type="file"
-                      name="illustration_chant"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleRequestChange}
-                    />
-                  </label>
-                  {requestPreviewIllustration && (
-                    <button
-                      className="btn btn-danger text-sm"
-                      onClick={clearIllustration}
+                <div className="flex gap-2 items-center">
+                  <input
+                    key={`illustration-${fileResetKey}`}
+                    id={`illustration-${fileResetKey}`}
+                    type="file"
+                    name="illustration_chant"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleRequestChange}
+                  />
+                  {!requestPreviewIllustration ? (
+                    <label
+                      htmlFor={`illustration-${fileResetKey}`}
+                      className="btn btn-ghost text-sm"
                     >
-                      Supprimer
-                    </button>
+                      Ajouter un fichier
+                    </label>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor={`illustration-${fileResetKey}`}
+                        className="btn btn-outline text-xs px-2 py-1"
+                      >
+                        Changer
+                      </label>
+                      <button
+                        className="btn btn-danger text-xs px-2 py-1"
+                        onClick={clearIllustration}
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -440,25 +467,38 @@ export default function ChantsListe() {
             <div>
               <div className="flex items-center justify-between">
                 <span className="font-semibold">Paroles PDF</span>
-                <div className="flex gap-2">
-                  <label className="btn btn-solid cursor-pointer text-sm">
-                    {requestPreviewPDF ? "Changer" : "Ajouter"}
-                    <input
-                      key={`pdf-${fileResetKey}`}
-                      type="file"
-                      name="paroles_pdf"
-                      accept="application/pdf"
-                      className="hidden"
-                      onChange={handleRequestChange}
-                    />
-                  </label>
-                  {requestPreviewPDF && (
-                    <button
-                      className="btn btn-danger text-sm"
-                      onClick={clearPDF}
+                <div className="flex gap-2 items-center">
+                  <input
+                    key={`pdf-${fileResetKey}`}
+                    id={`pdf-${fileResetKey}`}
+                    type="file"
+                    name="paroles_pdf"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={handleRequestChange}
+                  />
+                  {!requestPreviewPDF ? (
+                    <label
+                      htmlFor={`pdf-${fileResetKey}`}
+                      className="btn btn-ghost text-sm"
                     >
-                      Supprimer
-                    </button>
+                      Ajouter un fichier
+                    </label>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor={`pdf-${fileResetKey}`}
+                        className="btn btn-outline text-xs px-2 py-1"
+                      >
+                        Changer
+                      </label>
+                      <button
+                        className="btn btn-danger text-xs px-2 py-1"
+                        onClick={clearPDF}
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -468,25 +508,38 @@ export default function ChantsListe() {
             <div>
               <div className="flex items-center justify-between">
                 <span className="font-semibold">Partition</span>
-                <div className="flex gap-2">
-                  <label className="btn btn-solid cursor-pointer text-sm">
-                    {requestPreviewPartition ? "Changer" : "Ajouter"}
-                    <input
-                      key={`partition-${fileResetKey}`}
-                      type="file"
-                      name="partition"
-                      accept=".pdf,.png,.jpg"
-                      className="hidden"
-                      onChange={handleRequestChange}
-                    />
-                  </label>
-                  {requestPreviewPartition && (
-                    <button
-                      className="btn btn-danger text-sm"
-                      onClick={clearPartition}
+                <div className="flex gap-2 items-center">
+                  <input
+                    key={`partition-${fileResetKey}`}
+                    id={`partition-${fileResetKey}`}
+                    type="file"
+                    name="partition"
+                    accept=".pdf,.png,.jpg"
+                    className="hidden"
+                    onChange={handleRequestChange}
+                  />
+                  {!requestPreviewPartition ? (
+                    <label
+                      htmlFor={`partition-${fileResetKey}`}
+                      className="btn btn-ghost text-sm"
                     >
-                      Supprimer
-                    </button>
+                      Ajouter un fichier
+                    </label>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor={`partition-${fileResetKey}`}
+                        className="btn btn-outline text-xs px-2 py-1"
+                      >
+                        Changer
+                      </label>
+                      <button
+                        className="btn btn-danger text-xs px-2 py-1"
+                        onClick={clearPartition}
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -495,19 +548,38 @@ export default function ChantsListe() {
 
             <div>
               <div className="flex items-center justify-between">
-                <span className="font-semibold">Pistes audio (MP3)</span>
-                <label className="btn btn-solid cursor-pointer text-sm">
-                  Ajouter
+                <span className="font-semibold">Pistes audio (MP3 / M4A)</span>
+                <div className="flex items-center gap-2">
                   <input
-                    key={`audio-${fileResetKey}-${requestPreviewAudio.length}`}
+                    key={`audio-${fileResetKey}`}
+                    id={`audio-${fileResetKey}`}
                     type="file"
                     name="new_audio"
                     multiple
-                    accept=".mp3"
+                    accept=".mp3,.m4a"
                     className="hidden"
                     onChange={handleRequestChange}
                   />
-                </label>
+                  <label
+                    htmlFor={`audio-${fileResetKey}`}
+                    className="btn btn-ghost text-sm"
+                  >
+                    Ajouter un fichier
+                  </label>
+                  {requestPreviewAudio.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn btn-outline text-xs px-2 py-1"
+                      onClick={() => {
+                        setRequestForm((prev) => ({ ...prev, new_audio: [] }));
+                        setRequestPreviewAudio([]);
+                        setFileResetKey((k) => k + 1);
+                      }}
+                    >
+                      Réinitialiser
+                    </button>
+                  )}
+                </div>
               </div>
               {requestPreviewAudio.map((file, index) => (
                 <div key={`${file}-${index}`} className="flex items-center gap-3 mt-1">
@@ -567,19 +639,22 @@ export default function ChantsListe() {
                         {ch.nom_chant}
                       </h3>
 
-                      {/* FAVORIS → remplace tout le code précédent */}
-                      {USER_ID && (
-                        <span onClick={(e) => e.stopPropagation()}>
+                      {/* FAVORIS */}
+                      <span onClick={(e) => e.stopPropagation()}>
+                        {USER_ID ? (
                           <FavoriButton chantId={ch.id} USER_ID={USER_ID} size={34} />
-                        </span>
-                      )}
+                        ) : (
+                          <div
+                            className="opacity-40 cursor-not-allowed border border-mauve/30 rounded-full p-2"
+                            title="Connecte-toi pour ajouter aux favoris"
+                          >
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="#8B5CF6">
+                              <path d="M12 21s-6.2-4.3-9.3-7.4C-1 11-.5 6.5 2.3 4.2 5.1 1.9 9 3 12 6c3-3 6.9-4.1 9.7-1.8 2.8 2.3 3.3 6.8.6 9.4C18.2 16.7 12 21 12 21z"/>
+                            </svg>
+                          </div>
+                        )}
+                      </span>
                     </div>
-
-                    {ch.auteur && (
-                      <p className="mt-2 text-gray-600">
-                        <strong>Auteur :</strong> {ch.auteur}
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>

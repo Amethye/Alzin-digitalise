@@ -180,4 +180,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 #MEDIA FILES
 #--------------------------------------------------------------------
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Autorise des uploads jusqu'à 1000 Mo (1 Go) pour les fichiers volumineux
+UPLOAD_MAX_SIZE = 1000 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = UPLOAD_MAX_SIZE
+FILE_UPLOAD_MAX_MEMORY_SIZE = UPLOAD_MAX_SIZE

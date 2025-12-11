@@ -45,9 +45,20 @@ export const setFavorisForUser = (userId: number, favoris: Favori[]) => {
 
 export const addFavoriForUser = (userId: number, favori: Favori) => {
   const current = favorisByUser.get(userId) ?? [];
-  if (current.some((f) => f.id === favori.id || f.chant_id === favori.chant_id)) {
+  if (current.some((f) => f.id === favori.id)) {
     return;
   }
+
+  const existingIndex = current.findIndex((f) => f.chant_id === favori.chant_id);
+  if (existingIndex !== -1) {
+    const next = [...current];
+    next[existingIndex] = favori;
+    favorisByUser.set(userId, next);
+    initializedUsers.add(userId);
+    notify(userId);
+    return;
+  }
+
   favorisByUser.set(userId, [...current, favori]);
   initializedUsers.add(userId);
   notify(userId);

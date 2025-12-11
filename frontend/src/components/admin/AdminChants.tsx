@@ -524,12 +524,12 @@ export default function AdminChants() {
           </div>
 
           {/* MULTIPLE MP3 */}
-          <div>
+            <div>
             <div className="flex justify-between items-center">
-              <span className="font-semibold text-lg">Pistes audio (MP3)</span>
+              <span className="font-semibold text-lg">Pistes audio (MP3 / M4A)</span>
               <label className="btn btn-solid cursor-pointer text-sm">
                 Ajouter
-                <input key = {previewAudio.length} type="file" name="new_audio" multiple accept=".mp3"
+                <input key={previewAudio.length} type="file" name="new_audio" multiple accept=".mp3,.m4a"
                   className="hidden" onChange={handleChange} />
               </label>
             </div>

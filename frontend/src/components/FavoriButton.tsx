@@ -32,7 +32,10 @@ export default function FavoriButton({
   size?: number;
 }) {
   const [favoris, setFavoris] = useState<Favori[]>([]);
+  const [optimistic, setOptimistic] = useState<boolean | null>(null);
+  const [processing, setProcessing] = useState(false);
   const isFavori = favoris.some((f) => f.chant_id === chantId);
+  const displayedFavori = optimistic ?? isFavori;
 
   useEffect(() => {
     if (!USER_ID) return;
@@ -49,33 +52,69 @@ export default function FavoriButton({
 
   const add = async () => {
     if (!USER_ID) return;
-    const res = await fetch(API_FAVORIS, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        utilisateur_id: USER_ID,
-        chant_id: chantId,
-        date_favori: new Date().toISOString().split("T")[0],
-      }),
-    });
-    const newFav: Favori = await res.json();
-    addFavoriForUser(USER_ID, newFav);
+    setOptimistic(true);
+    setProcessing(true);
+    const optimisticDate = new Date().toISOString().split("T")[0];
+    const optimisticFav: Favori = {
+      id: -Date.now(),
+      utilisateur_id: USER_ID,
+      chant_id: chantId,
+      date_favori: optimisticDate,
+    };
+    addFavoriForUser(USER_ID, optimisticFav);
+    try {
+      const res = await fetch(API_FAVORIS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          utilisateur_id: USER_ID,
+          chant_id: chantId,
+          date_favori: optimisticDate,
+        }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.error) {
+        throw new Error(payload.error || "Impossible d’ajouter ce favori.");
+      }
+      const newFav: Favori = payload;
+      addFavoriForUser(USER_ID, newFav);
+    } catch (err: any) {
+      removeFavoriForUser(USER_ID, chantId);
+      alert(err?.message || "Impossible d’ajouter ce favori.");
+    } finally {
+      setProcessing(false);
+      setOptimistic(null);
+    }
   };
 
   const remove = async () => {
     const fav = favoris.find((f) => f.chant_id === chantId);
-    if (!fav) return;
-
-    await fetch(`${API_FAVORIS}?id=${fav.id}`, { method: "DELETE" });
-    removeFavoriForUser(fav.utilisateur_id, chantId);
+    if (!fav || !USER_ID) return;
+    removeFavoriForUser(USER_ID, chantId);
+    setOptimistic(false);
+    setProcessing(true);
+    try {
+      const res = await fetch(`${API_FAVORIS}?id=${fav.id}`, { method: "DELETE" });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || payload.error) {
+        throw new Error(payload.error || "Impossible de retirer ce favori.");
+      }
+    } catch (err: any) {
+      addFavoriForUser(USER_ID, fav);
+      alert(err?.message || "Impossible de retirer ce favori.");
+    } finally {
+      setProcessing(false);
+      setOptimistic(null);
+    }
   };
 
   return (
     <button
-      onClick={isFavori ? remove : add}
+      onClick={displayedFavori ? remove : add}
       className="btn btn-ghost p-1"
+      disabled={processing}
     >
-      {isFavori ? <HeartFull size={size} /> : <HeartEmpty size={size} />}
+      {displayedFavori ? <HeartFull size={size} /> : <HeartEmpty size={size} />}
     </button>
   );
 }

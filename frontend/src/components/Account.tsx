@@ -1,6 +1,18 @@
 import { useState, useEffect } from "react";
 import { apiUrl } from "../lib/api";
 
+const STATUS_LABELS: Record<string, string> = {
+  EN_ATTENTE: "En attente",
+  ACCEPTEE: "Acceptée",
+  REFUSEE: "Refusée",
+};
+
+const STATUS_CLASSES: Record<string, string> = {
+  EN_ATTENTE: "text-yellow-700 bg-yellow-50 border-yellow-200",
+  ACCEPTEE: "text-green-700 bg-green-50 border-green-200",
+  REFUSEE: "text-red-700 bg-red-50 border-red-200",
+};
+
 interface UserInfo {
   id: number;
   nom: string;
@@ -25,6 +37,12 @@ export default function AccountPage() {
     pseudo: "",
     ville: "",
   });
+
+  const [chantRequests, setChantRequests] = useState<any[]>([]);
+  const [audioRequests, setAudioRequests] = useState<any[]>([]);
+  const [modRequests, setModRequests] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   // Charger l'utilisateur
   useEffect(() => {
@@ -62,6 +80,51 @@ export default function AccountPage() {
       );
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchHistory = async () => {
+      setHistoryLoading(true);
+      setHistoryError(null);
+
+      const headers = { "X-User-Email": user.email };
+
+      const fetchList = async (path: string, label: string) => {
+        try {
+          const res = await fetch(apiUrl(path), { headers });
+          if (!res.ok) {
+            setHistoryError((prev) =>
+              prev ? `${prev} · Impossible de charger ${label}.` : `Impossible de charger ${label}.`
+            );
+            return [];
+          }
+          return res.json();
+        } catch {
+          setHistoryError((prev) =>
+            prev ? `${prev} · Impossible de charger ${label}.` : `Impossible de charger ${label}.`
+          );
+          return [];
+        }
+      };
+
+      try {
+        const [chants, audios, mods] = await Promise.all([
+          fetchList("/api/demandes-chants/", "les demandes d'ajout de chants"),
+          fetchList("/api/demandes-audio/", "les demandes de pistes audio"),
+          fetchList("/api/demandes-modification/", "les demandes de modification"),
+        ]);
+
+        setChantRequests(chants);
+        setAudioRequests(audios);
+        setModRequests(mods);
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [user]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -90,6 +153,18 @@ export default function AccountPage() {
     setUser({ ...user!, ...form });
     localStorage.setItem("email", form.email.toLowerCase());
     setEditMode(false);
+  };
+
+  const renderStatusBadge = (status: string) => {
+    const label = STATUS_LABELS[status] ?? status;
+    const statusClasses = STATUS_CLASSES[status] ?? "text-gray-700 bg-gray-50 border-gray-200";
+    return (
+      <span
+        className={`text-xs rounded-full border px-2 py-0.5 font-semibold ${statusClasses}`}
+      >
+        {label}
+      </span>
+    );
   };
 
   if (!user)
@@ -168,23 +243,134 @@ export default function AccountPage() {
             <p><span className="font-semibold text-mauve">Ville :</span> {user.ville}</p>
             <p><span className="font-semibold text-mauve">Email :</span> {user.email}</p>
 
-            <div className="flex gap-3 pt-3">
-              <button
-                onClick={() => setEditMode(true)}
-                className="btn btn-solid"
-              >
-                Modifier mes données
-              </button>
+          <div className="flex gap-3 pt-3">
+            <button
+              onClick={() => setEditMode(true)}
+              className="btn btn-solid"
+            >
+              Modifier mes données
+            </button>
 
-              <button
-                onClick={() => (window.location.href = "/reset-password")}
-                className="btn btn-solid"
-              >
-                Changer mon mot de passe
-              </button>
-            </div>
+            <button
+              onClick={() => (window.location.href = "/reset-password")}
+              className="btn btn-solid"
+            >
+              Changer mon mot de passe
+            </button>
           </div>
+        </div>
+      )}
+    </div>
+
+      <div className="w-full max-w-4xl space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-mauve">Historique des demandes</h2>
+          {historyLoading && (
+            <p className="text-sm text-gray-500">Chargement de l'historique…</p>
+          )}
+        </div>
+        {historyError && (
+          <p className="text-sm text-red-600">{historyError}</p>
         )}
+
+        <section className="rounded-2xl border border-mauve/30 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-mauve">Demandes d'ajout de chants</h3>
+            <span className="text-sm text-gray-500">{chantRequests.length} demande(s)</span>
+          </div>
+          {historyLoading ? (
+            <p className="text-sm text-gray-500">Chargement…</p>
+          ) : chantRequests.length === 0 ? (
+            <p className="text-sm text-gray-500 italic">Aucune demande pour le moment.</p>
+          ) : (
+            <div className="space-y-3">
+              {chantRequests.map((req) => (
+                <div key={req.id} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-mauve">{req.nom_chant}</p>
+                    {renderStatusBadge(req.statut)}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {new Date(req.date_creation).toLocaleDateString("fr-FR")}
+                  </p>
+                  {req.description && (
+                    <p className="text-sm text-gray-700 mt-1">{req.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-mauve/30 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-mauve">Demandes d'ajout de pistes audio</h3>
+            <span className="text-sm text-gray-500">{audioRequests.length} demande(s)</span>
+          </div>
+          {historyLoading ? (
+            <p className="text-sm text-gray-500">Chargement…</p>
+          ) : audioRequests.length === 0 ? (
+            <p className="text-sm text-gray-500 italic">Aucune demande pour le moment.</p>
+          ) : (
+            <div className="space-y-3">
+              {audioRequests.map((req) => (
+                <div key={req.id} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-mauve">{req.chant?.nom_chant || "Piste audio"}</p>
+                    {renderStatusBadge(req.statut)}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {new Date(req.date_creation).toLocaleDateString("fr-FR")}
+                  </p>
+                  {req.fichier_mp3_url ? (
+                    <a
+                      href={req.fichier_mp3_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-blue-600 underline mt-1 block"
+                    >
+                      Fichier proposé
+                    </a>
+                  ) : (
+                    <p className="text-sm text-gray-700 mt-1">Aucun fichier associé.</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-mauve/30 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-mauve">Demandes de modification</h3>
+            <span className="text-sm text-gray-500">{modRequests.length} demande(s)</span>
+          </div>
+          {historyLoading ? (
+            <p className="text-sm text-gray-500">Chargement…</p>
+          ) : modRequests.length === 0 ? (
+            <p className="text-sm text-gray-500 italic">Aucune demande pour le moment.</p>
+          ) : (
+            <div className="space-y-3">
+              {modRequests.map((req) => (
+                <div key={req.id} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold text-mauve">{req.nom_chant}</p>
+                    {renderStatusBadge(req.statut)}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Chant original : {req.chant_nom}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(req.date_creation).toLocaleDateString("fr-FR")}
+                  </p>
+                  {req.description && (
+                    <p className="text-sm text-gray-700 mt-1">{req.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
