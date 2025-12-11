@@ -589,26 +589,6 @@ def admin_users_api(request, user_id=None, action=None):
 
     #DELETE /api/admin/users/<id>/
     if request.method == "DELETE":
-        chant_count = chant.objects.filter(utilisateur=user).count()
-        piste_count = piste_audio.objects.filter(utilisateur=user).count()
-        blocking_rels = []
-        if chant_count:
-            blocking_rels.append("un chant")
-        if piste_count:
-            blocking_rels.append("une piste audio")
-
-        if blocking_rels:
-            relation_text = " et ".join(blocking_rels)
-            return JsonResponse(
-                {
-                    "error": (
-                        f"Impossible de supprimer cet utilisateur : il est lié à "
-                        f"{relation_text}."
-                    )
-                },
-                status=400,
-            )
-
         try:
             with transaction.atomic():
                 _cleanup_user_relations(user)

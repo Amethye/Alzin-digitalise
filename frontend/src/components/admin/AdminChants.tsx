@@ -310,10 +310,15 @@ export default function AdminChants() {
         : b.nom_chant.localeCompare(a.nom_chant, "fr")
     );
 
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const displayed = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const visibleChants = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   useEffect(() => setPage(1), [search, filterCat, order]);
+  useEffect(() => {
+    if (page > totalPages && filtered.length > 0) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages, filtered.length]);
 
   // ---------------------------------------------------------------------
   // RENDER
@@ -619,60 +624,85 @@ export default function AdminChants() {
           </select>
         </div>
 
-        {/* GROUPEMENT PAR CATÉGORIE */}
-        {categories.map((cat) => {
-          const chantsDeCat = chants
-            .filter((c) =>
-              c.categories.map((x) => x.toLowerCase()).includes(cat.toLowerCase())
-            )
-            .filter((c) =>
-              `${c.nom_chant} ${c.auteur} ${c.ville_origine}`
-                .toLowerCase()
-                .includes(search.toLowerCase())
-            )
-            .sort((a, b) => a.nom_chant.localeCompare(b.nom_chant, "fr"));
+        {filtered.length === 0 ? (
+          <p className="text-sm text-gray-500">Aucun chant ne correspond aux filtres.</p>
+        ) : (
+          <>
+            {/* GROUPEMENT PAR CATÉGORIE */}
+            {sortCategoriesWithAutreLast(
+              Array.from(
+                new Set(
+                  visibleChants.flatMap((chantItem) =>
+                    chantItem.categories.length ? chantItem.categories : ["Autre"]
+                  )
+                )
+              )
+            ).map((cat) => {
+              const chantsDeCat = visibleChants
+                .filter((c) =>
+                  c.categories
+                    .map((x) => x.toLowerCase())
+                    .includes(cat.toLowerCase())
+                )
+                .sort((a, b) => a.nom_chant.localeCompare(b.nom_chant, "fr"));
 
-          if (chantsDeCat.length === 0) return null;
+              if (chantsDeCat.length === 0) return null;
 
-          return (
-            <div key={cat} className="mb-8">
-              <h3 className="text-lg font-semibold text-mauve mb-3">{cat}</h3>
+              return (
+                <div key={cat} className="mb-8">
+                  <h3 className="text-lg font-semibold text-mauve mb-3">{cat}</h3>
 
-              <div className="flex flex-col gap-3">
-                {chantsDeCat.map((c) => (
-                  <div
-                    key={c.id}
-                    className="border rounded-lg p-3 shadow-sm hover:shadow-md transition"
-                  >
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-mauve truncate">
-                        {c.nom_chant}
-                      </h3>
+                  <div className="flex flex-col gap-3">
+                    {chantsDeCat.map((c) => (
+                      <div
+                        key={c.id}
+                        className="border rounded-lg p-3 shadow-sm hover:shadow-md transition"
+                      >
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-semibold text-mauve truncate">
+                            {c.nom_chant}
+                          </h3>
 
-                      <div className="flex gap-2 shrink-0">
-                        <button
-                          onClick={() => startEdit(c)}
-                          className="btn btn-warning text-sm px-3 py-1"
-                        >
-                          Modifier
-                        </button>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => startEdit(c)}
+                              className="btn btn-warning text-sm px-3 py-1"
+                            >
+                              Modifier
+                            </button>
 
-                        <DeleteButton
-                          endpoint={`${API_CHANTS}${c.id}/`}
-                          confirmMessage="Supprimer ce chant ?"
-                          onSuccess={() => {
-                            if (editingId === c.id) cancelEdit();
-                            loadData();
-                          }}
-                        />
+                            <DeleteButton
+                              endpoint={`${API_CHANTS}${c.id}/`}
+                              confirmMessage="Supprimer ce chant ?"
+                              onSuccess={() => {
+                                if (editingId === c.id) cancelEdit();
+                                loadData();
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
+                </div>
+              );
+            })}
+
+            {filtered.length > PER_PAGE && (
+              <div className="flex justify-center gap-3 mt-6">
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPage(i + 1)}
+                    className={`btn ${page === i + 1 ? "btn-solid" : "btn-ghost"}`}
+                  >
+                    {i + 1}
+                  </button>
                 ))}
               </div>
-            </div>
-          );
-        })}
+            )}
+          </>
+        )}
       </section>
     </div>
   );

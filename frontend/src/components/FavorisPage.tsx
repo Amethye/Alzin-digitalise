@@ -123,9 +123,18 @@ export default function FavorisPage() {
       : (c.categories.length ? c.categories : ["Autre"]).includes(filterCat)
   );
   
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const paginatedChants = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
   // Regrouper par catégories
   const categoriesMap: Record<string, Chant[]> = {};
-  filtered.forEach((chant) => {
+  paginatedChants.forEach((chant) => {
     const catList = chant.categories.length ? chant.categories : ["Autre"];
     catList.forEach((cat) => {
       if (!categoriesMap[cat]) categoriesMap[cat] = [];
@@ -145,14 +154,7 @@ export default function FavorisPage() {
   );
   const allCategories = ["Toutes", ...categoriesForFilter];
 
-  // Pagination
   const categoriesList = sortCategoriesWithAutreLast(Object.keys(categoriesMap));
-
-  const totalPages = Math.ceil(categoriesList.length / PER_PAGE);
-  const visibleCategories = categoriesList.slice(
-    (page - 1) * PER_PAGE,
-    page * PER_PAGE
-  );
   const totalFavorisDisplayed = filtered.length;
 
   if (!USER_ID)
@@ -197,46 +199,53 @@ export default function FavorisPage() {
       </div>
 
       {/* Groupe par catégories */}
-      {visibleCategories.map((cat) => {
-        const sortedChants = [...categoriesMap[cat]].sort((a, b) =>
-          a.nom_chant.localeCompare(b.nom_chant, "fr")
-        );
+      {filtered.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          Aucun favori ne correspond à ta recherche.
+        </p>
+      ) : (
+        <>
+          {categoriesList.map((cat) => {
+            const sortedChants = [...categoriesMap[cat]].sort((a, b) =>
+              a.nom_chant.localeCompare(b.nom_chant, "fr")
+            );
 
-        return (
-          <div key={cat}>
-            <h2 className="text-2xl font-bold text-mauve mt-6 mb-3">{cat}</h2>
+            return (
+              <div key={cat}>
+                <h2 className="text-2xl font-bold text-mauve mt-6 mb-3">{cat}</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {sortedChants.map((ch) => (
-                <div
-                  key={ch.id}
-                  onClick={() => (window.location.href = `/chants/${ch.id}`)}
-                  className="border border-mauve/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-mauve/5 transition"
-                >
-                  <div className="flex justify-between items-start">
-                    <h3 className="text-xl font-bold text-mauve">{ch.nom_chant}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {sortedChants.map((ch) => (
+                    <div
+                      key={ch.id}
+                      onClick={() => (window.location.href = `/chants/${ch.id}`)}
+                      className="border border-mauve/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-mauve/5 transition"
+                    >
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-xl font-bold text-mauve">{ch.nom_chant}</h3>
 
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <FavoriButton chantId={ch.id} USER_ID={USER_ID} />
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <FavoriButton chantId={ch.id} USER_ID={USER_ID} />
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
+              </div>
+            );
+          })}
+        </>
+      )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {filtered.length > PER_PAGE && (
         <div className="flex justify-center gap-3 mt-6">
           {Array.from({ length: totalPages }, (_, i) => (
             <button
               key={i}
               onClick={() => setPage(i + 1)}
-              className={`btn ${
-                page === i + 1 ? "btn-solid" : "btn-ghost"
-              }`}>
+              className={`btn ${page === i + 1 ? "btn-solid" : "btn-ghost"}`}
+            >
               {i + 1}
             </button>
           ))}

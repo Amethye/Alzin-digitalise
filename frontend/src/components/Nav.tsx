@@ -144,7 +144,6 @@ export default function Nav() {
     { label: "Mon compte", href: "/account" },
     { label: "Mes favoris", href: "/favoris" },
     { label: "Mes commandes", href: "/orders" },
-    { label: "Mes demandes", href: "/mes-demandes" },
     { label: "Support", href: "/support" },
   ];
 
