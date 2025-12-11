@@ -44,12 +44,16 @@ export default function AdminTemplatesPage() {
   const [selectedChantIds, setSelectedChantIds] = useState<number[]>([]);
 
   const [chantSearch, setChantSearch] = useState("");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(null);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] =
+    useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const isEditMode = editingId !== null;
 
   // ------------------ chargement initial ------------------
   useEffect(() => {
@@ -66,7 +70,8 @@ export default function AdminTemplatesPage() {
 
         if (!resTpl.ok) throw new Error("Impossible de charger les templates.");
         if (!resChants.ok) throw new Error("Impossible de charger les chants.");
-        if (!resCats.ok) throw new Error("Impossible de charger les catégories.");
+        if (!resCats.ok)
+          throw new Error("Impossible de charger les catégories.");
 
         const dataTpl: Template[] = await resTpl.json();
         const dataChantsRaw: any[] = await resChants.json();
@@ -99,12 +104,12 @@ export default function AdminTemplatesPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // comme dans AlzinPerso : ajoute tous les chants d'une catégorie
   const handleAddCategoryChants = (catName: string) => {
     const idsToAdd = chants
       .filter((c) =>
         c.categories.some(
-          (cat) => cat.trim().toLowerCase() === catName.trim().toLowerCase()
+          (cat) =>
+            cat.trim().toLowerCase() === catName.trim().toLowerCase()
         )
       )
       .map((c) => c.id);
@@ -152,9 +157,57 @@ export default function AdminTemplatesPage() {
     setSelectedChantIds([]);
     setSelectedCategoryFilter(null);
     setChantSearch("");
+    setEditingId(null);
   };
 
-  // ------------------ submit ------------------
+  // ------------------ édition d'un template ------------------
+  const handleEditTemplate = (t: Template) => {
+    setEditingId(t.id);
+    setForm({
+      nom_template: t.nom_template,
+      description: t.description || "",
+      couleur: t.couleur || "",
+      type_papier: t.type_papier || "",
+    });
+    setSelectedChantIds(t.chant_ids || []);
+    setSuccess(null);
+    setError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancelEdit = () => {
+    resetForm();
+  };
+
+  // ------------------ suppression d'un template ------------------
+  const handleDeleteTemplate = async (id: number) => {
+    if (!window.confirm("Supprimer ce template ?")) return;
+
+    try {
+      setError(null);
+      setSuccess(null);
+
+      const res = await fetch(apiUrl(`/api/templates-chansonniers/${id}/`), {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Erreur lors de la suppression du template.");
+      }
+
+      setTemplates((prev) => prev.filter((t) => t.id !== id));
+
+      if (editingId === id) {
+        resetForm();
+      }
+
+      setSuccess("Template supprimé.");
+    } catch (e: any) {
+      setError(e.message || "Erreur lors de la suppression du template.");
+    }
+  };
+
+  // ------------------ submit (création / édition) ------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -174,27 +227,51 @@ export default function AdminTemplatesPage() {
         chant_ids: selectedChantIds,
       };
 
-      const res = await fetch(apiUrl("/api/templates-chansonniers/"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      let res: Response;
+
+      if (isEditMode && editingId !== null) {
+        res = await fetch(
+          apiUrl(`/api/templates-chansonniers/${editingId}/`),
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+      } else {
+        res = await fetch(apiUrl("/api/templates-chansonniers/"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
 
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(
-          `Erreur lors de la création du template. ${txt || ""}`.trim()
+          `Erreur lors de l'enregistrement du template. ${txt || ""}`.trim()
         );
       }
 
-      const created: Template = await res.json();
-      setTemplates((prev) => [created, ...prev]);
+      const saved: Template = await res.json();
+
+      if (isEditMode && editingId !== null) {
+        setTemplates((prev) =>
+          prev.map((t) => (t.id === editingId ? saved : t))
+        );
+        setSuccess("Template mis à jour avec succès.");
+      } else {
+        setTemplates((prev) => [saved, ...prev]);
+        setSuccess("Template créé avec succès.");
+      }
+
       resetForm();
-      setSuccess("Template créé avec succès.");
     } catch (e: any) {
-      setError(e.message || "Erreur lors de la création du template.");
+      setError(e.message || "Erreur lors de l'enregistrement du template.");
     } finally {
       setSaving(false);
     }
@@ -204,7 +281,9 @@ export default function AdminTemplatesPage() {
   return (
     <div className="w-full max-w-5xl space-y-6">
       <h1 className="text-xl font-bold text-mauve sm:text-2xl">
-        Création de template de chansonnier
+        {isEditMode
+          ? "Modifier un template de chansonnier"
+          : "Création de template de chansonnier"}
       </h1>
 
       <form
@@ -403,13 +482,31 @@ export default function AdminTemplatesPage() {
           </div>
         </section>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 disabled:opacity-60"
-        >
-          {saving ? "Enregistrement..." : "Créer le template"}
-        </button>
+        <div className="flex gap-3 justify-end">
+          {isEditMode && (
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="btn btn-secondary text-sm"
+            >
+              Annuler la modification
+            </button>
+          )}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 disabled:opacity-60"
+          >
+            {saving
+              ? isEditMode
+                ? "Mise à jour..."
+                : "Création..."
+              : isEditMode
+              ? "Mettre à jour le template"
+              : "Créer le template"}
+          </button>
+        </div>
       </form>
 
       {/* liste des templates existants */}
@@ -427,19 +524,38 @@ export default function AdminTemplatesPage() {
             {templates.map((t) => (
               <li
                 key={t.id}
-                className="rounded-md border border-gray-100 px-3 py-2"
+                className="flex flex-col gap-2 rounded-md border border-gray-100 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
               >
-                <p className="font-semibold text-mauve">{t.nom_template}</p>
-                {t.description && (
-                  <p className="text-gray-600 text-xs sm:text-sm">
-                    {t.description}
+                <div>
+                  <p className="font-semibold text-mauve">{t.nom_template}</p>
+                  {t.description && (
+                    <p className="text-gray-600 text-xs sm:text-sm">
+                      {t.description}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    Papier : {t.type_papier || "-"} • Couleur :{" "}
+                    {t.couleur || "-"} • Chants :{" "}
+                    {t.chant_ids?.length ?? 0}
                   </p>
-                )}
-                <p className="text-xs text-gray-500">
-                  Papier : {t.type_papier || "-"} • Couleur :{" "}
-                  {t.couleur || "-"} • Chants :{" "}
-                  {t.chant_ids?.length ?? 0}
-                </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleEditTemplate(t)}
+                    className="rounded-md bg-purple-100 px-3 py-1 text-xs font-semibold text-mauve hover:bg-purple-200"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteTemplate(t.id)}
+                    className="rounded-md bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-700"
+                  >
+                    Supprimer
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

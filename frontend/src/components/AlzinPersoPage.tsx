@@ -7,6 +7,7 @@ const logoSrc = LogoUrl.split("?")[0];
 type TemplateChansonnier = {
   id: number;
   nom_template: string;
+  chant_ids?: number[]; 
 };
 
 type Chant = {
@@ -394,20 +395,35 @@ export default function AlzinPersoPage() {
               </label>
               <select
                 value={selectedTemplateId}
-                onChange={(e) =>
-                  setSelectedTemplateId(
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
-              >
-                <option value="">Blanc (par défaut)</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.nom_template}
-                  </option>
-                ))}
-              </select>
+                onChange={(e) => {
+    const value = e.target.value;
+    const newId = value ? Number(value) : "";
+
+    setSelectedTemplateId(newId);
+
+    // si un template est sélectionné, on applique ses chants
+    if (value) {
+      const tpl = templates.find((t) => t.id === Number(value));
+      if (tpl && Array.isArray(tpl.chant_ids)) {
+        setSelectedChantIds(tpl.chant_ids);
+      } else {
+        // pas de chants liés au template → on vide la sélection
+        setSelectedChantIds([]);
+      }
+    } else {
+      // "Blanc (par défaut)" : aucun template → pas de sélection automatique
+      setSelectedChantIds([]);
+    }
+  }}
+  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+>
+  <option value="">Blanc (par défaut)</option>
+  {templates.map((t) => (
+    <option key={t.id} value={t.id}>
+      {t.nom_template}
+    </option>
+  ))}
+</select>
             </div>
           </div>
 

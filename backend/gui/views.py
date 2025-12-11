@@ -1983,6 +1983,7 @@ def chansonnier_perso_detail_api(request, chansonnier_id):
 
 
 @csrf_exempt
+@csrf_exempt
 def templates_chansonniers_api(request):
     # -------- GET : liste des templates avec les ids des chants ----------
     if request.method == "GET":
@@ -2008,6 +2009,56 @@ def templates_chansonniers_api(request):
             )
 
         return JsonResponse(data, safe=False)
+
+    # -------- POST : création d'un template + association de chants -------
+    if request.method == "POST":
+        try:
+            body_raw = request.body.decode("utf-8")
+            body = json.loads(body_raw) if body_raw else {}
+        except Exception:
+            return JsonResponse({"error": "JSON invalide"}, status=400)
+
+        nom_template = (body.get("nom_template") or "").strip()
+        description = (body.get("description") or "").strip()
+        couleur = (body.get("couleur") or "").strip()
+        type_papier = (body.get("type_papier") or "").strip()
+        chant_ids = body.get("chant_ids") or []
+
+        if not nom_template:
+            return JsonResponse({"error": "nom_template requis"}, status=400)
+
+        t = template_chansonnier.objects.create(
+            nom_template=nom_template,
+            description=description,
+            couleur=couleur,
+            type_papier=type_papier,
+        )
+
+        # Lier les chants au template via la table existante
+        for cid in chant_ids:
+            try:
+                contenir_chant_template.objects.create(
+                    chant_id=cid,
+                    template_chansonnier=t,
+                )
+            except Exception:
+                # on ignore les doublons / ids foireux
+                continue
+
+        return JsonResponse(
+            {
+                "id": t.id,
+                "nom_template": t.nom_template,
+                "description": t.description,
+                "couleur": t.couleur,
+                "type_papier": t.type_papier,
+                "chant_ids": chant_ids,
+            },
+            status=201,
+        )
+
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
 
     # -------- POST : création d'un template + association de chants -------
     if request.method == "POST":
@@ -2057,6 +2108,87 @@ def templates_chansonniers_api(request):
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
+
+@csrf_exempt
+@require_http_methods(["GET", "PUT", "PATCH", "DELETE"])
+def template_chansonnier_detail_api(request, template_id):
+    try:
+        t = template_chansonnier.objects.get(id=template_id)
+    except template_chansonnier.DoesNotExist:
+        return JsonResponse({"error": "Template introuvable"}, status=404)
+
+    # --------- DELETE : suppression du template ----------
+    if request.method == "DELETE":
+        # les liens contenir_chant_template sont supprimés via la FK
+        t.delete()
+        return JsonResponse({"success": True})
+
+    # --------- GET : détail d'un template ----------
+    if request.method == "GET":
+        chant_ids = list(
+            contenir_chant_template.objects.filter(
+                template_chansonnier=t
+            ).values_list("chant_id", flat=True)
+        )
+        return JsonResponse(
+            {
+                "id": t.id,
+                "nom_template": t.nom_template,
+                "description": t.description,
+                "couleur": t.couleur,
+                "type_papier": t.type_papier,
+                "chant_ids": chant_ids,
+            }
+        )
+
+    # --------- PUT / PATCH : mise à jour ----------
+    try:
+        body_raw = request.body.decode("utf-8")
+        body = json.loads(body_raw) if body_raw else {}
+    except Exception:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    # mise à jour des champs texte
+    if "nom_template" in body or request.method == "PUT":
+        t.nom_template = (body.get("nom_template", t.nom_template) or "").strip()
+    if "description" in body or request.method == "PUT":
+        t.description = (body.get("description", t.description) or "").strip()
+    if "couleur" in body or request.method == "PUT":
+        t.couleur = (body.get("couleur", t.couleur) or "").strip()
+    if "type_papier" in body or request.method == "PUT":
+        t.type_papier = (body.get("type_papier", t.type_papier) or "").strip()
+
+    t.save()
+
+    # si chant_ids est fourni, on remplace complètement la liste de chants
+    if "chant_ids" in body or request.method == "PUT":
+        chant_ids = body.get("chant_ids") or []
+        contenir_chant_template.objects.filter(template_chansonnier=t).delete()
+        for cid in chant_ids:
+            try:
+                contenir_chant_template.objects.create(
+                    chant_id=cid,
+                    template_chansonnier=t,
+                )
+            except Exception:
+                continue
+
+    final_chant_ids = list(
+        contenir_chant_template.objects.filter(
+            template_chansonnier=t
+        ).values_list("chant_id", flat=True)
+    )
+
+    return JsonResponse(
+        {
+            "id": t.id,
+            "nom_template": t.nom_template,
+            "description": t.description,
+            "couleur": t.couleur,
+            "type_papier": t.type_papier,
+            "chant_ids": final_chant_ids,
+        }
+    )
 
 #----------------------------------------------------------------------------------------
 #                           COMMANDES

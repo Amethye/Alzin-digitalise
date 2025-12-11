@@ -68,7 +68,8 @@ urlpatterns = [
 
     path("commandes-lignes/", views.details_commande_api, name="api_details_commande"),
     path("mes-chansonniers/", views.mes_chansonniers_api, name="api_mes_chansonniers"),
-    
+        path("templates-chansonniers/<int:template_id>/",views.template_chansonnier_detail_api, name="api_template_chansonnier_detail",),
+
     path("evenements/", views.evenements_api, name="api_evenements"),
     path("evenements/<int:id>/", views.evenement_detail_api, name="api_evenement_detail"),
     
