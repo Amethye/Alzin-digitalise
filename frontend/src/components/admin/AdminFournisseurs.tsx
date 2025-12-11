@@ -181,9 +181,9 @@ export default function AdminFournisseurs() {
         </div>
 
         <button
-          type="submit"
+          type="button"
           disabled={saving}
-          className="inline-flex items-center rounded-md bg-bordeau-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-bordeau-700 disabled:opacity-60"
+          className="btn btn-solid"
         >
           {saving ? "Enregistrement..." : "Ajouter"}
         </button>
@@ -279,5 +279,6 @@ export default function AdminFournisseurs() {
         )}
       </div>
     </div>
+
   );
 }
