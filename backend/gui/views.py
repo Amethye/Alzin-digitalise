@@ -428,7 +428,7 @@ def admin_demandes_modification_api(request, demande_id=None):
     if action == "ACCEPTER":
         if demande.statut != "EN_ATTENTE":
             return JsonResponse({"error": "Demande déjà traitée"}, status=400)
-        apply_modification_to_chant(demande)
+        _apply_modification_to_chant(demande)
         demande.statut = "ACCEPTEE"
         demande.justification_refus = None
         demande.date_decision = timezone.now()
@@ -766,9 +766,39 @@ def serialize_demande_audio(request, demande):
 
 
 def serialize_demande_modification(request, demande):
-    data = serialize_demande_chant(request, demande)
-    data["chant_id"] = demande.chant_id
-    data["chant_nom"] = demande.chant.nom_chant
+    """Serialize a modification request without expecting audio tracks."""
+    data = {
+        "id": demande.id,
+        "nom_chant": demande.nom_chant,
+        "auteur": demande.auteur or "",
+        "ville_origine": demande.ville_origine or "",
+        "paroles": demande.paroles or "",
+        "description": demande.description or "",
+        "categories": demande.categories or [],
+        "statut": demande.statut,
+        "justification_refus": demande.justification_refus,
+        "date_creation": demande.date_creation.isoformat(),
+        "date_decision": demande.date_decision.isoformat() if demande.date_decision else None,
+        "utilisateur": {
+            "id": demande.utilisateur_id,
+            "pseudo": demande.utilisateur.pseudo,
+            "email": demande.utilisateur.email,
+        },
+        "illustration_chant_url": _absolute_media_url(
+            request,
+            demande.illustration_chant.url if demande.illustration_chant else None,
+        ),
+        "paroles_pdf_url": _absolute_media_url(
+            request,
+            demande.paroles_pdf.url if demande.paroles_pdf else None,
+        ),
+        "partition_url": _absolute_media_url(
+            request,
+            demande.partition.url if demande.partition else None,
+        ),
+        "chant_id": demande.chant_id,
+        "chant_nom": demande.chant.nom_chant,
+    }
     return data
 
 
