@@ -18,8 +18,19 @@ from django.forms.models import model_to_dict
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.utils import timezone
-from django.db import models, IntegrityError
+from django.db import models, IntegrityError, transaction
 import os
+
+
+from datetime import date
+def parse_iso_date(value):
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
 
 def api_root(request):
     return JsonResponse({
@@ -462,11 +473,37 @@ def logout_api(request):
     return JsonResponse({"success": True})
 
 
+def _cleanup_user_relations(user_obj: utilisateur):
+    """
+    Supprime ou neutralise toutes les relations FK vers l'utilisateur avant la suppression.
+    Utile lorsque la base contient encore des contraintes RESTRICT héritées d'un ancien schéma.
+    """
+    # Relations SET_NULL
+    chant.objects.filter(utilisateur=user_obj).update(utilisateur=None)
+    appartenir.objects.filter(utilisateur=user_obj).update(utilisateur=None)
+    piste_audio.objects.filter(utilisateur=user_obj).update(utilisateur=None)
+
+    # Relations en cascade (on supprime les objets dépendants)
+    demande_chant.objects.filter(utilisateur=user_obj).delete()
+    demande_modification_chant.objects.filter(utilisateur=user_obj).delete()
+    demande_piste_audio.objects.filter(utilisateur=user_obj).delete()
+    noter.objects.filter(utilisateur=user_obj).delete()
+    favoris.objects.filter(utilisateur=user_obj).delete()
+    commentaire.objects.filter(utilisateur=user_obj).delete()
+    chansonnier_perso.objects.filter(utilisateur=user_obj).delete()
+    commande.objects.filter(utilisateur=user_obj).delete()
+    demande_support.objects.filter(utilisateur=user_obj).delete()
+
+
 #------------------------------------------------------------------------
                                 #ADMIN_USER
 #------------------------------------------------------------------------
 @csrf_exempt
 def admin_users_api(request, user_id=None, action=None):
+
+    # Préflight CORS pour les requêtes cross-origin (DELETE/PUT)
+    if request.method == "OPTIONS":
+        return JsonResponse({"ok": True})
 
     #GET /api/admin/users/
     if request.method == "GET" and user_id is None:
@@ -484,12 +521,14 @@ def admin_users_api(request, user_id=None, action=None):
             })
         return JsonResponse(data, safe=False)
 
+    if user_id is None:
+        return JsonResponse({"error": "Paramètre 'user_id' requis"}, status=400)
+
     # On cherche l'utilisateur si user_id est fourni
-    if user_id is not None:
-        try:
-            user = utilisateur.objects.get(id=user_id)
-        except utilisateur.DoesNotExist:
-            return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
+    try:
+        user = utilisateur.objects.get(id=user_id)
+    except utilisateur.DoesNotExist:
+        return JsonResponse({"error": "Utilisateur introuvable"}, status=404)
 
     #PUT /api/admin/users/<id>/role/
     if request.method == "PUT" and action == "role":
@@ -528,7 +567,15 @@ def admin_users_api(request, user_id=None, action=None):
 
     #DELETE /api/admin/users/<id>/
     if request.method == "DELETE":
-        user.delete()
+        try:
+            with transaction.atomic():
+                _cleanup_user_relations(user)
+                user.delete()
+        except IntegrityError:
+            return JsonResponse(
+                {"error": "Impossible de supprimer cet utilisateur (données liées)."},
+                status=400,
+            )
         return JsonResponse({"success": True})
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
@@ -2154,8 +2201,12 @@ def evenements_api(request):
     except JSONDecodeError:
         return JsonResponse({"error": "JSON invalide"}, status=400)
 
+    parsed_date = parse_iso_date(body.get("date_evenement"))
+    if body.get("date_evenement") and parsed_date is None:
+        return JsonResponse({"error": "date_evenement invalide"}, status=400)
+
     e = evenement.objects.create(
-        date_evenement=body.get("date_evenement"),  # à parser côté front si besoin
+        date_evenement=parsed_date,
         lieu=body.get("lieu", ""),
         nom_evenement=body.get("nom_evenement", ""),
         annonce_fil_actu=body.get("annonce_fil_actu", ""),
@@ -2210,7 +2261,11 @@ def evenement_detail_api(request, id):
     e.lieu = body.get("lieu", e.lieu)
     e.annonce_fil_actu = body.get("annonce_fil_actu", e.annonce_fil_actu)
     e.histoire = body.get("histoire", e.histoire)
-    # à toi de décider comment tu gères date_evenement (string -> date)
+    new_date = parse_iso_date(body.get("date_evenement"))
+    if body.get("date_evenement") and new_date is None:
+        return JsonResponse({"error": "date_evenement invalide"}, status=400)
+    if new_date is not None:
+        e.date_evenement = new_date
     e.save()
 
     data = {
