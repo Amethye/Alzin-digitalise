@@ -73,7 +73,7 @@ export default function AdminSupportTab() {
         setError(null);
 
         // Vérifier le rôle + charge utilisateur
-        const resMe = await fetch("http://127.0.0.1:8000/api/me/", { headers });
+        const resMe = await fetch("/api/me/", { headers });
         if (!resMe.ok) {
           throw new Error("Impossible de charger ton profil.");
         }
@@ -92,10 +92,8 @@ export default function AdminSupportTab() {
 
         // Charger les tickets
         const url = statusFilter
-          ? `http://127.0.0.1:8000/api/admin/support/?status=${encodeURIComponent(
-              statusFilter
-            )}`
-          : "http://127.0.0.1:8000/api/admin/support/";
+          ? `/api/admin/support/?status=${encodeURIComponent(statusFilter)}`
+          : "/api/admin/support/";
 
         const resTickets = await fetch(url, { headers });
         if (!resTickets.ok) {
@@ -125,7 +123,7 @@ export default function AdminSupportTab() {
       setLoadingDetail(true);
       setError(null);
 
-      const res = await fetch(`http://127.0.0.1:8000/api/admin/support/${id}/`, {
+      const res = await fetch(`/api/admin/support/${id}/`, {
         headers,
       });
 
@@ -155,7 +153,7 @@ export default function AdminSupportTab() {
       setError(null);
 
       const res = await fetch(
-        `http://127.0.0.1:8000/api/admin/support/${selectedTicket.id}/`,
+        `/api/admin/support/${selectedTicket.id}/`,
         {
           method: "PATCH",
           headers,

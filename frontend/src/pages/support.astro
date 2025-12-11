@@ -1,8 +1,10 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import SupportPage from "../components/SupportPage";
+import Layout from "@layouts/Layout.astro";
+import SupportPage from "@components/SupportPage";
 ---
 
 <Layout title="Support">
-  <SupportPage client:load />
+  <main class="flex min-h-[70vh] flex-1 items-start justify-center px-4 py-10 sm:px-6">
+    <SupportPage client:load />
+  </main>
 </Layout>

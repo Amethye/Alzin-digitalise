@@ -40,7 +40,7 @@ export default function SupportPage() {
         setLoading(true);
         setError(null);
 
-        const resMe = await fetch("http://127.0.0.1:8000/api/me/", {
+        const resMe = await fetch("/api/me/", {
           headers,
         });
 
@@ -99,7 +99,7 @@ export default function SupportPage() {
     try {
       setSending(true);
 
-      const res = await fetch("http://127.0.0.1:8000/api/support/", {
+      const res = await fetch("/api/support/", {
         method: "POST",
         headers: {
           "X-User-Email": email,

@@ -303,6 +303,16 @@ export default function Nav() {
                     Mes commandes
                   </a>
 
+                  <a
+                    href="/support"
+                    onClick={() => setShowDesktopMenu(false)}
+                    className="block px-4 py-2 text-sm text-mauve hover:bg-purple-50"
+                  >
+                    Support
+                  </a>
+                  
+                  
+
                   <button
                     onClick={handleLogout}
                     className="btn btn-danger w-full justify-start"
