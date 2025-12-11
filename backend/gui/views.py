@@ -496,10 +496,7 @@ def logout_api(request):
 
 
 def _cleanup_user_relations(user_obj: utilisateur):
-    """
-    Supprime ou neutralise toutes les relations FK vers l'utilisateur avant la suppression.
-    Utile lorsque la base contient encore des contraintes RESTRICT héritées d'un ancien schéma.
-    """
+
     # Relations SET_NULL
     chant.objects.filter(utilisateur=user_obj).update(utilisateur=None)
     appartenir.objects.filter(utilisateur=user_obj).update(utilisateur=None)
@@ -622,11 +619,40 @@ def _absolute_media_url(request, relative_url: str | None):
         return relative_url
 
 
+def _resolve_demande_categorie(form_data):
+    """
+    Retourne l'objet catégorie correspondant aux données reçues (id ou nom).
+    """
+    if not form_data:
+        return None
+
+    cat_id = form_data.get("categorie_id")
+    if cat_id:
+        try:
+            return categorie.objects.get(id=int(cat_id))
+        except (ValueError, categorie.DoesNotExist):
+            pass
+
+    if hasattr(form_data, "getlist"):
+        for cat_name in form_data.getlist("categories"):
+            if not cat_name:
+                continue
+            try:
+                return categorie.objects.get(nom_categorie=cat_name)
+            except categorie.DoesNotExist:
+                continue
+
+    cat_name = (form_data.get("categorie") or form_data.get("nom_categorie") or "").strip()
+    if cat_name:
+        try:
+            return categorie.objects.get(nom_categorie=cat_name)
+        except categorie.DoesNotExist:
+            pass
+
+    return None
+
+
 def serialize_chant(request, c):
-    """
-    Sérialisation complète d'un chant,
-    avec URLs absolues et statistiques sur les pistes audio.
-    """
 
     # ----------- Construction du JSON principal -----------
     data = {
@@ -702,7 +728,6 @@ def _require_authenticated_user(request):
 
 
 def serialize_demande_chant(request, demande):
-    """Serialize a chant request to expose to front (admin/user)."""
     return {
         "id": demande.id,
         "nom_chant": demande.nom_chant,
@@ -710,7 +735,15 @@ def serialize_demande_chant(request, demande):
         "ville_origine": demande.ville_origine or "",
         "paroles": demande.paroles or "",
         "description": demande.description or "",
-        "categories": demande.categories or [],
+        "categories": (
+            [demande.categorie.nom_categorie]
+            if demande.categorie
+            else []
+        ),
+        "categorie": {
+            "id": demande.categorie_id,
+            "nom_categorie": demande.categorie.nom_categorie,
+        } if demande.categorie else None,
         "statut": demande.statut,
         "justification_refus": demande.justification_refus,
         "date_creation": demande.date_creation.isoformat(),
@@ -743,7 +776,6 @@ def serialize_demande_chant(request, demande):
 
 
 def serialize_demande_audio(request, demande):
-    """Serialize an audio-track request."""
     return {
         "id": demande.id,
         "statut": demande.statut,
@@ -766,7 +798,6 @@ def serialize_demande_audio(request, demande):
 
 
 def serialize_demande_modification(request, demande):
-    """Serialize a modification request without expecting audio tracks."""
     data = {
         "id": demande.id,
         "nom_chant": demande.nom_chant,
@@ -840,17 +871,12 @@ def _create_chant_from_demande(demande):
 
     new_chant.save()
 
-    categories_list = demande.categories or []
-    if not categories_list:
-        categories_list = ["Autre"]
-
-    for cat_name in categories_list:
-        try:
-            cat_obj = categorie.objects.get(nom_categorie=cat_name)
-        except categorie.DoesNotExist:
-            continue
+    demande_cat = demande.categorie
+    if not demande_cat:
+        demande_cat = categorie.objects.filter(nom_categorie="Autre").first()
+    if demande_cat:
         appartenir.objects.create(
-            categorie=cat_obj,
+            categorie=demande_cat,
             chant=new_chant,
             utilisateur=demande.utilisateur,
         )
@@ -922,7 +948,6 @@ def _apply_modification_to_chant(demande):
 
 
 def delete_file_field(instance, field_name):
-    """Supprime physiquement un fichier et réinitialise le champ."""
     field = getattr(instance, field_name, None)
     if field and hasattr(field, "path") and os.path.exists(field.path):
         os.remove(field.path)
@@ -939,7 +964,7 @@ def demandes_chants_api(request, demande_id=None):
 
     if demande_id:
         try:
-            demande = demande_chant.objects.select_related("utilisateur").prefetch_related("pistes_audio").get(
+            demande = demande_chant.objects.select_related("utilisateur", "categorie").prefetch_related("pistes_audio").get(
                 id=demande_id, utilisateur=user
             )
         except demande_chant.DoesNotExist:
@@ -951,7 +976,13 @@ def demandes_chants_api(request, demande_id=None):
         return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
     if request.method == "GET":
-        qs = demande_chant.objects.filter(utilisateur=user).prefetch_related("pistes_audio").order_by("-date_creation")
+        qs = (
+            demande_chant.objects
+            .filter(utilisateur=user)
+            .select_related("categorie")
+            .prefetch_related("pistes_audio")
+            .order_by("-date_creation")
+        )
         data = [serialize_demande_chant(request, d) for d in qs]
         return JsonResponse(data, safe=False)
 
@@ -969,8 +1000,7 @@ def demandes_chants_api(request, demande_id=None):
     if demande_chant.objects.filter(nom_chant__iexact=nom_chant, statut="EN_ATTENTE").exists():
         return JsonResponse({"error": "Une demande avec ce nom est déjà en attente."}, status=409)
 
-    categories = form_data.getlist("categories")
-    categories = [c for c in categories if c]
+    categorie_obj = _resolve_demande_categorie(form_data)
 
     demande = demande_chant.objects.create(
         utilisateur=user,
@@ -979,7 +1009,7 @@ def demandes_chants_api(request, demande_id=None):
         ville_origine=form_data.get("ville_origine") or "",
         paroles=form_data.get("paroles") or "",
         description=form_data.get("description") or "",
-        categories=categories,
+        categorie=categorie_obj,
     )
 
     if form_files.get("illustration_chant"):

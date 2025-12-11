@@ -337,11 +337,11 @@ export default function ChantPage({ id }: { id: number }) {
     chant.categories && chant.categories.length > 0 ? chant.categories : ["Autre"];
 
   return (
-    <div className="px-10 py-10 flex flex-col gap-8 max-w-4xl mx-auto font-sans">
+    <div className="px-10 py-10 flex flex-col gap-8 w-full font-sans">
 
       {/* Titre + favori */}
       <div className="flex justify-between items-start">
-        <h1 className="text-4xl font-bold text-mauve">{chant.nom_chant}</h1>
+        <h1 className="text-4xl font-bold text-bordeau">{chant.nom_chant}</h1>
 
         {USER_ID && (
           <FavoriButton chantId={chant.id} USER_ID={USER_ID} size={40} />
@@ -350,10 +350,10 @@ export default function ChantPage({ id }: { id: number }) {
 
       {/* Catégories */}
       <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Catégories</p>
+        <p className="text-sm font-semibold text-bordeau mb-1">Catégories</p>
         <div className="flex flex-wrap gap-2">
           {displayCategories.map((cat) => (
-            <span key={cat} className="px-3 py-1 bg-mauve/10 text-mauve rounded-full text-sm">
+            <span key={cat} className="px-3 py-1 bg-bordeau/10 text-bordeau rounded-full text-sm">
               {cat}
             </span>
           ))}
@@ -362,8 +362,8 @@ export default function ChantPage({ id }: { id: number }) {
 
       {/* Paroles */}
       <div>
-        <h2 className="text-2xl font-semibold text-mauve mb-3">Paroles</h2>
-        <pre className="whitespace-pre-wrap bg-purple-50 p-4 rounded-xl border border-mauve/20 font-sans tracking-wide leading-relaxed">
+        <h2 className="text-2xl font-semibold text-bordeau mb-3">Paroles</h2>
+        <pre className="whitespace-pre-wrap bg-bordeau/10 p-4 rounded-xl border border-bordeau/20 font-sans tracking-wide leading-relaxed">
           {chant.paroles || "Aucune parole disponible."}
         </pre>
       </div>
@@ -371,7 +371,7 @@ export default function ChantPage({ id }: { id: number }) {
       {/* Audio */}
       <div>
         <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-2xl font-semibold text-mauve">Audio</h2>
+          <h2 className="text-2xl font-semibold text-bordeau">Audio</h2>
           {USER_ID ? (
           <button
             onClick={() => {
@@ -401,7 +401,7 @@ export default function ChantPage({ id }: { id: number }) {
         </audio>
 
                 <div className="flex items-center gap-3 text-gray-700 text-sm mb-1">
-                  <span className="font-semibold text-mauve text-lg">Note :</span>
+                  <span className="font-semibold text-bordeau text-lg">Note :</span>
 
                   <span className="text-lg font-bold">
                     {p.note_moyenne?.toFixed(1) || "0.0"}★
@@ -421,7 +421,7 @@ export default function ChantPage({ id }: { id: number }) {
 
                 {USER_ID && (
                   <div>
-                    <p className="text-sm text-mauve font-semibold mb-1">
+                    <p className="text-sm text-bordeau font-semibold mb-1">
                       Noter cette piste :
                     </p>
                     <RatingStars
@@ -441,7 +441,7 @@ export default function ChantPage({ id }: { id: number }) {
         )}
 
         {showAudioRequestForm && USER_ID && (
-          <div className="mt-4 rounded-2xl border border-mauve/30 bg-white p-4 shadow-sm space-y-3">
+          <div className="mt-4 rounded-2xl border border-bordeau/30 bg-white p-4 shadow-sm space-y-3">
             <p className="text-sm text-gray-600">
               Ajoute un fichier MP3 pour proposer une nouvelle piste. L'équipe valide chaque demande.
             </p>
@@ -504,26 +504,26 @@ export default function ChantPage({ id }: { id: number }) {
 
       {/* Ville */}
       <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Auteur</p>
+        <p className="text-sm font-semibold text-bordeau mb-1">Auteur</p>
         <p className="text-gray-700">{chant.auteur || "Aucun auteur identifié"}</p>
       </div>
 
       {/* Ville */}
       <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Ville d'origine</p>
+        <p className="text-sm font-semibold text-bordeau mb-1">Ville d'origine</p>
         <p className="text-gray-700">{chant.ville_origine || "Aucune ville d'origine identifiée"}</p>
       </div>
 
 
       {/* Description */}
       <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Description</p>
+        <p className="text-sm font-semibold text-bordeau mb-1">Description</p>
         <p className="text-gray-700">{chant.description || "Aucune description"}</p>
       </div>
 
       {/* Illustration */}
       <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Illustration</p>
+        <p className="text-sm font-semibold text-bordeau mb-1">Illustration</p>
         {resolveMediaUrl(chant.illustration_chant_url) ? (
         <img
           src={resolveMediaUrl(chant.illustration_chant_url)}
@@ -536,7 +536,7 @@ export default function ChantPage({ id }: { id: number }) {
 
       {/* PDF */}
       <div>
-        <p className="text-sm font-semibold text-mauve mb-1">PDF des paroles</p>
+        <p className="text-sm font-semibold text-bordeau mb-1">PDF des paroles</p>
         {resolveMediaUrl(chant.paroles_pdf_url) ? (
           <a
             href={resolveMediaUrl(chant.paroles_pdf_url)}
@@ -553,7 +553,7 @@ export default function ChantPage({ id }: { id: number }) {
 
       {/* Partition */}
       <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Partition</p>
+        <p className="text-sm font-semibold text-bordeau mb-1">Partition</p>
         {resolveMediaUrl(chant.partition_url) ? (
           <a
             href={resolveMediaUrl(chant.partition_url)}
@@ -570,7 +570,7 @@ export default function ChantPage({ id }: { id: number }) {
       
       {/* Ajouté par */}
       <div>
-        <p className="text-sm font-semibold text-mauve mb-1">Chant ajouté par</p>
+        <p className="text-sm font-semibold text-bordeau mb-1">Chant ajouté par</p>
         <p className="text-gray-700">{chant.utilisateur_pseudo || "Un membre"}</p>
       </div>
 
@@ -606,43 +606,43 @@ export default function ChantPage({ id }: { id: number }) {
       </div>
 
       {showEditRequestForm && USER_ID && (
-        <section className="rounded-2xl border border-mauve/30 bg-white p-6 shadow flex flex-col gap-6">
-          <h2 className="text-xl font-semibold text-mauve">Formulaire de modification</h2>
+        <section className="rounded-2xl border border-bordeau/30 bg-white p-6 shadow flex flex-col gap-6">
+          <h2 className="text-xl font-semibold text-bordeau">Formulaire de modification</h2>
           <div className="grid gap-4">
             <input
               name="nom_chant"
               value={editForm.nom_chant}
               onChange={handleEditChange}
               placeholder="Nom du chant"
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau"
             />
             <input
               name="auteur"
               value={editForm.auteur}
               onChange={handleEditChange}
               placeholder="Auteur"
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau"
             />
             <input
               name="ville_origine"
               value={editForm.ville_origine}
               onChange={handleEditChange}
               placeholder="Ville d'origine"
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau"
             />
             <textarea
               name="paroles"
               value={editForm.paroles}
               onChange={handleEditChange}
               placeholder="Paroles"
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve h-28"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau h-28"
             />
             <textarea
               name="description"
               value={editForm.description}
               onChange={handleEditChange}
               placeholder="Description"
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve h-24"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau h-24"
             />
           </div>
 
@@ -654,7 +654,7 @@ export default function ChantPage({ id }: { id: number }) {
                   key={cat}
                   className={`px-3 py-1 border rounded-full cursor-pointer ${
                     editSelectedCats.includes(cat)
-                      ? "bg-mauve text-white border-mauve"
+                      ? "bg-bordeau text-white border-bordeau"
                       : "border-gray-300"
                   }`}
                 >

@@ -46,7 +46,7 @@ export default function EvenementsTimeline() {
   return (
     <div className="relative mx-auto max-w-3xl">
       {/* ligne verticale */}
-      <div className="absolute left-4 top-0 h-full w-px bg-mauve/30 md:left-1/2" />
+      <div className="absolute left-4 top-0 h-full w-px bg-bordeau/30 md:left-1/2" />
 
       <div className="space-y-8">
         {evenements.map((e, index) => {
@@ -65,15 +65,15 @@ export default function EvenementsTimeline() {
               className="relative flex flex-col md:flex-row"
             >
               {/* point sur la ligne */}
-              <div className="absolute left-4 top-2 h-3 w-3 -translate-x-1/2 rounded-full bg-mauve md:left-1/2" />
+              <div className="absolute left-4 top-2 h-3 w-3 -translate-x-1/2 rounded-full bg-bordeau md:left-1/2" />
 
               <div
                 className={`mt-0 w-full md:w-1/2 ${
                   isLeft ? "md:pr-8 md:text-right" : "md:ml-auto md:pl-8"
                 }`}
               >
-                <div className="ml-10 rounded-xl bg-white p-4 shadow md:ml-0">
-                  <p className="text-xs font-semibold uppercase text-mauve">
+                <div className="ml-10 rounded-xl bg-white border border-bordeau/30 p-4 shadow md:ml-0">
+                  <p className="text-xs font-semibold uppercase text-bordeau">
                     {dateLabel} — {e.lieu}
                   </p>
                   <h3 className="mt-1 text-lg font-bold text-gray-900">
@@ -88,7 +88,7 @@ export default function EvenementsTimeline() {
 
                   <a
                     href={`/evenements/${e.id}`}
-                    className="mt-2 inline-flex items-center rounded-full border border-mauve px-3 py-1 text-xs font-semibold text-mauve hover:bg-mauve/10"
+                    className="mt-2 inline-flex items-center rounded-full border border-bordeau px-3 py-1 text-xs font-semibold text-bordeau hover:bg-bordeau/10"
                   >
                     Voir l’évènement
                   </a>

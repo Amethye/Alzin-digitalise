@@ -130,7 +130,7 @@ export default function Register({ next = "/" }: SignupFormProps) {
 
   return (
     <div className="w-full max-w-md rounded-xl bg-white px-5 py-6 shadow-lg sm:px-8">
-      <h1 className="mb-2 text-xl font-semibold text-mauve sm:text-2xl">Inscription</h1>
+      <h1 className="mb-2 text-xl font-semibold text-bordeau sm:text-2xl">Inscription</h1>
 
       <form onSubmit={handleSubmit} className="stack" noValidate>
         {["nom","prenom","email","pseudo","ville"].map((field) => (
@@ -141,7 +141,7 @@ export default function Register({ next = "/" }: SignupFormProps) {
               name={field}
               value={(form as any)[field]}
               onChange={handleChange}
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau w-full"
             />
           </div>
         ))}
@@ -152,7 +152,7 @@ export default function Register({ next = "/" }: SignupFormProps) {
           name="password"
           value={form.password}
           onChange={handleChange}
-          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"
+          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau w-full"
         />
 
         <label className="font-semibold">Confirmer le mot de passe</label>
@@ -161,7 +161,7 @@ export default function Register({ next = "/" }: SignupFormProps) {
           name="password2"
           value={form.password2}
           onChange={handleChange}
-          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"
+          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau w-full"
         />
 
         <button type="submit" className="btn btn-solid mt-4 w-full">

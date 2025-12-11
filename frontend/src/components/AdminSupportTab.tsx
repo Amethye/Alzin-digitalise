@@ -212,13 +212,13 @@ export default function AdminSupportTab() {
       {/* Liste des tickets */}
       <section className="w-full lg:w-1/2 lg:border-r lg:border-gray-200 lg:pr-4">
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold text-mauve sm:text-xl">
+          <h2 className="text-lg font-semibold text-bordeau sm:text-xl">
             Demandes de support
           </h2>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:w-48 sm:text-base"
+            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:w-48 sm:text-base"
           >
             <option value="">Tous les statuts</option>
             <option value="new">Nouvelles</option>
@@ -238,7 +238,7 @@ export default function AdminSupportTab() {
                 key={t.id}
                 className={`cursor-pointer rounded-lg border px-3 py-2 text-sm shadow-sm transition hover:bg-gray-50 sm:text-base ${
                   selectedTicket?.id === t.id
-                    ? "border-mauve bg-mauve/5"
+                    ? "border-bordeau bg-bordeau/5"
                     : "border-gray-200"
                 }`}
                 onClick={() => handleSelectTicket(t.id)}
@@ -255,7 +255,7 @@ export default function AdminSupportTab() {
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                       t.status === "new"
-                        ? "bg-purple-100 text-purple-800"
+                        ? "bg-bordeau-100 text-bordeau-800"
                         : t.status === "in_progress"
                         ? "bg-amber-100 text-amber-800"
                         : "bg-emerald-100 text-emerald-800"
@@ -298,7 +298,7 @@ export default function AdminSupportTab() {
           <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 sm:px-4 sm:py-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 className="text-base font-semibold text-mauve sm:text-lg">
+                <h3 className="text-base font-semibold text-bordeau sm:text-lg">
                   {selectedTicket.objet}
                 </h3>
                 <p className="text-xs text-gray-500 sm:text-sm">
@@ -310,7 +310,7 @@ export default function AdminSupportTab() {
                 value={selectedTicket.status}
                 onChange={(e) => handleChangeStatus(e.target.value)}
                 disabled={updating}
-                className="rounded-lg border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-mauve sm:text-sm"
+                className="rounded-lg border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-sm"
               >
                 <option value="new">Nouvelle</option>
                 <option value="in_progress">En cours</option>
@@ -332,7 +332,7 @@ export default function AdminSupportTab() {
                 <h4 className="mb-1 text-xs font-semibold text-gray-700 sm:text-sm">
                   Pièces jointes
                 </h4>
-                <ul className="list-inside list-disc text-xs text-mauve sm:text-sm">
+                <ul className="list-inside list-disc text-xs text-bordeau sm:text-sm">
                   {selectedTicket.attachments.map((att) =>
                     att.url ? (
                       <li key={att.id}>
@@ -340,7 +340,7 @@ export default function AdminSupportTab() {
                           href={att.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="underline hover:text-purple-800"
+                          className="underline hover:text-bordeau-800"
                         >
                           {att.filename}
                         </a>

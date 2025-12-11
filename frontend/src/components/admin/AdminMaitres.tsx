@@ -86,9 +86,9 @@ export default function AdminMaitres() {
   };
 
   return (
-    <section className="mx-auto w-full max-w-xl rounded-xl border border-mauve/30 bg-white px-6 py-6 shadow-md sm:px-7 sm:py-7">
+    <section className="mx-auto w-full max-w-xl rounded-xl border border-bordeau/30 bg-white px-6 py-6 shadow-md sm:px-7 sm:py-7">
       
-      <h1 className="mb-2 text-xl font-bold text-mauve sm:text-2xl">
+      <h1 className="mb-2 text-xl font-bold text-bordeau sm:text-2xl">
         Maîtres de chants
       </h1>
 
@@ -122,7 +122,7 @@ export default function AdminMaitres() {
             className="
               mt-2 w-full rounded-lg border border-gray-300 
               px-3 py-3 text-sm shadow-sm
-              focus:border-mauve focus:outline-none focus:ring-2 focus:ring-mauve
+              focus:border-bordeau focus:outline-none focus:ring-2 focus:ring-bordeau
             "
             placeholder="Ex : Prénom Nom"
             value={maitresText}

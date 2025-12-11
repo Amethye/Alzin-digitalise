@@ -113,19 +113,19 @@ export default function EvenementsList() {
     <div className="w-full max-w-5xl mx-auto space-y-10">
       {upcoming.length > 0 && (
         <section>
-          <h2 className="mb-4 text-2xl font-bold text-mauve">À venir</h2>
+          <h2 className="mb-4 text-2xl font-bold text-bordeau">À venir</h2>
           <div className="space-y-4">
             {upcoming.map((e) => (
               <a
                 key={e.id}
                 href={`/evenements/${e.id}`}
-                className="block rounded-xl border border-mauve/30 bg-white p-4 shadow hover:shadow-md transition"
+                className="block rounded-xl border border-bordeau/30 bg-white p-4 shadow hover:shadow-md transition"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h3 className="text-lg font-semibold text-mauve">
+                  <h3 className="text-lg font-semibold text-bordeau">
                     {e.nom_evenement}
                   </h3>
-                  <span className="inline-flex items-center rounded-full bg-mauve/10 px-3 py-1 text-xs font-medium text-mauve">
+                  <span className="inline-flex items-center rounded-full bg-bordeau/10 px-3 py-1 text-xs font-medium text-bordeau">
                     {formatDate(e.date_evenement)} • {e.lieu}
                   </span>
                 </div>
@@ -136,7 +136,7 @@ export default function EvenementsList() {
 
                 {chantsByEvent[e.id]?.length ? (
                   <div className="mt-2 space-y-1">
-                    <p className="text-sm font-semibold text-mauve">Chants prévus :</p>
+                    <p className="text-sm font-semibold text-bordeau">Chants prévus :</p>
                     <ul className="list-disc list-inside text-sm text-gray-700">
                       {chantsByEvent[e.id].map((c) => (
                         <li key={c.id}>{c.nom}</li>
@@ -147,7 +147,7 @@ export default function EvenementsList() {
 
                 {e.histoire.trim() !== "" && (
                   <details className="mt-1 text-sm text-gray-700">
-                    <summary className="cursor-pointer font-medium text-mauve">
+                    <summary className="cursor-pointer font-medium text-bordeau">
                       Voir le récit
                     </summary>
                     <p className="mt-1 whitespace-pre-line">{e.histoire}</p>
@@ -161,7 +161,7 @@ export default function EvenementsList() {
 
       {past.length > 0 && (
         <section>
-          <h2 className="mb-4 text-2xl font-bold text-mauve">Évènements passés</h2>
+          <h2 className="mb-4 text-2xl font-bold text-bordeau">Évènements passés</h2>
           <div className="space-y-4">
             {past.map((e) => (
               <a

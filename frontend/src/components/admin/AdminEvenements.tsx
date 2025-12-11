@@ -260,8 +260,8 @@ export default function AdminEvenements() {
   return (
     <div className="flex w-full flex-col gap-10 p-8">
       {/* FORMULAIRE */}
-      <section className="w-full rounded-xl border border-mauve/40 bg-white p-8 shadow-md">
-        <h2 className="mb-6 text-2xl font-bold text-mauve">
+      <section className="w-full rounded-xl border border-bordeau/40 bg-white p-8 shadow-md">
+        <h2 className="mb-6 text-2xl font-bold text-bordeau">
           {editingId ? "Modifier un évènement" : "Ajouter un évènement"}
         </h2>
 
@@ -271,7 +271,7 @@ export default function AdminEvenements() {
             placeholder="Nom de l'évènement *"
             value={form.nom_evenement}
             onChange={handleChange}
-            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:ring-2 focus:ring-mauve md:col-span-2"
+            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:ring-2 focus:ring-bordeau md:col-span-2"
           />
 
           <input
@@ -279,7 +279,7 @@ export default function AdminEvenements() {
             name="date_evenement"
             value={form.date_evenement}
             onChange={handleChange}
-            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:ring-2 focus:ring-mauve"
+            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:ring-2 focus:ring-bordeau"
           />
 
           <input
@@ -287,7 +287,7 @@ export default function AdminEvenements() {
             placeholder="Lieu *"
             value={form.lieu}
             onChange={handleChange}
-            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:ring-2 focus:ring-mauve"
+            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:ring-2 focus:ring-bordeau"
           />
 
           <textarea
@@ -295,7 +295,7 @@ export default function AdminEvenements() {
             placeholder="Annonce (fil actu)"
             value={form.annonce_fil_actu}
             onChange={handleChange}
-            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm md:col-span-2 h-24 focus:ring-2 focus:ring-mauve"
+            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm md:col-span-2 h-24 focus:ring-2 focus:ring-bordeau"
           />
 
           <textarea
@@ -303,12 +303,12 @@ export default function AdminEvenements() {
             placeholder="Histoire / compte-rendu"
             value={form.histoire}
             onChange={handleChange}
-            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm md:col-span-2 h-32 focus:ring-2 focus:ring-mauve"
+            className="rounded-xl border border-gray-300 px-4 py-3 shadow-sm md:col-span-2 h-32 focus:ring-2 focus:ring-bordeau"
           />
         </div>
 
-        <div className="mt-6 rounded-xl border border-mauve/30 bg-gray-50 p-4">
-          <h3 className="font-semibold text-mauve mb-3">Chants associés</h3>
+        <div className="mt-6 rounded-xl border border-bordeau/30 bg-gray-50 p-4">
+          <h3 className="font-semibold text-bordeau mb-3">Chants associés</h3>
 
           <div className="flex flex-col md:flex-row gap-3 items-center mb-3">
             <select
@@ -329,7 +329,7 @@ export default function AdminEvenements() {
             <button
               type="button"
               onClick={addChantToEvent}
-              className="rounded bg-mauve text-white px-4 py-2"
+              className="rounded bg-bordeau text-white px-4 py-2"
             >
               Ajouter
             </button>
@@ -341,7 +341,7 @@ export default function AdminEvenements() {
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             onClick={() => saveEvenement(editingId ?? undefined)}
-            className="rounded-xl bg-mauve px-6 py-3 text-lg font-semibold text-white shadow hover:bg-purple-600 transition"
+            className="rounded-xl bg-bordeau px-6 py-3 text-lg font-semibold text-white shadow hover:bg-bordeau-600 transition"
           >
             {editingId ? "Mettre à jour" : "Ajouter"}
           </button>
@@ -360,7 +360,7 @@ export default function AdminEvenements() {
 
       {/* LISTE DES ÉVÈNEMENTS */}
       <section>
-        <h2 className="mb-4 text-2xl font-bold text-mauve">Liste des évènements</h2>
+        <h2 className="mb-4 text-2xl font-bold text-bordeau">Liste des évènements</h2>
 
         {loading ? (
           <p className="text-gray-600">Chargement…</p>
@@ -371,10 +371,10 @@ export default function AdminEvenements() {
             {evenements.map((e) => (
               <div
                 key={e.id}
-                className="flex flex-col justify-between rounded-xl border border-mauve/30 bg-white p-6 shadow"
+                className="flex flex-col justify-between rounded-xl border border-bordeau/30 bg-white p-6 shadow"
               >
                 <div>
-                  <h3 className="text-xl font-bold text-mauve">{e.nom_evenement}</h3>
+                  <h3 className="text-xl font-bold text-bordeau">{e.nom_evenement}</h3>
                   <p className="text-sm text-gray-700">
                     {new Date(e.date_evenement).toLocaleDateString("fr-BE")} —{" "}
                     <span className="font-semibold">{e.lieu}</span>

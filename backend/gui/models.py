@@ -158,7 +158,13 @@ class demande_chant(models.Model):
     paroles_pdf = models.FileField(upload_to="paroles_pdf/", null=True, blank=True)
     partition = models.FileField(upload_to="partitions/", null=True, blank=True)
 
-    categories = models.JSONField(default=list, blank=True)
+    categorie = models.ForeignKey(
+        categorie,
+        on_delete=models.PROTECT,
+        related_name="demandes_chant",
+        null=True,
+        blank=True,
+    )
 
     statut = models.CharField(max_length=20, choices=STATUTS, default="EN_ATTENTE")
     justification_refus = models.TextField(blank=True, null=True)

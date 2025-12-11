@@ -167,8 +167,8 @@ export default function FavorisPage() {
 
   return (
     <div className="px-10 py-10 flex flex-col gap-10 w-full">
-      <h1 className="text-3xl font-bold text-mauve">
-        Mes favoris <span className="text-mauve/70">({totalFavorisDisplayed})</span>
+      <h1 className="text-3xl font-bold text-bordeau">
+        Mes favoris <span className="text-bordeau/70">({totalFavorisDisplayed})</span>
       </h1>
 
       {/* Barre de recherche + catégorie */}
@@ -181,7 +181,7 @@ export default function FavorisPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="border border-mauve/40 p-3 rounded-lg flex-1"
+          className="border border-bordeau/40 p-3 rounded-lg flex-1"
         />
 
         <select
@@ -190,7 +190,7 @@ export default function FavorisPage() {
             setFilterCat(e.target.value);
             setPage(1);
           }}
-          className="border border-mauve/40 p-3 rounded-lg w-full md:w-60"
+          className="border border-bordeau/40 p-3 rounded-lg w-full md:w-60"
         >
           {allCategories.map((cat) => (
             <option key={cat}>{cat}</option>
@@ -212,17 +212,17 @@ export default function FavorisPage() {
 
             return (
               <div key={cat}>
-                <h2 className="text-2xl font-bold text-mauve mt-6 mb-3">{cat}</h2>
+                <h2 className="text-2xl font-bold text-bordeau mt-6 mb-3">{cat}</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {sortedChants.map((ch) => (
                     <div
                       key={ch.id}
                       onClick={() => (window.location.href = `/chants/${ch.id}`)}
-                      className="border border-mauve/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-mauve/5 transition"
+                      className="border border-bordeau/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-bordeau/5 transition"
                     >
                       <div className="flex justify-between items-start">
-                        <h3 className="text-xl font-bold text-mauve">{ch.nom_chant}</h3>
+                        <h3 className="text-xl font-bold text-bordeau">{ch.nom_chant}</h3>
 
                         <div onClick={(e) => e.stopPropagation()}>
                           <FavoriButton chantId={ch.id} USER_ID={USER_ID} />

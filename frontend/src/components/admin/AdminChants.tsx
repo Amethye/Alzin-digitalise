@@ -327,8 +327,8 @@ export default function AdminChants() {
     <div className="w-full min-h-screen px-10 py-8 flex flex-col gap-12">
 
       {/* FORMULAIRE */}
-      <section className="w-full rounded-xl border border-mauve/40 bg-white p-8 shadow">
-        <h2 className="text-2xl font-bold text-mauve mb-6">
+      <section className="w-full rounded-xl border border-bordeau/40 bg-white p-8 shadow">
+        <h2 className="text-2xl font-bold text-bordeau mb-6">
           {editingId ? "Modifier un chant" : "Ajouter un chant"}
         </h2>
 
@@ -336,23 +336,23 @@ export default function AdminChants() {
         <div className="grid gap-4 w-full">
           <input name="nom_chant" placeholder="Nom du chant" value={form.nom_chant}
             onChange={handleChange}
-            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"/>
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau w-full"/>
 
           <input name="auteur" placeholder="Auteur" value={form.auteur}
             onChange={handleChange}
-            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"/>
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau w-full"/>
 
           <input name="ville_origine" placeholder="Ville d'origine" value={form.ville_origine}
             onChange={handleChange}
-            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full"/>
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau w-full"/>
 
           <textarea name="paroles" placeholder="Paroles" value={form.paroles}
             onChange={handleChange}
-            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full h-28" />
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau w-full h-28" />
 
           <textarea name="description" placeholder="Description" value={form.description}
             onChange={handleChange}
-            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve w-full h-20" />
+            className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau w-full h-20" />
         </div>
 
         {/* CATÉGORIES */}
@@ -364,7 +364,7 @@ export default function AdminChants() {
                 key={cat}
                 className={`px-3 py-1 border rounded-full cursor-pointer ${
                   selectedCats.includes(cat)
-                    ? "bg-mauve text-white border-mauve"
+                    ? "bg-bordeau text-white border-bordeau"
                     : "border-gray-300"
                 }`}
               >
@@ -595,8 +595,8 @@ export default function AdminChants() {
       </section>
 
       {/* LISTE DES CHANTS GROUPÉS PAR CATÉGORIE */}
-      <section className="rounded-xl bg-white p-8 shadow border border-mauve/40">
-        <h2 className="text-2xl font-bold text-mauve mb-6">Liste des chants</h2>
+      <section className="rounded-xl bg-white p-8 shadow border border-bordeau/40">
+        <h2 className="text-2xl font-bold text-bordeau mb-6">Liste des chants</h2>
 
         {/* Recherche + Filtre catégorie */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -606,14 +606,14 @@ export default function AdminChants() {
             placeholder="Rechercher..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-mauve/50 rounded-lg p-3 flex-1"
+            className="border border-bordeau/50 rounded-lg p-3 flex-1"
           />
 
           {/* Filtre catégorie */}
           <select
             value={filterCat}
             onChange={(e) => setFilterCat(e.target.value)}
-            className="border border-mauve/50 rounded-lg p-3 w-full md:w-60"
+            className="border border-bordeau/50 rounded-lg p-3 w-full md:w-60"
           >
             <option value="Toutes">Toutes les catégories</option>
             {categories.map((cat) => (
@@ -650,7 +650,7 @@ export default function AdminChants() {
 
               return (
                 <div key={cat} className="mb-8">
-                  <h3 className="text-lg font-semibold text-mauve mb-3">{cat}</h3>
+                  <h3 className="text-lg font-semibold text-bordeau mb-3">{cat}</h3>
 
                   <div className="flex flex-col gap-3">
                     {chantsDeCat.map((c) => (
@@ -659,7 +659,7 @@ export default function AdminChants() {
                         className="border rounded-lg p-3 shadow-sm hover:shadow-md transition"
                       >
                         <div className="flex justify-between items-center">
-                          <h3 className="text-lg font-semibold text-mauve truncate">
+                          <h3 className="text-lg font-semibold text-bordeau truncate">
                             {c.nom_chant}
                           </h3>
 

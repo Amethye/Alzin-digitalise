@@ -134,7 +134,7 @@ export default function SupportPage() {
           alt="Logo Alzin"
           className="mb-6 h-20 w-auto opacity-90"
         />
-        <h1 className="mb-3 text-2xl font-bold text-mauve sm:text-3xl">
+        <h1 className="mb-3 text-2xl font-bold text-bordeau sm:text-3xl">
           Connecte-toi pour contacter le support
         </h1>
         <p className="mb-6 max-w-xl text-sm text-gray-600 sm:text-base">
@@ -144,13 +144,13 @@ export default function SupportPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <a
             href="/register"
-            className="inline-flex items-center justify-center rounded-lg bg-mauve px-5 py-2.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-purple-800 sm:text-base"
+            className="inline-flex items-center justify-center rounded-lg bg-bordeau px-5 py-2.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-bordeau-800 sm:text-base"
           >
             Devenir membre
           </a>
           <a
             href="/login"
-            className="inline-flex items-center justify-center rounded-lg border border-mauve px-5 py-2.5 text-sm font-semibold text-mauve duration-150 hover:bg-mauve hover:text-white sm:text-base"
+            className="inline-flex items-center justify-center rounded-lg border border-bordeau px-5 py-2.5 text-sm font-semibold text-bordeau duration-150 hover:bg-bordeau hover:text-white sm:text-base"
           >
             Se connecter
           </a>
@@ -171,7 +171,7 @@ export default function SupportPage() {
     <div className="w-full max-w-5xl rounded-xl bg-white px-4 py-6 shadow-lg sm:px-6 sm:py-8">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-mauve sm:text-3xl">
+          <h1 className="text-2xl font-bold text-bordeau sm:text-3xl">
             Support &amp; recommandations
           </h1>
           <p className="mt-1 text-sm text-gray-600 sm:text-base">
@@ -195,7 +195,7 @@ export default function SupportPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Infos utilisateur */}
         <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 sm:py-5">
-          <h2 className="text-base font-semibold text-mauve sm:text-lg">
+          <h2 className="text-base font-semibold text-bordeau sm:text-lg">
             Tes informations
           </h2>
 
@@ -228,7 +228,7 @@ export default function SupportPage() {
 
         {/* Contenu de la demande */}
         <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 sm:py-5">
-          <h2 className="text-base font-semibold text-mauve sm:text-lg">
+          <h2 className="text-base font-semibold text-bordeau sm:text-lg">
             Détails de ta demande
           </h2>
 
@@ -240,7 +240,7 @@ export default function SupportPage() {
               type="text"
               value={objet}
               onChange={(e) => setObjet(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
               placeholder="Ex. Problème de connexion, suggestion de nouvelle fonctionnalité..."
               required
             />
@@ -253,7 +253,7 @@ export default function SupportPage() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[150px] w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+              className="min-h-[150px] w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
               placeholder="Explique ton problème ou ta recommandation avec le plus de détails possible."
               required
             />

@@ -19,7 +19,7 @@
   }
 }
 @theme {
-  --color-mauve: #7E00FE;
+  --color-bordeau: #4F0341;
   --color-gris: #f0f2f5;
 }
 
@@ -28,15 +28,15 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-mauve px-4 py-2 text-sm font-semibold text-mauve transition-colors duration-200 hover:bg-mauve hover:text-white disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-bordeau px-4 py-2 text-sm font-semibold text-bordeau transition-colors duration-200 hover:bg-bordeau hover:text-white disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-solid {
-    @apply border-transparent bg-mauve text-white hover:bg-mauve/90;
+    @apply border-transparent bg-bordeau text-white hover:bg-bordeau/90;
   }
 
   .btn-secondary {
-    @apply border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-mauve;
+    @apply border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-bordeau;
   }
 
   .btn-danger {
@@ -48,6 +48,6 @@
   }
 
   .btn-ghost {
-    @apply border-transparent text-mauve hover:bg-mauve/10;
+    @apply border-transparent text-bordeau hover:bg-bordeau/10;
   }
 }

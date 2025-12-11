@@ -280,7 +280,7 @@ export default function AdminTemplatesPage() {
   // ------------------ rendu ------------------
   return (
     <div className="w-full max-w-5xl space-y-6">
-      <h1 className="text-xl font-bold text-mauve sm:text-2xl">
+      <h1 className="text-xl font-bold text-bordeau sm:text-2xl">
         {isEditMode
           ? "Modifier un template de chansonnier"
           : "Création de template de chansonnier"}
@@ -304,7 +304,7 @@ export default function AdminTemplatesPage() {
         {/* infos générales */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-mauve mb-1">
+            <label className="block text-sm font-medium text-bordeau mb-1">
               Nom du template
             </label>
             <input
@@ -318,7 +318,7 @@ export default function AdminTemplatesPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-mauve mb-1">
+            <label className="block text-sm font-medium text-bordeau mb-1">
               Couleur (indicative)
             </label>
             <input
@@ -333,7 +333,7 @@ export default function AdminTemplatesPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-mauve mb-1">
+          <label className="block text-sm font-medium text-bordeau mb-1">
             Description
           </label>
           <textarea
@@ -346,7 +346,7 @@ export default function AdminTemplatesPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-mauve mb-1">
+          <label className="block text-sm font-medium text-bordeau mb-1">
             Type de papier
           </label>
           <input
@@ -362,7 +362,7 @@ export default function AdminTemplatesPage() {
         {/* sélection catégories + chants */}
         <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 sm:py-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-            <h2 className="text-base font-semibold text-mauve sm:text-lg">
+            <h2 className="text-base font-semibold text-bordeau sm:text-lg">
               Chants du template
             </h2>
             <p className="text-xs text-gray-600 sm:text-sm">
@@ -437,7 +437,7 @@ export default function AdminTemplatesPage() {
                 value={chantSearch}
                 onChange={(e) => setChantSearch(e.target.value)}
                 placeholder="Rechercher un chant…"
-                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
               />
 
               <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 bg-white">
@@ -460,7 +460,7 @@ export default function AdminTemplatesPage() {
                             checked={!!checked}
                             onChange={() => toggleChant(c.id)}
                             onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4 rounded border-gray-300 text-mauve focus:ring-mauve"
+                            className="h-4 w-4 rounded border-gray-300 text-bordeau focus:ring-bordeau"
                           />
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-gray-800">
@@ -496,7 +496,7 @@ export default function AdminTemplatesPage() {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 disabled:opacity-60"
+            className="inline-flex items-center rounded-md bg-bordeau-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-bordeau-700 disabled:opacity-60"
           >
             {saving
               ? isEditMode
@@ -511,7 +511,7 @@ export default function AdminTemplatesPage() {
 
       {/* liste des templates existants */}
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold text-mauve">
+        <h2 className="mb-3 text-lg font-semibold text-bordeau">
           Templates existants
         </h2>
 
@@ -527,7 +527,7 @@ export default function AdminTemplatesPage() {
                 className="flex flex-col gap-2 rounded-md border border-gray-100 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="font-semibold text-mauve">{t.nom_template}</p>
+                  <p className="font-semibold text-bordeau">{t.nom_template}</p>
                   {t.description && (
                     <p className="text-gray-600 text-xs sm:text-sm">
                       {t.description}
@@ -544,7 +544,7 @@ export default function AdminTemplatesPage() {
                   <button
                     type="button"
                     onClick={() => handleEditTemplate(t)}
-                    className="rounded-md bg-purple-100 px-3 py-1 text-xs font-semibold text-mauve hover:bg-purple-200"
+                    className="rounded-md bg-bordeau-100 px-3 py-1 text-xs font-semibold text-bordeau hover:bg-bordeau-200"
                   >
                     Modifier
                   </button>

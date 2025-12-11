@@ -27,7 +27,19 @@ export default {
       },
       colors: {
         'rouge': '#D13F27',
-        'mauve': '#7E00FE',
+        'bordeau': {
+          50: '#fdf4f7',
+          100: '#f6dce7',
+          200: '#e5aacc',
+          300: '#ce7ab0',
+          400: '#b34c92',
+          500: '#91236f',
+          600: '#6c0d4c',
+          700: '#4f0341',
+          800: '#36022c',
+          900: '#23001c',
+          DEFAULT: '#4f0341',
+        },
       },
       boxShadow: {
         // Box shadow generated with https://shadows.brumm.af/

@@ -118,7 +118,7 @@ export default function AdminChanter() {
 
   return (
     <section className="w-full max-w-5xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold text-mauve">
+      <h1 className="text-2xl font-bold text-bordeau">
         Lier les chants aux évènements
       </h1>
 
@@ -145,7 +145,7 @@ export default function AdminChanter() {
             <select
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="rounded-xl border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-mauve/40"
+              className="rounded-xl border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-bordeau/40"
             >
               <option value="">Sélectionne un évènement</option>
               {evenements
@@ -166,7 +166,7 @@ export default function AdminChanter() {
             <select
               value={selectedChantId}
               onChange={(e) => setSelectedChantId(e.target.value)}
-              className="rounded-xl border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-mauve/40"
+              className="rounded-xl border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-bordeau/40"
             >
               <option value="">Sélectionne un chant</option>
               {chants

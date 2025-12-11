@@ -135,7 +135,7 @@ export default function AdminFournisseurs() {
 
   return (
     <div className="w-full max-w-5xl space-y-6">
-      <h1 className="text-xl font-bold text-mauve sm:text-2xl">
+      <h1 className="text-xl font-bold text-bordeau sm:text-2xl">
         Gestion des fournisseurs
       </h1>
 
@@ -143,7 +143,7 @@ export default function AdminFournisseurs() {
         onSubmit={handleSubmit}
         className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
       >
-        <h2 className="text-sm font-semibold text-mauve sm:text-base">
+        <h2 className="text-sm font-semibold text-bordeau sm:text-base">
           Ajouter un fournisseur
         </h2>
 
@@ -153,7 +153,7 @@ export default function AdminFournisseurs() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-mauve mb-1">
+            <label className="block text-sm font-medium text-bordeau mb-1">
               Nom
             </label>
             <input
@@ -167,7 +167,7 @@ export default function AdminFournisseurs() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-mauve mb-1">
+            <label className="block text-sm font-medium text-bordeau mb-1">
               Ville
             </label>
             <input
@@ -183,14 +183,14 @@ export default function AdminFournisseurs() {
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex items-center rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 disabled:opacity-60"
+          className="inline-flex items-center rounded-md bg-bordeau-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-bordeau-700 disabled:opacity-60"
         >
           {saving ? "Enregistrement..." : "Ajouter"}
         </button>
       </form>
 
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-mauve sm:text-base">
+        <h2 className="mb-3 text-sm font-semibold text-bordeau sm:text-base">
           Fournisseurs existants
         </h2>
 
@@ -226,7 +226,7 @@ export default function AdminFournisseurs() {
                   </div>
                 ) : (
                   <div className="flex-1">
-                    <p className="font-semibold text-mauve">
+                    <p className="font-semibold text-bordeau">
                       {f.nom_fournisseur}
                     </p>
                     <p className="text-xs text-gray-600">
@@ -258,7 +258,7 @@ export default function AdminFournisseurs() {
                     <button
                       type="button"
                       onClick={() => handleStartEdit(f)}
-                      className="rounded-md bg-purple-100 px-3 py-1 text-xs font-semibold text-mauve hover:bg-purple-200"
+                      className="rounded-md bg-bordeau-100 px-3 py-1 text-xs font-semibold text-bordeau hover:bg-bordeau-200"
                     >
                       Modifier
                     </button>

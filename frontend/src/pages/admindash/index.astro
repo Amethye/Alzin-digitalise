@@ -2,15 +2,15 @@
 import Layout from "@layouts/Layout.astro";
 
 const links = [
-  { name: "Gestion utilisateurs", path: "/admindash/users", color: "bg-purple-100"},
-  { name: "Chants", path: "/admindash/chants", color: "bg-purple-100"},
-  { name: "Demandes d'utilisateurs", path: "/admindash/demandes-chants", color: "bg-purple-100"},
-  { name: "Catégories", path: "/admindash/categories", color: "bg-purple-100"},
-  { name: "Création template", path: "/admindash/templates", color: "bg-purple-100"},
-  { name: "Maîtres de chants", path: "/admindash/maitres", color: "bg-purple-100"},
-  { name: "Demandes de support", path: "/admindash/support", color: "bg-purple-100" },
-  { name: "Gestion évènements", path: "/admindash/evenements", color: "bg-purple-100" },
-  { name: "Fournisseurs", path: "/admindash/fournisseurs", color: "bg-purple-100"},
+  { name: "Gestion utilisateurs", path: "/admindash/users", color: "hover:bg-bordeau/20"},
+  { name: "Chants", path: "/admindash/chants", color: "hover:bg-bordeau/20"},
+  { name: "Demandes d'utilisateurs", path: "/admindash/demandes-chants", color: "hover:bg-bordeau/20"},
+  { name: "Catégories", path: "/admindash/categories", color: "hover:bg-bordeau/20"},
+  { name: "Création template", path: "/admindash/templates", color: "hover:bg-bordeau/20"},
+  { name: "Maîtres de chants", path: "/admindash/maitres", color: "hover:bg-bordeau/20"},
+  { name: "Demandes de support", path: "/admindash/support", color: "hover:bg-bordeau/20" },
+  { name: "Gestion évènements", path: "/admindash/evenements", color: "hover:bg-bordeau/20" },
+  { name: "Fournisseurs", path: "/admindash/fournisseurs", color: "hover:bg-bordeau/20"},
 
   
 ];
@@ -19,7 +19,7 @@ const links = [
 <Layout title="Admin Dashboard">
   <main class="flex flex-1 flex-col items-center gap-6 px-4 py-6 sm:px-6">
     <section class="w-full max-w-5xl">
-      <h1 class="mb-6 text-2xl font-bold text-mauve sm:text-3xl">
+      <h1 class="mb-6 text-2xl font-bold text-bordeau sm:text-3xl">
         Admin Dashboard
       </h1>
 
@@ -27,10 +27,10 @@ const links = [
         {links.map((link) => (
           <a
             href={link.path}
-            class={`flex flex-col items-center justify-center rounded-xl px-4 py-6 shadow-md transition-all duration-200 hover:shadow-xl ${link.color}`}
+            class={`flex flex-col items-center justify-center rounded-xl px-4 py-6 bg-bordeau/10 border border-bordeau/30 text-bordeau shadow-md transition-all duration-200 hover:shadow-xl ${link.color}`}
           >
             <span class="mb-3 text-3xl sm:text-4xl"></span>
-            <span class="text-base font-semibold text-mauve sm:text-lg">
+            <span class="text-base font-semibold text-bordeau sm:text-lg">
               {link.name}
             </span>
           </a>

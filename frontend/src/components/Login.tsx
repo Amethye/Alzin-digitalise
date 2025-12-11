@@ -87,7 +87,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
 
   return (
     <div className="w-full max-w-md rounded-xl bg-white px-5 py-6 shadow-lg sm:px-8">
-      <h1 className="mb-2 bg-white text-xl font-semibold text-mauve sm:text-2xl">
+      <h1 className="mb-2 bg-white text-xl font-semibold text-bordeau sm:text-2xl">
         Connexion
       </h1>
 
@@ -101,7 +101,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
           autoComplete="username"
           value={ident}
           onChange={(e) => setIdent(e.target.value)}
-          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve"
+          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau"
           required
         />
 
@@ -114,7 +114,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ next = "/" }) => {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve"
+          className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau"
           required
         />
 

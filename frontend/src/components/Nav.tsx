@@ -165,7 +165,7 @@ export default function Nav() {
         <div className="flex items-center justify-between gap-4 lg:col-span-2">
           <a href="/" className="inline-flex items-center gap-3 text-base duration-150 hover:opacity-80 xs:text-lg">
             <img src={logoSrc} alt="Logo FPMs" className="h-12 w-auto max-w-[70px]" />
-            <span className="text-base font-semibold leading-tight text-mauve sm:text-lg">
+            <span className="text-base font-semibold leading-tight text-bordeau sm:text-lg">
               <span className="lg:hidden">Alzin</span>
               <span className="hidden lg:inline">Alzin FPMs</span>
             </span>
@@ -185,7 +185,7 @@ export default function Nav() {
                     className="btn btn-ghost px-2 py-1 text-xs"
                   >
                     Connecté
-                    <svg width="16" height="16" fill="currentColor" className="ml-1 text-mauve" viewBox="0 0 20 20">
+                    <svg width="16" height="16" fill="currentColor" className="ml-1 text-bordeau" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
                         d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.063a.75.75 0 111.08 1.04l-4.25 4.667a.75.75 0 01-1.08 0l-4.25-4.667a.75.75 0 01.02-1.06z"
@@ -236,10 +236,10 @@ export default function Nav() {
                     onClick={handleNavItemClick}
                     className="
                       relative px-1 py-1
-                      text-mauve font-semibold
+                      text-bordeau font-semibold
                       after:absolute after:bottom-0 after:left-0 after:z-50
                       after:h-[3px] after:w-0 after:rounded-full
-                      after:bg-mauve after:duration-500
+                      after:bg-bordeau after:duration-500
                       hover:after:w-full
                     "
                   >
@@ -269,7 +269,7 @@ export default function Nav() {
                 className="btn btn-ghost px-2 py-1"
               >
                 Connecté : <strong>{me.identifiant}</strong> ({me.role})
-                <svg width="16" height="16" fill="currentColor" className="ml-1 text-mauve" viewBox="0 0 20 20">
+                <svg width="16" height="16" fill="currentColor" className="ml-1 text-bordeau" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
                     d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.063a.75.75 0 111.08 1.04l-4.25 4.667a.75.75 0 01-1.08 0l-4.25-4.667a.75.75 0 01.02-1.06z"
@@ -278,11 +278,11 @@ export default function Nav() {
                 </svg>
               </button>
               {showDesktopMenu && (
-                <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-mauve/30 z-50">
+                <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-bordeau/30 z-50">
                   <a
                     href="/account"
                     onClick={() => setShowDesktopMenu(false)}
-                    className="block px-4 py-2 text-sm text-mauve hover:bg-purple-50"
+                    className="block px-4 py-2 text-sm text-bordeau hover:bg-bordeau-50"
                   >
                     Mon compte
                   </a>
@@ -290,7 +290,7 @@ export default function Nav() {
                   <a
                     href="/favoris"
                     onClick={() => setShowDesktopMenu(false)}
-                    className="block px-4 py-2 text-sm text-mauve hover:bg-purple-50"
+                    className="block px-4 py-2 text-sm text-bordeau hover:bg-bordeau-50"
                   >
                     Mes favoris
                   </a>
@@ -298,7 +298,7 @@ export default function Nav() {
                   <a
                     href="/orders"
                     onClick={() => setShowDesktopMenu(false)}
-                    className="block px-4 py-2 text-sm text-mauve hover:bg-purple-50"
+                    className="block px-4 py-2 text-sm text-bordeau hover:bg-bordeau-50"
                   >
                     Mes commandes
                   </a>
@@ -306,7 +306,7 @@ export default function Nav() {
                   <a
                     href="/support"
                     onClick={() => setShowDesktopMenu(false)}
-                    className="block px-4 py-2 text-sm text-mauve hover:bg-purple-50"
+                    className="block px-4 py-2 text-sm text-bordeau hover:bg-bordeau-50"
                   >
                     Support
                   </a>
@@ -338,7 +338,7 @@ export default function Nav() {
             className="fixed bottom-0 right-0 top-0 z-40 w-72 max-w-[80%] bg-white/95 shadow-xl backdrop-blur-sm lg:hidden"
           >
             <div className="flex items-center justify-between border-b px-4 py-4">
-              <span className="text-base font-semibold text-mauve">Menu</span>
+              <span className="text-base font-semibold text-bordeau">Menu</span>
               <button type="button" onClick={toggleMobileMenu} className="btn btn-ghost p-2">
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -350,7 +350,7 @@ export default function Nav() {
             <div className="border-b px-4 py-4 text-sm text-gray-700">
               {me ? (
                 <div>
-                  <p className="font-semibold text-mauve">{me.identifiant}</p>
+                  <p className="font-semibold text-bordeau">{me.identifiant}</p>
                   <p className="text-gray-600">Rôle : {me.role}</p>
                   <div className="mt-3 space-y-2">
                     {userMenuLinks.map((link) => (
@@ -395,10 +395,10 @@ export default function Nav() {
                       onClick={handleNavItemClick}
                       className="
                         relative block px-1 py-1 text-center
-                        text-mauve font-semibold
+                        text-bordeau font-semibold
                         after:absolute after:bottom-0 after:left-1/2 after:z-50
                         after:h-[3px] after:w-0 after:-translate-x-1/2 after:rounded-full
-                        after:bg-mauve after:duration-500
+                        after:bg-bordeau after:duration-500
                         hover:after:w-full
                       "
                     >

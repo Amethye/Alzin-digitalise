@@ -63,10 +63,10 @@ export default function ResetPasswordForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-6 rounded-xl bg-purple-50/40 border border-mauve/30">
+    <form onSubmit={handleSubmit} className="space-y-4 p-6 rounded-xl bg-bordeau-50/40 border border-bordeau/30">
 
       {message && (
-        <p className="rounded-lg border border-mauve bg-mauve/10 px-3 py-2 text-mauve">
+        <p className="rounded-lg border border-bordeau bg-bordeau/10 px-3 py-2 text-bordeau">
           {message}
         </p>
       )}

@@ -118,9 +118,9 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
   // RENDER
   // ---------------------------------------------------------
   return (
-    <div className="mt-10 bg-white rounded-2xl shadow p-6 border border-gray-200">
+    <div className="mt-10 bg-gray-50 rounded-2xl shadow p-6 border border-bordeau/20">
       {/* --- TITRE + compteur de commentaires --- */}
-      <h2 className="text-2xl font-bold text-mauve mb-4">
+      <h2 className="text-2xl font-bold text-bordeau mb-4">
         Commentaires ({comments.length})
       </h2>
 
@@ -128,7 +128,7 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
       {userId && !userAlreadyCommented && (
         <div className="mb-4">
           <textarea
-            className="border border-mauve p-3 w-full rounded-lg"
+            className="border border-bordeau p-3 w-full rounded-lg"
             placeholder="Écrire un commentaire..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
@@ -151,10 +151,10 @@ export default function Comments({ chantId, userId, isAdmin = false }: Props) {
           return (
             <div
               key={comment.id}
-              className="p-4 rounded-xl bg-purple-50 border border-mauve/20 shadow-sm"
+              className="p-4 rounded-xl bg-bordeau/10 border border-bordeau/30 shadow-sm"
             >
               <div className="flex justify-between items-center">
-                <p className="font-semibold text-mauve">
+                <p className="font-semibold text-bordeau">
                   {comment.utilisateur_pseudo}
                   <span className="text-sm text-gray-500 ml-2">
                     {new Date(comment.date_comment).toLocaleDateString("fr-FR")}

@@ -179,8 +179,8 @@ export default function AccountPage() {
     <div className="w-full max-w-6xl px-4 pt-10 pb-20 min-h-[calc(100vh-220px)] mx-auto">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
         <div className="space-y-6">
-          <div className="rounded-2xl bg-purple-50/40 border border-mauve/30 p-6 shadow-md space-y-5">
-            <h1 className="text-3xl font-bold text-mauve">
+          <div className="rounded-2xl bg-bordeau-50/40 border border-bordeau/30 p-6 shadow-md space-y-5">
+            <h1 className="text-3xl font-bold text-bordeau">
               Mon compte
             </h1>
 
@@ -197,7 +197,7 @@ export default function AccountPage() {
               >
                 {["nom", "prenom", "email", "pseudo", "ville"].map((field) => (
                   <div key={field}>
-                    <label className="font-semibold text-mauve block mb-1">
+                    <label className="font-semibold text-bordeau block mb-1">
                       {field.charAt(0).toUpperCase() + field.slice(1)}
                     </label>
                     <input
@@ -205,7 +205,7 @@ export default function AccountPage() {
                       name={field}
                       value={(form as any)[field]}
                       onChange={handleChange}
-                      className="w-full rounded-lg border border-mauve/30 bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-mauve"
+                      className="w-full rounded-lg border border-bordeau/30 bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-bordeau"
                     />
                   </div>
                 ))}
@@ -237,11 +237,11 @@ export default function AccountPage() {
               </form>
             ) : (
               <div className="space-y-3">
-                <p><span className="font-semibold text-mauve">Nom :</span> {user.nom}</p>
-                <p><span className="font-semibold text-mauve">Prénom :</span> {user.prenom}</p>
-                <p><span className="font-semibold text-mauve">Pseudo :</span> {user.pseudo}</p>
-                <p><span className="font-semibold text-mauve">Ville :</span> {user.ville}</p>
-                <p><span className="font-semibold text-mauve">Email :</span> {user.email}</p>
+                <p><span className="font-semibold text-bordeau">Nom :</span> {user.nom}</p>
+                <p><span className="font-semibold text-bordeau">Prénom :</span> {user.prenom}</p>
+                <p><span className="font-semibold text-bordeau">Pseudo :</span> {user.pseudo}</p>
+                <p><span className="font-semibold text-bordeau">Ville :</span> {user.ville}</p>
+                <p><span className="font-semibold text-bordeau">Email :</span> {user.email}</p>
 
                 <div className="flex flex-wrap gap-3 pt-3">
                   <button
@@ -265,7 +265,7 @@ export default function AccountPage() {
 
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-2xl font-bold text-mauve">Historique des demandes</h2>
+            <h2 className="text-2xl font-bold text-bordeau">Historique des demandes</h2>
             {historyLoading && (
               <p className="text-sm text-gray-500">Chargement de l'historique…</p>
             )}
@@ -274,9 +274,9 @@ export default function AccountPage() {
             <p className="text-sm text-red-600">{historyError}</p>
           )}
 
-          <section className="rounded-2xl border border-mauve/30 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-bordeau/30 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-mauve">Demandes d'ajout de chants</h3>
+              <h3 className="text-xl font-semibold text-bordeau">Demandes d'ajout de chants</h3>
               <span className="text-sm text-gray-500">{chantRequests.length} demande(s)</span>
             </div>
             {historyLoading ? (
@@ -288,7 +288,7 @@ export default function AccountPage() {
                 {chantRequests.map((req) => (
                   <div key={req.id} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-semibold text-mauve">{req.nom_chant}</p>
+                      <p className="font-semibold text-bordeau">{req.nom_chant}</p>
                       {renderStatusBadge(req.statut)}
                     </div>
                     <p className="text-xs text-gray-500">
@@ -303,9 +303,9 @@ export default function AccountPage() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-mauve/30 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-bordeau/30 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-mauve">Demandes d'ajout de pistes audio</h3>
+              <h3 className="text-xl font-semibold text-bordeau">Demandes d'ajout de pistes audio</h3>
               <span className="text-sm text-gray-500">{audioRequests.length} demande(s)</span>
             </div>
             {historyLoading ? (
@@ -317,7 +317,7 @@ export default function AccountPage() {
                 {audioRequests.map((req) => (
                   <div key={req.id} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-semibold text-mauve">{req.chant?.nom_chant || "Piste audio"}</p>
+                      <p className="font-semibold text-bordeau">{req.chant?.nom_chant || "Piste audio"}</p>
                       {renderStatusBadge(req.statut)}
                     </div>
                     <p className="text-xs text-gray-500">
@@ -341,9 +341,9 @@ export default function AccountPage() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-mauve/30 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-bordeau/30 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-mauve">Demandes de modification</h3>
+              <h3 className="text-xl font-semibold text-bordeau">Demandes de modification</h3>
               <span className="text-sm text-gray-500">{modRequests.length} demande(s)</span>
             </div>
             {historyLoading ? (
@@ -355,7 +355,7 @@ export default function AccountPage() {
                 {modRequests.map((req) => (
                   <div key={req.id} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-semibold text-mauve">{req.nom_chant}</p>
+                      <p className="font-semibold text-bordeau">{req.nom_chant}</p>
                       {renderStatusBadge(req.statut)}
                     </div>
                     <p className="text-xs text-gray-500">

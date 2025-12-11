@@ -426,7 +426,7 @@ export default function AdminChantRequests() {
       <div className="flex flex-col gap-6">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-mauve">Demandes de chants</h1>
+            <h1 className="text-2xl font-bold text-bordeau">Demandes de chants</h1>
             <p className="text-sm text-gray-500">Valide ou refuse les propositions envoyées par les utilisateurs.</p>
           </div>
           <div className="flex items-center gap-2">
@@ -449,8 +449,8 @@ export default function AdminChantRequests() {
         {error && <p className="text-red-600">{error}</p>}
 
         <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
-          <div className="rounded-2xl border border-mauve/30 bg-white shadow-sm">
-            <div className="border-b border-mauve/20 px-4 py-3 text-sm font-semibold text-mauve">
+          <div className="rounded-2xl border border-bordeau/30 bg-white shadow-sm">
+            <div className="border-b border-bordeau/20 px-4 py-3 text-sm font-semibold text-bordeau">
               Demandes ({requests.length})
             </div>
             <div className="max-h-[70vh] overflow-y-auto divide-y divide-gray-100">
@@ -462,12 +462,12 @@ export default function AdminChantRequests() {
                 <button
                   key={req.id}
                   onClick={() => handleSelect(req.id)}
-                  className={`w-full text-left px-4 py-3 hover:bg-mauve/5 transition ${
-                    selectedId === req.id ? "bg-mauve/10" : ""
+                  className={`w-full text-left px-4 py-3 hover:bg-bordeau/5 transition ${
+                    selectedId === req.id ? "bg-bordeau/10" : ""
                   }`}
                 >
                   <div className="flex justify-between items-center gap-2">
-                    <p className="font-semibold text-mauve truncate">{req.nom_chant}</p>
+                    <p className="font-semibold text-bordeau truncate">{req.nom_chant}</p>
                     <span
                       className={`text-xs rounded-full px-2 py-0.5 border ${statusColor[req.statut]}`}
                     >
@@ -483,7 +483,7 @@ export default function AdminChantRequests() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-mauve/30 bg-white shadow-sm p-5 min-h-[400px]">
+          <div className="rounded-2xl border border-bordeau/30 bg-white shadow-sm p-5 min-h-[400px]">
             {loadingDetail && <p className="text-sm text-gray-500">Chargement du détail…</p>}
             {detailError && <p className="text-sm text-red-600">{detailError}</p>}
             {!selected && !loadingDetail && !detailError && (
@@ -492,7 +492,7 @@ export default function AdminChantRequests() {
             {selected && !loadingDetail && (
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
-                  <h2 className="text-xl font-semibold text-mauve">{selected.nom_chant}</h2>
+                  <h2 className="text-xl font-semibold text-bordeau">{selected.nom_chant}</h2>
                   <p className="text-sm text-gray-500">
                     Proposé par {selected.utilisateur?.pseudo ?? "inconnu"} ·{" "}
                     {new Date(selected.date_creation).toLocaleString("fr-BE")}
@@ -502,7 +502,7 @@ export default function AdminChantRequests() {
                 {selected.categories.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {selected.categories.map((cat) => (
-                      <span key={cat} className="px-3 py-1 rounded-full bg-mauve/10 text-mauve text-xs">
+                      <span key={cat} className="px-3 py-1 rounded-full bg-bordeau/10 text-bordeau text-xs">
                         {cat}
                       </span>
                     ))}
@@ -574,12 +574,12 @@ export default function AdminChantRequests() {
                 )}
 
                 {selected.statut === "EN_ATTENTE" && (
-                  <div className="flex flex-col gap-3 border-t border-mauve/20 pt-4">
+                  <div className="flex flex-col gap-3 border-t border-bordeau/20 pt-4">
                     <textarea
                       value={actionJustification}
                       onChange={(e) => setActionJustification(e.target.value)}
                       placeholder="Justification (obligatoire si refus)"
-                      className="border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-mauve/40 min-h-[90px]"
+                      className="border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau/40 min-h-[90px]"
                     />
                     {actionFeedback && <p className="text-sm text-red-600">{actionFeedback}</p>}
                     <div className="flex flex-wrap gap-3">
@@ -609,7 +609,7 @@ export default function AdminChantRequests() {
       <div className="flex flex-col gap-6 border-t border-gray-200 pt-8">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-mauve">Demandes de pistes audio</h2>
+            <h2 className="text-2xl font-bold text-bordeau">Demandes de pistes audio</h2>
             <p className="text-sm text-gray-500">Valide les propositions de fichiers MP3 pour les chants existants.</p>
           </div>
           <div className="flex items-center gap-2">
@@ -632,8 +632,8 @@ export default function AdminChantRequests() {
         {audioError && <p className="text-red-600">{audioError}</p>}
 
         <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
-          <div className="rounded-2xl border border-mauve/30 bg-white shadow-sm">
-            <div className="border-b border-mauve/20 px-4 py-3 text-sm font-semibold text-mauve">
+          <div className="rounded-2xl border border-bordeau/30 bg-white shadow-sm">
+            <div className="border-b border-bordeau/20 px-4 py-3 text-sm font-semibold text-bordeau">
               Demandes ({audioRequests.length})
             </div>
             <div className="max-h-[70vh] overflow-y-auto divide-y divide-gray-100">
@@ -645,12 +645,12 @@ export default function AdminChantRequests() {
                 <button
                   key={req.id}
                   onClick={() => handleSelectAudio(req.id)}
-                  className={`w-full text-left px-4 py-3 hover:bg-mauve/5 transition ${
-                    selectedAudioId === req.id ? "bg-mauve/10" : ""
+                  className={`w-full text-left px-4 py-3 hover:bg-bordeau/5 transition ${
+                    selectedAudioId === req.id ? "bg-bordeau/10" : ""
                   }`}
                 >
                   <div className="flex justify-between items-center gap-2">
-                    <p className="font-semibold text-mauve truncate">{req.chant.nom_chant}</p>
+                    <p className="font-semibold text-bordeau truncate">{req.chant.nom_chant}</p>
                     <span
                       className={`text-xs rounded-full px-2 py-0.5 border ${statusColor[req.statut]}`}
                     >
@@ -666,7 +666,7 @@ export default function AdminChantRequests() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-mauve/30 bg-white shadow-sm p-5 min-h-[360px]">
+          <div className="rounded-2xl border border-bordeau/30 bg-white shadow-sm p-5 min-h-[360px]">
             {audioLoadingDetail && <p className="text-sm text-gray-500">Chargement du détail…</p>}
             {audioDetailError && <p className="text-sm text-red-600">{audioDetailError}</p>}
             {!selectedAudio && !audioLoadingDetail && !audioDetailError && (
@@ -675,7 +675,7 @@ export default function AdminChantRequests() {
             {selectedAudio && !audioLoadingDetail && (
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
-                  <h3 className="text-xl font-semibold text-mauve">
+                  <h3 className="text-xl font-semibold text-bordeau">
                     {selectedAudio.chant.nom_chant}
                   </h3>
                   <p className="text-sm text-gray-500">
@@ -706,12 +706,12 @@ export default function AdminChantRequests() {
                 )}
 
                 {selectedAudio.statut === "EN_ATTENTE" && (
-                  <div className="flex flex-col gap-3 border-t border-mauve/20 pt-4">
+                  <div className="flex flex-col gap-3 border-t border-bordeau/20 pt-4">
                     <textarea
                       value={audioActionJustification}
                       onChange={(e) => setAudioActionJustification(e.target.value)}
                       placeholder="Justification (obligatoire si refus)"
-                      className="border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-mauve/40 min-h-[90px]"
+                      className="border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau/40 min-h-[90px]"
                     />
                     {audioActionFeedback && (
                       <p className="text-sm text-red-600">{audioActionFeedback}</p>
@@ -743,7 +743,7 @@ export default function AdminChantRequests() {
       <div className="flex flex-col gap-6 border-t border-gray-200 pt-8">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-mauve">Demandes de modification</h2>
+            <h2 className="text-2xl font-bold text-bordeau">Demandes de modification</h2>
             <p className="text-sm text-gray-500">
               Valide les propositions de mise à jour des informations du chant.
             </p>
@@ -768,8 +768,8 @@ export default function AdminChantRequests() {
         {modError && <p className="text-red-600">{modError}</p>}
 
         <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
-          <div className="rounded-2xl border border-mauve/30 bg-white shadow-sm">
-            <div className="border-b border-mauve/20 px-4 py-3 text-sm font-semibold text-mauve">
+          <div className="rounded-2xl border border-bordeau/30 bg-white shadow-sm">
+            <div className="border-b border-bordeau/20 px-4 py-3 text-sm font-semibold text-bordeau">
               Demandes ({modRequests.length})
             </div>
             <div className="max-h-[70vh] overflow-y-auto divide-y divide-gray-100">
@@ -781,12 +781,12 @@ export default function AdminChantRequests() {
                 <button
                   key={req.id}
                   onClick={() => handleSelectMod(req.id)}
-                  className={`w-full text-left px-4 py-3 hover:bg-mauve/5 transition ${
-                    selectedModId === req.id ? "bg-mauve/10" : ""
+                  className={`w-full text-left px-4 py-3 hover:bg-bordeau/5 transition ${
+                    selectedModId === req.id ? "bg-bordeau/10" : ""
                   }`}
                 >
                   <div className="flex justify-between items-center gap-2">
-                    <p className="font-semibold text-mauve truncate">{req.chant_nom}</p>
+                    <p className="font-semibold text-bordeau truncate">{req.chant_nom}</p>
                     <span
                       className={`text-xs rounded-full px-2 py-0.5 border ${statusColor[req.statut]}`}
                     >
@@ -802,7 +802,7 @@ export default function AdminChantRequests() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-mauve/30 bg-white shadow-sm p-5 min-h-[360px]">
+          <div className="rounded-2xl border border-bordeau/30 bg-white shadow-sm p-5 min-h-[360px]">
             {modLoadingDetail && <p className="text-sm text-gray-500">Chargement du détail…</p>}
             {modDetailError && <p className="text-sm text-red-600">{modDetailError}</p>}
             {!selectedMod && !modLoadingDetail && !modDetailError && (
@@ -811,7 +811,7 @@ export default function AdminChantRequests() {
             {selectedMod && !modLoadingDetail && (
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
-                  <h3 className="text-xl font-semibold text-mauve">{selectedMod.nom_chant}</h3>
+                  <h3 className="text-xl font-semibold text-bordeau">{selectedMod.nom_chant}</h3>
                   <p className="text-sm text-gray-500">
                     Chant d'origine : {selectedMod.chant_nom} ·{" "}
                     {new Date(selectedMod.date_creation).toLocaleString("fr-BE")}
@@ -821,7 +821,7 @@ export default function AdminChantRequests() {
                 {selectedMod.categories.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {selectedMod.categories.map((cat) => (
-                      <span key={cat} className="px-3 py-1 rounded-full bg-mauve/10 text-mauve text-xs">
+                      <span key={cat} className="px-3 py-1 rounded-full bg-bordeau/10 text-bordeau text-xs">
                         {cat}
                       </span>
                     ))}
@@ -875,12 +875,12 @@ export default function AdminChantRequests() {
                 )}
 
                 {selectedMod.statut === "EN_ATTENTE" && (
-                  <div className="flex flex-col gap-3 border-t border-mauve/20 pt-4">
+                  <div className="flex flex-col gap-3 border-t border-bordeau/20 pt-4">
                     <textarea
                       value={modActionJustification}
                       onChange={(e) => setModActionJustification(e.target.value)}
                       placeholder="Justification (obligatoire si refus)"
-                      className="border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-mauve/40 min-h-[90px]"
+                      className="border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau/40 min-h-[90px]"
                     />
                     {modActionFeedback && <p className="text-sm text-red-600">{modActionFeedback}</p>}
                     <div className="flex flex-wrap gap-3">

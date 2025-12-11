@@ -303,7 +303,7 @@ export default function AlzinPersoPage() {
           alt="Logo Alzin"
           className="mb-6 h-20 w-auto opacity-90"
         />
-        <h1 className="mb-3 text-2xl font-bold text-mauve sm:text-3xl">
+        <h1 className="mb-3 text-2xl font-bold text-bordeau sm:text-3xl">
           Connecte-toi pour créer ton alzin
         </h1>
         <p className="mb-6 max-w-xl text-sm text-gray-600 sm:text-base">
@@ -313,13 +313,13 @@ export default function AlzinPersoPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <a
             href="/register"
-            className="inline-flex items-center justify-center rounded-lg bg-mauve px-5 py-2.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-purple-800 sm:text-base"
+            className="inline-flex items-center justify-center rounded-lg bg-bordeau px-5 py-2.5 text-sm font-semibold text-white shadow-sm duration-150 hover:bg-bordeau-800 sm:text-base"
           >
             Devenir membre
           </a>
           <a
             href="/login"
-            className="inline-flex items-center justify-center rounded-lg border border-mauve px-5 py-2.5 text-sm font-semibold text-mauve duration-150 hover:bg-mauve hover:text-white sm:text-base"
+            className="inline-flex items-center justify-center rounded-lg border border-bordeau px-5 py-2.5 text-sm font-semibold text-bordeau duration-150 hover:bg-bordeau hover:text-white sm:text-base"
           >
             Se connecter
           </a>
@@ -346,7 +346,7 @@ export default function AlzinPersoPage() {
     <div className="w-full max-w-5xl rounded-xl bg-white px-4 py-6 shadow-lg sm:px-6 sm:py-8">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-mauve sm:text-3xl">
+          <h1 className="text-2xl font-bold text-bordeau sm:text-3xl">
             {isEditMode ? "Modifier mon alzin personnalisé" : "Créer un alzin personnalisé"}
           </h1>
           <p className="mt-1 text-sm text-gray-600 sm:text-base">
@@ -370,7 +370,7 @@ export default function AlzinPersoPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Infos générales */}
         <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 sm:py-5">
-          <h2 className="text-base font-semibold text-mauve sm:text-lg">
+          <h2 className="text-base font-semibold text-bordeau sm:text-lg">
             Informations générales
           </h2>
 
@@ -383,7 +383,7 @@ export default function AlzinPersoPage() {
                 type="text"
                 value={nom}
                 onChange={(e) => setNom(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
                 placeholder="Ex. Alzin promo 2025"
                 required
               />
@@ -415,7 +415,7 @@ export default function AlzinPersoPage() {
       setSelectedChantIds([]);
     }
   }}
-  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
 >
   <option value="">Blanc (par défaut)</option>
   {templates.map((t) => (
@@ -436,7 +436,7 @@ export default function AlzinPersoPage() {
                 type="text"
                 value={couleur}
                 onChange={(e) => setCouleur(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
                 placeholder="Ex. Bordeaux"
                 required
               />
@@ -450,7 +450,7 @@ export default function AlzinPersoPage() {
                 type="text"
                 value={typePapier}
                 onChange={(e) => setTypePapier(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
                 placeholder="Ex. 120g ivoire"
                 required
               />
@@ -461,7 +461,7 @@ export default function AlzinPersoPage() {
         {/* Sélection des chants */}
         <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 sm:py-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-            <h2 className="text-base font-semibold text-mauve sm:text-lg">
+            <h2 className="text-base font-semibold text-bordeau sm:text-lg">
               Sélection des chants
             </h2>
             <p className="text-xs text-gray-600 sm:text-sm">
@@ -528,7 +528,7 @@ export default function AlzinPersoPage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Rechercher un chant..."
-                    className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                    className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
                   />
                 </div>
               </div>
@@ -553,7 +553,7 @@ export default function AlzinPersoPage() {
                             checked={!!checked}
                             onChange={() => toggleChantSelection(c.id)}
                             onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4 rounded border-gray-300 text-mauve focus:ring-mauve"
+                            className="h-4 w-4 rounded border-gray-300 text-bordeau focus:ring-bordeau"
                           />
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-gray-800">

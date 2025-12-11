@@ -79,15 +79,15 @@ export default function AdminUsersTable() {
   return (
     <div className="flex w-full flex-col gap-3">
       <div className="flex items-center justify-end">
-        <p className="rounded-full bg-mauve/10 px-3 py-1 text-sm text-mauve sm:text-base">
+        <p className="rounded-full bg-bordeau/10 px-3 py-1 text-sm text-bordeau sm:text-base">
           Total utilisateurs :{" "}
           <span className="font-semibold">{totalUsers}</span>
         </p>
       </div>
-      <div className="w-full overflow-x-auto rounded-lg border border-mauve/30 bg-white shadow-sm">
+      <div className="w-full overflow-x-auto rounded-lg border border-bordeau/30 bg-white shadow-sm">
         <table className="min-w-full divide-y divide-gray-200 text-sm sm:text-base">
           <thead>
-            <tr className="bg-mauve/10 text-left text-xs font-semibold uppercase tracking-wide text-gray-700 sm:text-sm">
+            <tr className="bg-bordeau/10 text-left text-xs font-semibold uppercase tracking-wide text-gray-700 sm:text-sm">
               <th className="px-4 py-3">Nom</th>
               <th className="px-4 py-3">Prénom</th>
               <th className="px-4 py-3">Pseudo</th>
@@ -100,7 +100,7 @@ export default function AdminUsersTable() {
 
           <tbody className="divide-y divide-gray-100">
             {users.map((u) => (
-              <tr key={u.id} className="bg-white hover:bg-purple-50/40">
+              <tr key={u.id} className="bg-white hover:bg-bordeau-50/40">
 
                 {/* NOM */}
                 <td className="px-4 py-3">
@@ -109,7 +109,7 @@ export default function AdminUsersTable() {
                       value={editValues.nom}
                       onChange={(e) => setEditValues((v) => ({ ...v, nom: e.target.value }))
                     }
-                    className="w-full rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                    className="w-full rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-bordeau-300"
                     />
                   ) : u.nom}
                 </td>
@@ -121,7 +121,7 @@ export default function AdminUsersTable() {
                       value={editValues.prenom}
                       onChange={(e) => setEditValues((v) => ({ ...v, prenom: e.target.value }))
                     }
-                    className="w-full rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                    className="w-full rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-bordeau-300"
                     />
                   ) : u.prenom}
                 </td>
@@ -133,7 +133,7 @@ export default function AdminUsersTable() {
                       value={editValues.pseudo}
                       onChange={(e) => setEditValues((v) => ({ ...v, pseudo: e.target.value }))
                     }
-                    className="w-full rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                    className="w-full rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-bordeau-300"
                     />
                   ) : u.pseudo}
                 </td>
@@ -148,7 +148,7 @@ export default function AdminUsersTable() {
                       value={editValues.ville}
                       onChange={(e) => setEditValues((v) => ({ ...v, ville: e.target.value }))
                     }
-                    className="w-full rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                    className="w-full rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-bordeau-300"
                     />
                   ) : u.ville}
                 </td>
@@ -158,7 +158,7 @@ export default function AdminUsersTable() {
                   <select
                     value={u.role}
                     onChange={(e) => changeRole(u.id, e.target.value)}
-                    className="rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                    className="rounded border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-bordeau-300"
                   >
                     {ROLE_OPTIONS.map((r) => (
                       <option key={r} value ={r}>{r}</option>

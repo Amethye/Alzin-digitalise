@@ -59,8 +59,8 @@ const fetchCats = async () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-lg rounded-xl border border-mauve/30 bg-white px-5 py-6 shadow-md sm:px-6">
-      <h2 className="mb-4 text-xl font-bold text-mauve">Gérer les catégories</h2>
+    <div className="mx-auto w-full max-w-lg rounded-xl border border-bordeau/30 bg-white px-5 py-6 shadow-md sm:px-6">
+      <h2 className="mb-4 text-xl font-bold text-bordeau">Gérer les catégories</h2>
 
       {/* Ajouter */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row">
@@ -69,7 +69,7 @@ const fetchCats = async () => {
           onChange={(e) => setNewCat(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addCategory()}
           placeholder="Nouvelle catégorie"
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-mauve/40"
+          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-bordeau/40"
         />
         <button
           onClick={addCategory}
@@ -84,7 +84,7 @@ const fetchCats = async () => {
         {categories.map((cat) => (
           <li
             key={cat}
-            className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 shadow-sm transition hover:border-mauve/50 hover:bg-mauve/5"
+            className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 shadow-sm transition hover:border-bordeau/50 hover:bg-bordeau/5"
           >
             {/* MODE ÉDITION */}
             {editingCat === cat ? (

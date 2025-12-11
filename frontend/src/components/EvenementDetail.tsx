@@ -45,8 +45,8 @@ export default function EvenementDetail({ id }: { id: number }) {
   });
 
   return (
-    <article className="max-w-3xl mx-auto flex flex-col gap-4 bg-white p-6 shadow rounded-xl">
-      <h1 className="text-3xl font-bold text-mauve">{event.nom_evenement}</h1>
+    <article className="w-full mx-auto flex flex-col gap-4 bg-bordeau/10 p-6 shadow rounded-xl">
+      <h1 className="text-3xl font-bold text-bordeau">{event.nom_evenement}</h1>
 
       <p className="text-gray-700 text-sm">
         {date} — <span className="font-semibold">{event.lieu}</span>
@@ -58,14 +58,14 @@ export default function EvenementDetail({ id }: { id: number }) {
 
       {event.histoire && (
         <section>
-          <h2 className="text-xl font-semibold text-mauve mt-2">Histoire</h2>
+          <h2 className="text-xl font-semibold text-bordeau mt-2">Histoire</h2>
           <p className="whitespace-pre-line text-gray-700">{event.histoire}</p>
         </section>
       )}
 
       <a
         href="/events"
-        className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-mauve px-4 py-1.5 text-xs font-semibold text-mauve hover:bg-mauve/10"
+        className="mt-4 inline-flex w-fit items-center gap-2 rounded-full border border-bordeau px-4 py-1.5 text-xs font-semibold text-bordeau hover:bg-bordeau/10"
       >
         <span aria-hidden>←</span>
         Retour aux évènements

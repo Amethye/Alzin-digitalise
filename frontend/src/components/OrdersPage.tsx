@@ -314,10 +314,10 @@ export default function OrdersPage() {
         {items.map((c) => (
           <li
             key={c.id}
-            className="flex flex-col rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col rounded-lg border border-bordeau/30 bg-bordeau/10 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-mauve sm:text-base">
+              <p className="text-sm font-semibold text-bordeau sm:text-base">
                 Commande #{c.id}
               </p>
               <p className="text-xs text-gray-600 sm:text-sm">
@@ -374,13 +374,13 @@ const renderAlzinsList = () => {
 
   return (
     <ul className="space-y-3">
-      {alzins.map((a) => (
-        <li
-          key={a.id}
-          className="flex flex-col rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-        >
+        {alzins.map((a) => (
+          <li
+            key={a.id}
+            className="flex flex-col rounded-lg border border-bordeau/30 bg-bordeau/10 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+          >
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-mauve sm:text-base">
+            <p className="text-sm font-semibold text-bordeau sm:text-base">
               {a.nom_chansonnier_perso}
             </p>
             <p className="text-xs text-gray-600 sm:text-sm">
@@ -443,7 +443,7 @@ const renderAlzinsList = () => {
           alt="Logo Alzin"
           className="mb-6 h-20 w-auto opacity-90"
         />
-        <h1 className="mb-3 text-2xl font-bold text-mauve sm:text-3xl">
+        <h1 className="mb-3 text-2xl font-bold text-bordeau sm:text-3xl">
           Deviens membre pour commander ton Alzin
         </h1>
         <p className="mb-6 max-w-xl text-sm text-gray-600 sm:text-base">
@@ -481,7 +481,7 @@ const renderAlzinsList = () => {
     <div className="w-full max-w-5xl rounded-xl bg-white px-4 py-6 shadow-lg sm:px-6 sm:py-8">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-mauve sm:text-3xl">
+          <h1 className="text-2xl font-bold text-bordeau sm:text-3xl">
             Commandes d&apos;Alzin
           </h1>
           <p className="mt-1 text-sm text-gray-600 sm:text-base">
@@ -579,7 +579,7 @@ const renderAlzinsList = () => {
               onSubmit={handleCreateOrUpdateOrder}
               className="mb-6 space-y-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 sm:py-5"
             >
-              <h2 className="text-base font-semibold text-mauve sm:text-lg">
+              <h2 className="text-base font-semibold text-bordeau sm:text-lg">
                 {editingCommandeId
                   ? `Modifier la commande #${editingCommandeId}`
                   : "Nouvelle commande"}
@@ -601,7 +601,7 @@ const renderAlzinsList = () => {
                         e.target.value ? Number(e.target.value) : ""
                       )
                     }
-                    className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                    className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
                     required
                   >
                     <option value="">Sélectionne un alzin</option>
@@ -628,7 +628,7 @@ const renderAlzinsList = () => {
                     onChange={(e) =>
                       setQuantity(Number(e.target.value) || 1)
                     }
-                    className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                    className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
                     required
                   />
                 </div>
@@ -649,7 +649,7 @@ const renderAlzinsList = () => {
                       e.target.value ? Number(e.target.value) : ""
                     )
                   }
-                  className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-mauve sm:text-base"
+                  className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-bordeau sm:text-base"
                   required
                 >
                   <option value="">Sélectionne un fournisseur</option>
@@ -708,7 +708,7 @@ const renderAlzinsList = () => {
           {/* Contenu selon l'onglet */}
           {activeTab === "en_cours" && (
             <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-mauve sm:text-xl">
+              <h2 className="text-lg font-semibold text-bordeau sm:text-xl">
                 Mes commandes en cours
               </h2>
               {renderCommandesList(
@@ -720,7 +720,7 @@ const renderAlzinsList = () => {
 
           {activeTab === "passees" && (
             <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-mauve sm:text-xl">
+              <h2 className="text-lg font-semibold text-bordeau sm:text-xl">
                 Mes commandes passées
               </h2>
               {renderCommandesList(
@@ -732,7 +732,7 @@ const renderAlzinsList = () => {
 
           {activeTab === "alzins" && (
             <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-mauve sm:text-xl">
+              <h2 className="text-lg font-semibold text-bordeau sm:text-xl">
                 Mes alzins personnalisés
               </h2>
               {renderAlzinsList()}

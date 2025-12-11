@@ -277,7 +277,7 @@ export default function ChantsListe() {
 
   return (
     <div className="px-10 py-10 flex flex-col gap-10 w-full">
-      <h1 className="text-3xl font-bold text-mauve">Liste de chants</h1>
+      <h1 className="text-3xl font-bold text-bordeau">Liste de chants</h1>
 
       {/* Recherche + filtre */}
       <div className="flex flex-col md:flex-row gap-4">
@@ -289,7 +289,7 @@ export default function ChantsListe() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="border border-mauve/40 p-3 rounded-lg flex-1"
+          className="border border-bordeau/40 p-3 rounded-lg flex-1"
         />
 
         <select
@@ -298,7 +298,7 @@ export default function ChantsListe() {
             setFilterCat(e.target.value);
             setPage(1);
           }}
-          className="border border-mauve/40 p-3 rounded-lg w-full md:w-60"
+          className="border border-bordeau/40 p-3 rounded-lg w-full md:w-60"
         >
           {categoryFilterOptions.map((cat) => (
             <option key={cat}>{cat}</option>
@@ -308,7 +308,7 @@ export default function ChantsListe() {
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <p className={`text-sm ${USER_ID ? "text-mauve font-semibold" : "text-gray-600"}`}>
+          <p className={`text-sm ${USER_ID ? "text-bordeau font-semibold" : "text-gray-600"}`}>
             Propose un nouveau chant à la communauté
           </p>
           <button
@@ -348,9 +348,9 @@ export default function ChantsListe() {
       </div>
 
       {showRequestForm && USER_ID && (
-        <section className="rounded-xl border border-mauve/40 bg-white p-6 shadow flex flex-col gap-6">
+        <section className="rounded-xl border border-bordeau/40 bg-white p-6 shadow flex flex-col gap-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-mauve">
+            <h2 className="text-2xl font-semibold text-bordeau">
               Demander l'ajout d'un chant
             </h2>
             <button
@@ -367,35 +367,35 @@ export default function ChantsListe() {
               placeholder="Nom du chant"
               value={requestForm.nom_chant}
               onChange={handleRequestChange}
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau"
             />
             <input
               name="auteur"
               placeholder="Auteur"
               value={requestForm.auteur}
               onChange={handleRequestChange}
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau"
             />
             <input
               name="ville_origine"
               placeholder="Ville d'origine"
               value={requestForm.ville_origine}
               onChange={handleRequestChange}
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau"
             />
             <textarea
               name="paroles"
               placeholder="Paroles"
               value={requestForm.paroles}
               onChange={handleRequestChange}
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve h-28"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau h-28"
             />
             <textarea
               name="description"
               placeholder="Description"
               value={requestForm.description}
               onChange={handleRequestChange}
-              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-mauve h-20"
+              className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-bordeau h-20"
             />
           </div>
 
@@ -407,7 +407,7 @@ export default function ChantsListe() {
                   key={cat}
                   className={`px-3 py-1 border rounded-full cursor-pointer ${
                     requestSelectedCats.includes(cat)
-                      ? "bg-mauve text-white border-mauve"
+                      ? "bg-bordeau text-white border-bordeau"
                       : "border-gray-300"
                   }`}
                 >
@@ -646,17 +646,17 @@ export default function ChantsListe() {
 
             return (
               <div key={cat}>
-                <h2 className="text-2xl font-bold text-mauve mt-6 mb-3">{cat}</h2>
+                <h2 className="text-2xl font-bold text-bordeau mt-6 mb-3">{cat}</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {list.map((ch) => (
                     <div
                       key={ch.id}
                       onClick={() => (window.location.href = `/chants/${ch.id}`)}
-                      className="border border-mauve/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-mauve/5 transition"
+                      className="border border-bordeau/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-bordeau/5 transition"
                     >
                       <div className="flex justify-between items-start">
-                        <h3 className="text-xl font-bold text-mauve">
+                        <h3 className="text-xl font-bold text-bordeau">
                           {ch.nom_chant}
                         </h3>
 
@@ -666,7 +666,7 @@ export default function ChantsListe() {
                             <FavoriButton chantId={ch.id} USER_ID={USER_ID} size={34} />
                           ) : (
                             <div
-                              className="opacity-40 cursor-not-allowed border border-mauve/30 rounded-full p-2"
+                              className="opacity-40 cursor-not-allowed border border-bordeau/30 rounded-full p-2"
                               title="Connecte-toi pour ajouter aux favoris"
                             >
                               <svg width="28" height="28" viewBox="0 0 24 24" fill="#8B5CF6">

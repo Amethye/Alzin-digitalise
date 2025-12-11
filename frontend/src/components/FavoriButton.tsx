@@ -11,13 +11,13 @@ import {
 const API_FAVORIS = "/api/favoris/";
 
 const HeartFull = ({ size = 34 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#8B5CF6">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 21s-6.2-4.35-9.33-8.22C-1.28 8.39 1.02 3 5.6 3c2.2 0 4.14 1.22 5.4 3.09C12.26 4.22 14.2 3 16.4 3c4.58 0 6.88 5.39 2.93 9.78C18.2 16.65 12 21 12 21z"/>
   </svg>
 );
 
 const HeartEmpty = ({ size = 34 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M12 21s-6.2-4.35-9.33-8.22C-1.28 8.39 1.02 3 5.6 3c2.2 0 4.14 1.22 5.4 3.09C12.26 4.22 14.2 3 16.4 3c4.58 0 6.88 5.39 2.93 9.78C18.2 16.65 12 21 12 21z"/>
   </svg>
 );
@@ -111,7 +111,7 @@ export default function FavoriButton({
   return (
     <button
       onClick={displayedFavori ? remove : add}
-      className="btn btn-ghost p-1"
+    className="btn btn-ghost p-1 text-bordeau"
       disabled={processing}
     >
       {displayedFavori ? <HeartFull size={size} /> : <HeartEmpty size={size} />}
