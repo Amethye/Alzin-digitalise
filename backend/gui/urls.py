@@ -47,6 +47,7 @@ urlpatterns = [
     ),
 
     path("templates-chansonniers/", views.templates_chansonniers_api, name="api_templates_chansonniers"),
+    path("fournisseurs/<int:fournisseur_id>/", views.fournisseur_detail_api, name="api_fournisseur_detail"),
 
     
     path("pistes-audio/", views.pistes_audio_api, name="api_pistes_audio"),

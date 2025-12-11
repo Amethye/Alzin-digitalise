@@ -1,0 +1,10 @@
+---
+import Layout from "@layouts/Layout.astro";
+import AdminFournisseurs from "@components/admin/AdminFournisseurs";
+---
+
+<Layout title="Fournisseurs">
+  <main class="flex min-h-[70vh] flex-1 items-start justify-center px-4 py-10 sm:px-6">
+    <AdminFournisseurs client:load />
+  </main>
+</Layout>

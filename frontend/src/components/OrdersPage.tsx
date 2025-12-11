@@ -22,7 +22,6 @@ type FournisseurBase = {
   id: number;
   nom_fournisseur: string;
   ville_fournisseur: string;
-  type_reliure: string;
 };
 
 type Fournisseur = FournisseurBase & {

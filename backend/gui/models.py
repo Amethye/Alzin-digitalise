@@ -77,6 +77,7 @@ class categorie(models.Model):
     def __str__(self):
         return self.nom_categorie
 
+
 class appartenir(models.Model):
     categorie = models.ForeignKey(
         categorie,
@@ -462,7 +463,6 @@ class details_commande(models.Model):
 class fournisseur(models.Model):
     nom_fournisseur = models.CharField(max_length = 100)
     ville_fournisseur = models.CharField(max_length = 85)
-    type_reliure = models.CharField(max_length= 30) #Reliures que le fournisseur propose
     
     class Meta:
         db_table = 'fournisseur'

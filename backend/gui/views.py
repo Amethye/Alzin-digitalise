@@ -1983,21 +1983,79 @@ def chansonnier_perso_detail_api(request, chansonnier_id):
 
 
 @csrf_exempt
-@require_http_methods(["GET"])
 def templates_chansonniers_api(request):
-    qs = template_chansonnier.objects.all()
-    data = [
-        {
-            "id": t.id,
-            # si ton modèle a un champ "nom_template", on le renvoie,
-            # sinon on utilise str(t)
-            "nom_template": getattr(t, "nom_template", str(t)),
-        }
-        for t in qs
-    ]
-    return JsonResponse(data, safe=False)
+    # -------- GET : liste des templates avec les ids des chants ----------
+    if request.method == "GET":
+        qs = template_chansonnier.objects.all()
+        data = []
 
+        for t in qs:
+            chant_ids = list(
+                contenir_chant_template.objects.filter(
+                    template_chansonnier=t
+                ).values_list("chant_id", flat=True)
+            )
 
+            data.append(
+                {
+                    "id": t.id,
+                    "nom_template": t.nom_template,
+                    "description": t.description,
+                    "couleur": t.couleur,
+                    "type_papier": t.type_papier,
+                    "chant_ids": chant_ids,
+                }
+            )
+
+        return JsonResponse(data, safe=False)
+
+    # -------- POST : création d'un template + association de chants -------
+    if request.method == "POST":
+        try:
+            body = json.loads(request.body.decode("utf-8") or "{}")
+        except JSONDecodeError:
+            return JsonResponse({"error": "JSON invalide"}, status=400)
+
+        nom_template = (body.get("nom_template") or "").strip()
+        description = (body.get("description") or "").strip()
+        couleur = (body.get("couleur") or "").strip()
+        type_papier = (body.get("type_papier") or "").strip()
+        chant_ids = body.get("chant_ids") or []
+
+        if not nom_template:
+            return JsonResponse({"error": "nom_template requis"}, status=400)
+
+        t = template_chansonnier.objects.create(
+            nom_template=nom_template,
+            description=description,
+            couleur=couleur,
+            type_papier=type_papier,
+        )
+
+        # Lier les chants au template
+        for cid in chant_ids:
+            try:
+                contenir_chant_template.objects.create(
+                    chant_id=cid,
+                    template_chansonnier=t,
+                )
+            except Exception:
+                # On ignore les doublons / ids invalides
+                continue
+
+        return JsonResponse(
+            {
+                "id": t.id,
+                "nom_template": t.nom_template,
+                "description": t.description,
+                "couleur": t.couleur,
+                "type_papier": t.type_papier,
+                "chant_ids": chant_ids,
+            },
+            status=201,
+        )
+
+    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
 
 #----------------------------------------------------------------------------------------
@@ -2009,6 +2067,7 @@ def templates_chansonniers_api(request):
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def fournisseurs_api(request):
+    # ------- GET : liste de tous les fournisseurs -------
     if request.method == "GET":
         qs = fournisseur.objects.all()
         data = [
@@ -2016,18 +2075,30 @@ def fournisseurs_api(request):
                 "id": f.id,
                 "nom_fournisseur": f.nom_fournisseur,
                 "ville_fournisseur": f.ville_fournisseur,
-                "type_reliure": f.type_reliure,
             }
             for f in qs
         ]
         return JsonResponse(data, safe=False)
 
-    body = json.loads(request.body.decode("utf-8"))
+    # ------- POST : création d'un fournisseur -------
+    try:
+        body_raw = request.body.decode("utf-8")
+        body = json.loads(body_raw) if body_raw else {}
+    except Exception:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    nom = (body.get("nom_fournisseur") or "").strip()
+    ville = (body.get("ville_fournisseur") or "").strip()
+
+    if not nom:
+        return JsonResponse(
+            {"error": "Le champ 'nom_fournisseur' est requis."},
+            status=400,
+        )
 
     f = fournisseur.objects.create(
-        nom_fournisseur=body["nom_fournisseur"],
-        ville_fournisseur=body.get("ville_fournisseur", ""),
-        type_reliure=body.get("type_reliure", ""),
+        nom_fournisseur=nom,
+        ville_fournisseur=ville,
     )
 
     return JsonResponse(
@@ -2035,10 +2106,42 @@ def fournisseurs_api(request):
             "id": f.id,
             "nom_fournisseur": f.nom_fournisseur,
             "ville_fournisseur": f.ville_fournisseur,
-            "type_reliure": f.type_reliure,
         },
-        status=201, 
+        status=201,
     )
+
+
+#DETAIL FOURNISSEUR 
+@csrf_exempt
+@require_http_methods(["PATCH", "DELETE"])
+def fournisseur_detail_api(request, fournisseur_id):
+    try:
+        f = fournisseur.objects.get(id=fournisseur_id)
+    except fournisseur.DoesNotExist:
+        return JsonResponse({"error": "Fournisseur introuvable"}, status=404)
+
+    if request.method == "DELETE":
+        f.delete()
+        return JsonResponse({"success": True})
+
+    # PATCH
+    try:
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except JSONDecodeError:
+        return JsonResponse({"error": "JSON invalide"}, status=400)
+
+    f.nom_fournisseur = body.get("nom_fournisseur", f.nom_fournisseur)
+    f.ville_fournisseur = body.get("ville_fournisseur", f.ville_fournisseur)
+    f.save()
+
+    return JsonResponse(
+        {
+            "id": f.id,
+            "nom_fournisseur": f.nom_fournisseur,
+            "ville_fournisseur": f.ville_fournisseur,
+        }
+    )
+
 
 #COMMANDE
 @csrf_exempt
