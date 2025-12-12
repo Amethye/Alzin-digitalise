@@ -26,7 +26,7 @@ const canonicalURL = new URL(canonical ?? Astro.url.pathname, site)
 ---
 
 <!doctype html>
-<html lang="fr-BE" class="scroll-p-24 scroll-smooth lg:scroll-p-[8.5rem]">
+<html lang="fr-BE" data-theme="light" class="scroll-p-24 scroll-smooth lg:scroll-p-[8.5rem]">
   <head>
     <meta charset="utf-8" />
     <meta name="title" content={title} />
@@ -69,6 +69,42 @@ const canonicalURL = new URL(canonical ?? Astro.url.pathname, site)
         },
       ]}
     />
+    <script>
+      (() => {
+        const THEME_FEATURE_ENABLED = false;
+        const STORAGE_KEY = "alzin-theme";
+        const THEME_VALUES = ["auto", "dark", "light"];
+        const getSystemTheme = () => {
+          if (!window.matchMedia) {
+            return "light";
+          }
+          return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        };
+        const resolveTheme = (preference) =>
+          preference === "auto" ? getSystemTheme() : preference;
+        const apply = (preference) => {
+          const root = document.documentElement;
+          const resolved = resolveTheme(preference);
+          root.dataset.theme = resolved;
+          root.classList.toggle("dark", resolved === "dark");
+          root.style.colorScheme = resolved;
+        };
+        const stored = typeof localStorage === "undefined" ? null : localStorage.getItem(STORAGE_KEY);
+        const initial = THEME_VALUES.includes(stored) ? stored : "auto";
+        if (!THEME_FEATURE_ENABLED) {
+          apply("light");
+          return;
+        }
+        apply(initial);
+        window.addEventListener("storage", (event) => {
+          if (event.key !== STORAGE_KEY) return;
+          const next = THEME_VALUES.includes(event.newValue)
+            ? event.newValue
+            : "auto";
+          apply(next);
+        });
+      })();
+    </script>
   </head>
   <body class="antialiased bg-gray-50" transition:animate="fade">
     <Nav client:load />

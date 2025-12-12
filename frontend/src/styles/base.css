@@ -51,3 +51,78 @@
     @apply border-transparent text-bordeau hover:bg-bordeau/10;
   }
 }
+
+@layer base {
+  :root {
+    --page-bg: #f8fafc;
+    --card-bg: #ffffff;
+    --page-text: #0f172a;
+    --muted-text: #475569;
+    --border-muted: rgba(15, 23, 42, 0.15);
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    --page-bg: #030711;
+    --card-bg: rgba(15, 23, 42, 0.92);
+    --page-text: #f8fafc;
+    --muted-text: #cfd8f5;
+    --border-muted: rgba(255, 255, 255, 0.1);
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--page-bg);
+    color: var(--page-text);
+  }
+
+  [data-theme="dark"] .text-gray-700,
+  [data-theme="dark"] .text-gray-800 {
+    color: #f8fafc !important;
+  }
+
+  [data-theme="dark"] .text-gray-600 {
+    color: #cbd5f5 !important;
+  }
+
+  [data-theme="dark"] .text-gray-500 {
+    color: #94a3b8 !important;
+  }
+
+  [data-theme="dark"] .bg-white {
+    background-color: var(--card-bg) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  [data-theme="dark"] .bg-white\/95 {
+    background-color: rgba(15, 23, 42, 0.95) !important;
+  }
+
+  [data-theme="dark"] .bg-white\/80 {
+    background-color: rgba(15, 23, 42, 0.82) !important;
+  }
+
+  [data-theme="dark"] .bg-gray-50 {
+    background-color: #0a0f1c !important;
+  }
+
+  [data-theme="dark"] .bg-gray-100 {
+    background-color: #111827 !important;
+  }
+
+  [data-theme="dark"] .bg-gray-200 {
+    background-color: #1f2937 !important;
+  }
+
+  [data-theme="dark"] .border-gray-200 {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  [data-theme="dark"] .border-gray-400 {
+    border-color: rgba(255, 255, 255, 0.18) !important;
+  }
+
+  [data-theme="dark"] .border-bordeau\/30 {
+    border-color: rgba(145, 35, 111, 0.35) !important;
+  }
+}

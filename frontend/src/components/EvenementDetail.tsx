@@ -63,7 +63,7 @@ export default function EvenementDetail({ id }: { id: number }) {
   const chants = event.chants ?? [];
 
   return (
-    <article className="w-full mx-auto flex flex-col gap-4 bg-bordeau/10 p-6 shadow rounded-xl">
+    <article className="w-full mx-auto flex flex-col gap-4 rounded-3xl border border-bordeau/30 bg-gradient-to-b from-white to-[#f8ecf5] p-6 shadow-2xl dark:border-bordeau/40 dark:bg-gradient-to-br dark:from-slate-900 dark:to-[#0b0015]">
       <h1 className="text-3xl font-bold text-bordeau">{event.nom_evenement}</h1>
 
       <p className="text-gray-700 text-sm">
@@ -83,7 +83,7 @@ export default function EvenementDetail({ id }: { id: number }) {
 
       <section className="mt-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-bordeau">Chants de l'évènement/h2>
+          <h2 className="text-xl font-semibold text-bordeau">Chants du programme</h2>
           <span className="text-sm text-gray-500">
             {chants.length} chant{chants.length > 1 ? "s" : ""}
           </span>
@@ -97,7 +97,7 @@ export default function EvenementDetail({ id }: { id: number }) {
             {chants.map((chant) => (
               <article
                 key={chant.id}
-                className="group flex items-start gap-4 rounded-xl border border-gray-200 bg-white/80 p-4 shadow-sm transition hover:border-bordeau/60"
+                className="group flex items-start gap-4 rounded-2xl border border-bordeau/10 bg-gradient-to-br from-white/60 to-white/80 p-4 shadow-lg transition hover:border-bordeau/60 hover:shadow-2xl dark:border-white/10 dark:bg-gradient-to-br dark:from-slate-900/70 dark:to-slate-900/30"
               >
                 {chant.illustration_chant_url && (
                   <img
@@ -106,16 +106,27 @@ export default function EvenementDetail({ id }: { id: number }) {
                     className="h-20 w-20 flex-none rounded-lg object-cover"
                   />
                 )}
-                <div className="flex flex-1 flex-col gap-1">
-                  <a
-                    href={`/chants/${chant.id}`}
-                    className="text-lg font-semibold text-bordeau transition hover:text-bordeau/70"
-                  >
-                    {chant.nom_chant}
-                  </a>
-                  <p className="text-sm text-gray-600">
-                    {chant.auteur ? `Auteur · ${chant.auteur}` : "Auteur inconnu"}
-                  </p>
+                  <div className="flex flex-1 flex-col gap-2">
+                    <a
+                      href={`/chants/${chant.id}`}
+                      className="text-lg font-semibold text-bordeau transition hover:text-bordeau/70"
+                    >
+                      {chant.nom_chant}
+                    </a>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs uppercase tracking-[0.3em] text-bordeau/80 dark:text-bordeau/60">
+                        Voir le chant
+                      </span>
+                      <a
+                        href={`/chants/${chant.id}`}
+                        className="ml-auto rounded-full bg-bordeau/90 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-white shadow-lg transition hover:bg-bordeau"
+                      >
+                        Détails
+                      </a>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {chant.auteur ? `Auteur · ${chant.auteur}` : "Auteur inconnu"}
+                    </p>
                   {chant.description && (
                     <p className="text-sm text-gray-500">{chant.description}</p>
                   )}

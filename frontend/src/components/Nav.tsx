@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { navItems as originalNavItems, type NavItem } from "./NavItems";
 import LogoUrl from "@images/LogoFPMs.svg?url";
+import ThemeToggle from "./ThemeToggle";
+import { THEME_FEATURE_ENABLED } from "../lib/theme";
 
 type Me = {
   email?: string;
@@ -172,6 +174,7 @@ export default function Nav() {
           </a>
 
           <div className="flex items-center gap-3">
+            {THEME_FEATURE_ENABLED && <ThemeToggle />}
             <div className="text-sm text-gray-700 lg:hidden" ref={mobileMenuRef}>
               {me ? (
                 <div className="relative inline-block">
