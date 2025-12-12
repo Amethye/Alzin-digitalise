@@ -2556,6 +2556,18 @@ def evenement_detail_api(request, id):
             "annonce_fil_actu": e.annonce_fil_actu,
             "histoire": e.histoire,
         }
+        chants_qs = (
+            chant.objects
+            .filter(chanter__evenement=e)
+            .prefetch_related(
+                "pistes_audio",
+                "categories_associees__categorie",
+                ACCEPTED_MODIFICATIONS_PREFETCH,
+            )
+            .order_by("nom_chant")
+            .distinct()
+        )
+        data["chants"] = [serialize_chant(request, c) for c in chants_qs]
         return JsonResponse(data)
 
     # ----------- DELETE : suppression de l'évènement -----------
