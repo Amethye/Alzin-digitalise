@@ -27,6 +27,7 @@ type Chant = {
     utilisateur_id?: number | null;
     utilisateur_pseudo?: string | null;
   }[];
+  a_ete_modifie?: boolean;
 };
 
 const API_CHANTS = "/api/chants/";
@@ -568,9 +569,11 @@ export default function ChantPage({ id }: { id: number }) {
         )}
       </div>
       
-      {/* Ajouté par */}
+      {/* Provenance */}
       <div>
-        <p className="text-sm font-semibold text-bordeau mb-1">Chant ajouté par</p>
+        <p className="text-sm font-semibold text-bordeau mb-1">
+          {chant.a_ete_modifie ? "Chant modifié par" : "Chant ajouté par"}
+        </p>
         <p className="text-gray-700">{chant.utilisateur_pseudo || "Un membre"}</p>
       </div>
 

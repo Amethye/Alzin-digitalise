@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import FavoriButton from "@components/FavoriButton";
 import { apiUrl } from "../lib/api";
 import { sortCategoriesWithAutreLast } from "../lib/categories";
@@ -86,6 +86,41 @@ export default function ChantsListe() {
       .catch(() => setAvailableCategories([]));
   }, []);
 
+  const tryRestoreScroll = useCallback(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    if (!chants.length) {
+      return false;
+    }
+    const stored = sessionStorage.getItem("chantsListScroll");
+    if (!stored) {
+      return false;
+    }
+    const scrollValue = Number(stored);
+    if (Number.isNaN(scrollValue)) {
+      return false;
+    }
+    window.scrollTo(0, scrollValue);
+    sessionStorage.removeItem("chantsListScroll");
+    return true;
+  }, [chants.length]);
+
+  useEffect(() => {
+    tryRestoreScroll();
+  }, [chants.length, tryRestoreScroll]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+    const handlePageShow = () => {
+      tryRestoreScroll();
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [tryRestoreScroll]);
+
   // Recherche
   const searched = chants.filter((c) => {
     const haystack = [
@@ -141,6 +176,16 @@ export default function ChantsListe() {
     }
     setShowRequestForm((prev) => !prev);
     setRequestFeedback(null);
+  };
+
+  const handleChantClick = (chantId: number) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const scrollTop =
+      window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+    sessionStorage.setItem("chantsListScroll", String(scrollTop));
+    window.location.href = `/chants/${chantId}`;
   };
 
   const resetRequestFormState = () => {
@@ -636,7 +681,7 @@ export default function ChantsListe() {
                 ).map((ch) => (
                   <div
                     key={ch.id}
-                    onClick={() => (window.location.href = `/chants/${ch.id}`)}
+                    onClick={() => handleChantClick(ch.id)}
                     className="border border-bordeau/30 rounded-xl p-5 shadow bg-white cursor-pointer hover:bg-bordeau/5 transition"
                   >
                     <div className="flex justify-between items-start">

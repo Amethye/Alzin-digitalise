@@ -599,13 +599,10 @@ def admin_users_api(request, user_id=None, action=None):
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
-
-    
 #------------------------------------------------------------------------
                             #CHANTS
 #------------------------------------------------------------------------
-
-from django.db.models import Avg
+from django.db.models import Avg, Prefetch
 from django.core.exceptions import DisallowedHost
 
 def _absolute_media_url(request, relative_url: str | None):
@@ -650,6 +647,15 @@ def _resolve_demande_categorie(form_data):
             pass
 
     return None
+
+
+ACCEPTED_MODIFICATIONS_PREFETCH = Prefetch(
+    "demandes_modifications",
+    queryset=demande_modification_chant.objects.filter(statut="ACCEPTEE")
+        .select_related("utilisateur")
+        .order_by("-date_decision"),
+    to_attr="accepted_modifications",
+)
 
 
 def serialize_chant(request, c):
@@ -710,6 +716,10 @@ def serialize_chant(request, c):
             "note_moyenne": float(note_moyenne),
             "nb_notes": nb_notes,
         })
+
+    accepted_modifications = getattr(c, "accepted_modifications", None) or []
+    last_modification = accepted_modifications[0] if accepted_modifications else None
+    data["a_ete_modifie"] = bool(last_modification)
 
     return data
 
@@ -915,6 +925,7 @@ def _apply_modification_to_chant(demande):
     chant_obj.ville_origine = demande.ville_origine
     chant_obj.paroles = demande.paroles
     chant_obj.description = demande.description
+    chant_obj.utilisateur = demande.utilisateur
 
     illustration_content, illustration_name = _clone_field_file(demande.illustration_chant)
     pdf_content, pdf_name = _clone_field_file(demande.paroles_pdf)
@@ -1156,7 +1167,15 @@ def chants_api(request, chant_id=None):
     # ============================================================
     if chant_id:
         try:
-            c = chant.objects.get(id=chant_id)
+            c = (
+                chant.objects
+                .prefetch_related(
+                    "pistes_audio",
+                    "categories_associees__categorie",
+                    ACCEPTED_MODIFICATIONS_PREFETCH,
+                )
+                .get(id=chant_id)
+            )
         except chant.DoesNotExist:
             return JsonResponse({"error": "Chant introuvable"}, status=404)
 
@@ -1256,7 +1275,11 @@ def chants_api(request, chant_id=None):
         qs = (
             chant.objects
             .all()
-            .prefetch_related("pistes_audio", "categories_associees__categorie")
+            .prefetch_related(
+                "pistes_audio",
+                "categories_associees__categorie",
+                ACCEPTED_MODIFICATIONS_PREFETCH,
+            )
             .order_by("nom_chant")
         )
         return JsonResponse(
