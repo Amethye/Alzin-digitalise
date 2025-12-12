@@ -133,7 +133,9 @@ class piste_audio(models.Model):
 
     def __str__(self):
         return f"Audio {self.id} - {self.chant.nom_chant} ajouté par {self.utilisateur.pseudo if self.utilisateur else 'inconnu'}"
-
+#-------------------------------------------------------------------------------
+                                # DEMANDES
+#-------------------------------------------------------------------------------
 
 class demande_chant(models.Model):
     STATUTS = (

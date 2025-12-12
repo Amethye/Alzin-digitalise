@@ -20,6 +20,9 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 from django.db import models, IntegrityError, transaction
 import os
+from json import JSONDecodeError
+from django.db.models import Avg, Prefetch
+from django.core.exceptions import DisallowedHost
 
 
 from datetime import date
@@ -99,6 +102,7 @@ def _extract_body_data(request):
     encoding = request.encoding or settings.DEFAULT_CHARSET
     body = request.body.decode(encoding or "utf-8")
     return QueryDict(body, encoding=encoding), MultiValueDict()
+
 #------------------------------------------------------------------------
                             #UTILISATEURS
 #------------------------------------------------------------------------
@@ -602,9 +606,6 @@ def admin_users_api(request, user_id=None, action=None):
 #------------------------------------------------------------------------
                             #CHANTS
 #------------------------------------------------------------------------
-from django.db.models import Avg, Prefetch
-from django.core.exceptions import DisallowedHost
-
 def _absolute_media_url(request, relative_url: str | None):
     if not relative_url:
         return None
@@ -617,9 +618,6 @@ def _absolute_media_url(request, relative_url: str | None):
 
 
 def _resolve_demande_categorie(form_data):
-    """
-    Retourne l'objet catégorie correspondant aux données reçues (id ou nom).
-    """
     if not form_data:
         return None
 
@@ -1162,9 +1160,7 @@ def demandes_modification_chant_api(request, demande_id=None):
 @csrf_exempt
 def chants_api(request, chant_id=None):
 
-    # ============================================================
     #                     DETAIL (chant_id donné)
-    # ============================================================
     if chant_id:
         try:
             c = (
@@ -1182,10 +1178,8 @@ def chants_api(request, chant_id=None):
         # ---------- GET ----------
         if request.method == "GET":
             return JsonResponse(serialize_chant(request, c))
-
-        # ========================================================
+        
         #        DELETE D'UN FICHIER SPÉCIFIQUE (field=xxx)
-        # ========================================================
         if request.method == "DELETE" and request.GET.get("field"):
             field = request.GET.get("field")
 
@@ -1578,6 +1572,7 @@ def pistes_audio_api(request, piste_id=None):
         return JsonResponse({"success": True})
 
     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+
 #----------------------------------------------------------------------------
                                 #NOTER
 #---------------------------------------------------------------------------
@@ -1729,16 +1724,6 @@ def favoris_api(request):
 #-----------------------------------------------------------
 #                         COMMENTAIRE
 #-----------------------------------------------------------
-# ================================
-#        COMMENTAIRES API
-# ================================
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse
-import json
-from .models import commentaire, utilisateur, chant
-from django.db import IntegrityError
-
 
 def _user_is_admin(user: utilisateur) -> bool:
     role_name = getattr(getattr(user, "role", None), "nom_role", "")
@@ -1880,17 +1865,10 @@ def commentaires_api(request):
 #                           CHANSONNIER 
 #  ----------------------------------------------------------------------------------------
 
-
-
 #Chansonnier
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def mes_chansonniers_api(request):
-    """
-    GET  : retourne les chansonniers personnalisés (alzins perso) de l'utilisateur courant.
-    POST : crée un nouveau chansonnier perso pour l'utilisateur courant
-           + (optionnel) associe une liste de chants via contenir_chant_perso.
-    """
     email = request.headers.get("X-User-Email", "").lower()
     if not email:
         return JsonResponse({"error": "Email manquant"}, status=400)
@@ -2247,7 +2225,6 @@ def template_chansonnier_detail_api(request, template_id):
 #                           COMMANDES
 #  ----------------------------------------------------------------------------------------
 
-
 #Fournisseur
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
@@ -2511,8 +2488,6 @@ def mes_commandes_detail_api(request, commande_id):
 #----------------------------------------------------------------
 #                           EVENENMENT
 #----------------------------------------------------------------
-
-
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def evenements_api(request):
@@ -2639,8 +2614,6 @@ def chanter_api(request):
         return JsonResponse({"status": "deleted"})
 
     # --- GET : /api/chanter/ ou filtré ---
-    #     /api/chanter/?evenement_id=3
-    #     /api/chanter/?chant_id=12
     if request.method == "GET":
         qs = chanter.objects.select_related("chant", "evenement")
 
@@ -2695,8 +2668,9 @@ def chanter_api(request):
 
 
 
-
-#CONTENIR #
+#--------------------------------------------------------
+                        #CONTENIR
+#--------------------------------------------------------
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def contenir_api(request):
@@ -2723,8 +2697,9 @@ def contenir_api(request):
         {"id": c.id, "chant_id": c.chant_id, "chansonnier_perso_id": c.chansonnier_perso_id},
         status=201,
     )
-
-#FOURNIR
+#---------------------------------------------------------
+                        #FOURNIR
+#---------------------------------------------------------
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 @csrf_exempt
@@ -2786,15 +2761,9 @@ def fournir_api(request):
         status=201,
     )
 
-
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-from json import JSONDecodeError
-import json
-from .models import maitre_chant
-
+#---------------------------------------------------------  
+#MAITRE DE CHANT
+#---------------------------------------------------------
 
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
